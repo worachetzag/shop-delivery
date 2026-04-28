@@ -10,6 +10,8 @@ const AdminInventoryPage = () => {
   const [movements, setMovements] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState(null);
+  const [loadingPurchaseOrderDetail, setLoadingPurchaseOrderDetail] = useState(false);
   const [adjustForm, setAdjustForm] = useState({ product_id: '', quantity_change: '', note: '', reference: '' });
   const [supplierForm, setSupplierForm] = useState({ name: '', contact_name: '', phone: '' });
   const [poForm, setPoForm] = useState({
@@ -181,6 +183,23 @@ const AdminInventoryPage = () => {
     }
   };
 
+  const viewPurchaseOrderDetail = async (poId) => {
+    setLoadingPurchaseOrderDetail(true);
+    try {
+      const res = await fetch(`${config.API_BASE_URL}products/admin/inventory/purchase-orders/${poId}/`, {
+        headers: authHeaders,
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'โหลดรายละเอียดใบสั่งซื้อไม่สำเร็จ');
+      setSelectedPurchaseOrder(data);
+    } catch (error) {
+      popup.error(error.message);
+    } finally {
+      setLoadingPurchaseOrderDetail(false);
+    }
+  };
+
   return (
     <div className="admin-dashboard" style={{ padding: 16 }}>
       <h1>จัดการสต็อกแบบครบวงจร</h1>
@@ -275,7 +294,7 @@ const AdminInventoryPage = () => {
         <h3>ใบสั่งซื้อล่าสุด</h3>
         <table>
           <thead>
-            <tr><th>PO</th><th>ผู้จำหน่าย</th><th>สถานะ</th><th>รายการ</th><th>รับเข้า</th></tr>
+            <tr><th>PO</th><th>ผู้จำหน่าย</th><th>สถานะ</th><th>รายการ</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {purchaseOrders.map((po) => (
@@ -284,12 +303,71 @@ const AdminInventoryPage = () => {
                 <td>{po.supplier_name || '-'}</td>
                 <td>{po.status_display || po.status}</td>
                 <td>{(po.items || []).length}</td>
-                <td><button type="button" className="stock-save-btn" onClick={() => receiveAll(po)}>รับเข้าคงค้างทั้งหมด</button></td>
+                <td>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button type="button" className="btn-secondary" onClick={() => viewPurchaseOrderDetail(po.id)}>
+                      ดูรายละเอียด
+                    </button>
+                    <button type="button" className="stock-save-btn" onClick={() => receiveAll(po)}>
+                      รับเข้าคงค้างทั้งหมด
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {(loadingPurchaseOrderDetail || selectedPurchaseOrder) && (
+        <div className="products-manage-table" style={{ marginBottom: 20 }}>
+          <h3>รายละเอียดใบสั่งซื้อ</h3>
+          {loadingPurchaseOrderDetail ? (
+            <p>กำลังโหลดรายละเอียด...</p>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+                <p><strong>เลขใบสั่งซื้อ:</strong> {selectedPurchaseOrder?.reference || '-'}</p>
+                <p><strong>ผู้จำหน่าย:</strong> {selectedPurchaseOrder?.supplier_name || '-'}</p>
+                <p><strong>สถานะ:</strong> {selectedPurchaseOrder?.status_display || selectedPurchaseOrder?.status || '-'}</p>
+                <p><strong>หมายเหตุ:</strong> {selectedPurchaseOrder?.notes || '-'}</p>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>สินค้า</th>
+                    <th>จำนวนสั่ง</th>
+                    <th>รับแล้ว</th>
+                    <th>คงค้าง</th>
+                    <th>ต้นทุน/หน่วย</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedPurchaseOrder?.items || []).map((item) => {
+                    const ordered = Number(item.ordered_quantity || 0);
+                    const received = Number(item.received_quantity || 0);
+                    const remaining = Math.max(0, ordered - received);
+                    return (
+                      <tr key={item.id}>
+                        <td>{item.product_name || `สินค้า #${item.product}`}</td>
+                        <td>{ordered}</td>
+                        <td>{received}</td>
+                        <td>{remaining}</td>
+                        <td>{Number(item.unit_cost || 0).toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div style={{ marginTop: 12 }}>
+                <button type="button" className="btn-outline" onClick={() => setSelectedPurchaseOrder(null)}>
+                  ปิดรายละเอียด
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="products-manage-table">
         <h3>ประวัติการเคลื่อนไหวสต็อก</h3>
