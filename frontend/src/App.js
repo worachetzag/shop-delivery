@@ -28,6 +28,7 @@ import AdminProductFormPage from './pages/AdminProductFormPage';
 import AdminStoreSettingsPage from './pages/AdminStoreSettingsPage';
 import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
+import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
 import './App.css';
 
@@ -77,7 +78,7 @@ function AppContent() {
     }
 
     if (['admin', 'store_admin', 'super_admin'].includes(userRole) && !location.pathname.startsWith('/admin')) {
-      navigate('/admin/orders', { replace: true });
+      navigate('/admin/dashboard', { replace: true });
       return;
     }
 
@@ -214,7 +215,7 @@ function AppContent() {
             path="/admin/dashboard"
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
-                <Navigate to="/admin/orders" replace />
+                <AdminOverviewPage />
               </ProtectedRoute>
             )}
           />

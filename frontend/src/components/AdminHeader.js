@@ -7,6 +7,7 @@ const AdminHeader = () => {
   const location = useLocation();
   const [username] = useState(localStorage.getItem('username') || 'Admin');
   const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
+  const [openGroup, setOpenGroup] = useState(null);
   const showAuditLog = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const role = localStorage.getItem('user_role') || '';
@@ -19,6 +20,22 @@ const AdminHeader = () => {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/personnel')) {
+      setOpenGroup('personnel');
+      return;
+    }
+    if (location.pathname.startsWith('/admin/store-settings')) {
+      setOpenGroup('store');
+      return;
+    }
+    if (location.pathname.startsWith('/admin/inventory')) {
+      setOpenGroup('inventory');
+      return;
+    }
+    setOpenGroup(null);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -58,6 +75,26 @@ const AdminHeader = () => {
     fontSize: '0.9rem',
     background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.08)',
   });
+  const groupButtonStyle = (active) => ({
+    color: 'white',
+    textDecoration: 'none',
+    padding: '8px 10px',
+    borderRadius: '5px',
+    fontSize: '0.92rem',
+    border: 'none',
+    width: '100%',
+    textAlign: 'left',
+    cursor: 'pointer',
+    background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.10)',
+  });
+  const submenuWrapStyle = {
+    display: 'grid',
+    gap: 6,
+    marginTop: 6,
+    paddingLeft: 8,
+    borderLeft: '2px solid rgba(255,255,255,0.24)',
+  };
+  const toggleGroup = (name) => setOpenGroup((prev) => (prev === name ? null : name));
 
   return (
     <header style={{
@@ -80,13 +117,19 @@ const AdminHeader = () => {
         gap: 14,
         alignItems: isCompact ? 'center' : 'stretch',
       }}>
-        <Link to="/admin/orders" style={{ color: 'white', textDecoration: 'none', marginBottom: 8 }}>
+        <Link to="/admin/dashboard" style={{ color: 'white', textDecoration: 'none', marginBottom: 8 }}>
           <h1 style={{ margin: 0, fontSize: '20px' }}>
             👨‍💼 Admin Dashboard
           </h1>
         </Link>
         
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+          <Link
+            to="/admin/dashboard"
+            style={subLinkStyle(isActivePath('/admin/dashboard'))}
+          >
+            ภาพรวม
+          </Link>
           <Link
             to="/admin/orders"
             style={subLinkStyle(isActivePath('/admin/orders'))}
@@ -107,21 +150,48 @@ const AdminHeader = () => {
           </Link>
 
           <div style={groupTitleStyle}>บุคลากร</div>
-          <Link to="/admin/personnel/staff" style={subLinkStyle(isActivePath('/admin/personnel/staff'))}>พนักงาน</Link>
-          <Link to="/admin/personnel/drivers" style={subLinkStyle(isActivePath('/admin/personnel/drivers'))}>คนขับ</Link>
+          <div onMouseEnter={() => !isCompact && setOpenGroup('personnel')}>
+            <button type="button" style={groupButtonStyle(openGroup === 'personnel')} onClick={() => toggleGroup('personnel')}>
+              บุคลากร {openGroup === 'personnel' ? '▾' : '▸'}
+            </button>
+            {openGroup === 'personnel' && (
+              <div style={submenuWrapStyle}>
+                <Link to="/admin/personnel/staff" style={subLinkStyle(isActivePath('/admin/personnel/staff'))}>พนักงาน</Link>
+                <Link to="/admin/personnel/drivers" style={subLinkStyle(isActivePath('/admin/personnel/drivers'))}>คนขับ</Link>
+              </div>
+            )}
+          </div>
 
           <div style={groupTitleStyle}>ตั้งค่าร้าน</div>
-          <Link to="/admin/store-settings/store" style={subLinkStyle(isActivePath('/admin/store-settings/store'))}>ข้อมูลร้าน</Link>
-          <Link to="/admin/store-settings/location" style={subLinkStyle(isActivePath('/admin/store-settings/location'))}>พิกัดร้าน</Link>
-          <Link to="/admin/store-settings/payment" style={subLinkStyle(isActivePath('/admin/store-settings/payment'))}>PromptPay</Link>
-          <Link to="/admin/store-settings/hours" style={subLinkStyle(isActivePath('/admin/store-settings/hours'))}>เวลาทำการ</Link>
+          <div onMouseEnter={() => !isCompact && setOpenGroup('store')}>
+            <button type="button" style={groupButtonStyle(openGroup === 'store')} onClick={() => toggleGroup('store')}>
+              ตั้งค่าร้าน {openGroup === 'store' ? '▾' : '▸'}
+            </button>
+            {openGroup === 'store' && (
+              <div style={submenuWrapStyle}>
+                <Link to="/admin/store-settings/store" style={subLinkStyle(isActivePath('/admin/store-settings/store'))}>ข้อมูลร้าน</Link>
+                <Link to="/admin/store-settings/location" style={subLinkStyle(isActivePath('/admin/store-settings/location'))}>พิกัดร้าน</Link>
+                <Link to="/admin/store-settings/payment" style={subLinkStyle(isActivePath('/admin/store-settings/payment'))}>PromptPay</Link>
+                <Link to="/admin/store-settings/hours" style={subLinkStyle(isActivePath('/admin/store-settings/hours'))}>เวลาทำการ</Link>
+              </div>
+            )}
+          </div>
 
           <div style={groupTitleStyle}>จัดการสต็อก</div>
-          <Link to="/admin/inventory/overview" style={subLinkStyle(isActivePath('/admin/inventory/overview'))}>ภาพรวม</Link>
-          <Link to="/admin/inventory/adjustments" style={subLinkStyle(isActivePath('/admin/inventory/adjustments'))}>ปรับสต็อก</Link>
-          <Link to="/admin/inventory/suppliers" style={subLinkStyle(isActivePath('/admin/inventory/suppliers'))}>ผู้จำหน่าย</Link>
-          <Link to="/admin/inventory/purchase-orders" style={subLinkStyle(isActivePath('/admin/inventory/purchase-orders'))}>ใบสั่งซื้อ (PO)</Link>
-          <Link to="/admin/inventory/movements" style={subLinkStyle(isActivePath('/admin/inventory/movements'))}>ประวัติสต็อก</Link>
+          <div onMouseEnter={() => !isCompact && setOpenGroup('inventory')}>
+            <button type="button" style={groupButtonStyle(openGroup === 'inventory')} onClick={() => toggleGroup('inventory')}>
+              จัดการสต็อก {openGroup === 'inventory' ? '▾' : '▸'}
+            </button>
+            {openGroup === 'inventory' && (
+              <div style={submenuWrapStyle}>
+                <Link to="/admin/inventory/overview" style={subLinkStyle(isActivePath('/admin/inventory/overview'))}>ภาพรวม</Link>
+                <Link to="/admin/inventory/adjustments" style={subLinkStyle(isActivePath('/admin/inventory/adjustments'))}>ปรับสต็อก</Link>
+                <Link to="/admin/inventory/suppliers" style={subLinkStyle(isActivePath('/admin/inventory/suppliers'))}>ผู้จำหน่าย</Link>
+                <Link to="/admin/inventory/purchase-orders" style={subLinkStyle(isActivePath('/admin/inventory/purchase-orders'))}>ใบสั่งซื้อ (PO)</Link>
+                <Link to="/admin/inventory/movements" style={subLinkStyle(isActivePath('/admin/inventory/movements'))}>ประวัติสต็อก</Link>
+              </div>
+            )}
+          </div>
 
           {showAuditLog ? (
             <Link
