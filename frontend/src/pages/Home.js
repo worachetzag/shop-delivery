@@ -4,6 +4,8 @@ import ProductCard from '../components/ProductCard';
 import { productsService } from '../services/api';
 import './Home.css';
 
+const SKELETON_CARD_COUNT = 8;
+
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +47,29 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="loading">
-        กำลังโหลดสินค้าแนะนำ...
+      <div className="home">
+        <section className="featured-products">
+          <div className="container">
+            <h2 className="section-title">สินค้าแนะนำ</h2>
+            <div className="products-grid">
+              {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
+                <div key={`home-skeleton-${index}`} className="product-card-skeleton" aria-hidden="true">
+                  <div className="product-card-skeleton-image" />
+                  <div className="product-card-skeleton-body">
+                    <div className="product-card-skeleton-line name" />
+                    <div className="product-card-skeleton-line category" />
+                    <div className="product-card-skeleton-line description" />
+                    <div className="product-card-skeleton-line price" />
+                    <div className="product-card-skeleton-line stock" />
+                  </div>
+                  <div className="product-card-skeleton-action">
+                    <div className="product-card-skeleton-button" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     );
   }

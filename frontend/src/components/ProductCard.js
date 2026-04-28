@@ -13,6 +13,7 @@ const ProductCard = ({
   showCartInfo = true,
 }) => {
   const popup = usePopup();
+  const [hasEntered, setHasEntered] = useState(false);
   const isControlled = useMemo(
     () =>
       typeof onAddToCart === 'function' ||
@@ -27,6 +28,13 @@ const ProductCard = ({
       setLocalCartQuantity(Number(cartQuantity || 0));
     }
   }, [cartQuantity, isControlled]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setHasEntered(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (isControlled) return;
@@ -120,7 +128,7 @@ const ProductCard = ({
   };
 
   return (
-    <div className="product-card">
+    <div className={`product-card ${hasEntered ? 'is-entered' : ''}`}>
       <Link to={`/customer/products/${product.id}`} className="product-link">
         <div className="product-image-container">
           <img 
@@ -134,7 +142,7 @@ const ProductCard = ({
         </div>
         
         <div className="product-info">
-          <h3 className="product-name">{product.name}</h3>
+          <h3 className="product-name" title={product.name}>{product.name}</h3>
           {categoryLabel && (
             <p className="product-category-inline">• {categoryLabel}</p>
           )}
@@ -150,26 +158,28 @@ const ProductCard = ({
       </Link>
       
       <div className="product-actions">
-        {showCartInfo && hasInCart && (
-          <div className="cart-status">
-            <span className="cart-icon">🛒</span>
-            <span>ใส่แล้ว {effectiveCartQuantity} ชิ้น</span>
-          </div>
-        )}
+        <div className={`cart-meta-area ${showCartInfo ? '' : 'is-collapsed'}`}>
+          {showCartInfo && hasInCart && (
+            <div className="cart-status">
+              <span className="cart-icon">🛒</span>
+              <span>ใส่แล้ว {effectiveCartQuantity} ชิ้น</span>
+            </div>
+          )}
 
-        {showCartInfo && hasInCart && (
-          <div className="cart-qty-editor">
-            <button className="qty-btn" onClick={handleDecrease}>-</button>
-            <span className="qty-value">{effectiveCartQuantity}</span>
-            <button
-              className="qty-btn"
-              onClick={handleIncrease}
-              disabled={remainingStock <= 0}
-            >
-              +
-            </button>
-          </div>
-        )}
+          {showCartInfo && hasInCart && (
+            <div className="cart-qty-editor">
+              <button className="qty-btn" onClick={handleDecrease}>-</button>
+              <span className="qty-value">{effectiveCartQuantity}</span>
+              <button
+                className="qty-btn"
+                onClick={handleIncrease}
+                disabled={remainingStock <= 0}
+              >
+                +
+              </button>
+            </div>
+          )}
+        </div>
 
         <button 
           className="btn btn-primary btn-sm"

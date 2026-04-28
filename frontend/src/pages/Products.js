@@ -7,6 +7,7 @@ import './Products.css';
 import { usePopup } from '../components/PopupProvider';
 
 const PAGE_SIZE = 12;
+const SKELETON_CARD_COUNT = 8;
 
 const Products = () => {
   const popup = usePopup();
@@ -203,8 +204,35 @@ const Products = () => {
 
   if (!listReady) {
     return (
-      <div className="loading">
-        กำลังโหลดสินค้า...
+      <div className="products-page">
+        <div className="container">
+          <div className="page-header">
+            <h1 className="page-title">สินค้าทั้งหมด</h1>
+            <p className="page-subtitle">เลือกสินค้าที่คุณต้องการ</p>
+          </div>
+          <div className="results-section">
+            <div className="results-header">
+              <p className="results-count">กำลังโหลดสินค้า...</p>
+            </div>
+            <div className="products-grid">
+              {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
+                <div key={`products-skeleton-${index}`} className="product-card-skeleton" aria-hidden="true">
+                  <div className="product-card-skeleton-image" />
+                  <div className="product-card-skeleton-body">
+                    <div className="product-card-skeleton-line name" />
+                    <div className="product-card-skeleton-line category" />
+                    <div className="product-card-skeleton-line description" />
+                    <div className="product-card-skeleton-line price" />
+                    <div className="product-card-skeleton-line stock" />
+                  </div>
+                  <div className="product-card-skeleton-action">
+                    <div className="product-card-skeleton-button" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
