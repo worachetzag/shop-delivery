@@ -8,7 +8,6 @@ from django.contrib.auth import authenticate
 from django.http import HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.sites.models import Site
 from django.db import transaction
 from django.db.models import Q
 import requests
@@ -18,6 +17,14 @@ from urllib.parse import urlencode
 from urllib.parse import quote_plus
 
 logger = logging.getLogger(__name__)
+
+def _line_callback_url(request):
+    """Resolve LINE callback URL with predictable priority."""
+    configured = getattr(settings, 'LINE_LOGIN_CALLBACK_URL', '').strip()
+    if configured:
+        return configured
+    return request.build_absolute_uri('/accounts/line/login/callback/')
+
 
 from .models import Customer, CustomerAddress, LineUser, UserRole, DriverProfile, AdminProfile, StaffAuditLog
 from .serializers import (
@@ -841,17 +848,7 @@ def line_login_start(request):
     state = secrets.token_urlsafe(24)
     request.session['line_oauth_state'] = state
 
-    # Use configured/Site domain for LINE callback to avoid localhost redirect_uri mismatch.
-    redirect_uri = getattr(settings, 'LINE_LOGIN_CALLBACK_URL', '').strip()
-    if not redirect_uri:
-        try:
-            site_domain = Site.objects.get_current().domain.strip()
-            if site_domain and site_domain not in ('localhost', '127.0.0.1'):
-                redirect_uri = f"https://{site_domain}/accounts/line/login/callback/"
-            else:
-                redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
-        except Exception:
-            redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
+    redirect_uri = _line_callback_url(request)
     logger.info(f"LINE OAuth start redirect_uri={redirect_uri}")
 
     params = {
@@ -895,16 +892,7 @@ def line_login_callback(request):
         # ขอ access token จาก LINE
         channel_id = settings.LINE_LOGIN_CHANNEL_ID
         channel_secret = settings.LINE_LOGIN_CHANNEL_SECRET
-        redirect_uri = getattr(settings, 'LINE_LOGIN_CALLBACK_URL', '').strip()
-        if not redirect_uri:
-            try:
-                site_domain = Site.objects.get_current().domain.strip()
-                if site_domain and site_domain not in ('localhost', '127.0.0.1'):
-                    redirect_uri = f"https://{site_domain}/accounts/line/login/callback/"
-                else:
-                    redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
-            except Exception:
-                redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
+        redirect_uri = _line_callback_url(request)
         logger.info(f"LINE OAuth token exchange redirect_uri={redirect_uri}")
         
         token_url = "https://api.line.me/oauth2/v2.1/token"
