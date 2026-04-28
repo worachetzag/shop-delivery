@@ -166,6 +166,13 @@ class StoreLocation(models.Model):
         blank=True,
         verbose_name="ลองจิจูดร้าน",
     )
+    promptpay_number = models.CharField(
+        max_length=32,
+        blank=True,
+        default='',
+        verbose_name="เบอร์พร้อมเพย์ร้าน",
+        help_text="ใส่เบอร์มือถือ 10 หลัก หรือเลข PromptPay ที่ต้องการรับเงิน",
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="อัปเดตล่าสุด")
 
     class Meta:

@@ -17,6 +17,7 @@ const AdminStoreSettingsPage = () => {
     store_location: {
       name: '',
       address: '',
+      promptpay_number: '',
       latitude: '',
       longitude: '',
     },
@@ -45,6 +46,7 @@ const AdminStoreSettingsPage = () => {
         store_location: {
           name: sl.name || '',
           address: sl.address || '',
+          promptpay_number: sl.promptpay_number || '',
           latitude: sl.latitude ?? '',
           longitude: sl.longitude ?? '',
         },
@@ -146,6 +148,11 @@ const AdminStoreSettingsPage = () => {
                 onChange={(e) => onLocationChange('address', e.target.value)}
                 placeholder="ที่อยู่ร้าน"
                 rows={3}
+              />
+              <input
+                value={form.store_location.promptpay_number}
+                onChange={(e) => onLocationChange('promptpay_number', e.target.value)}
+                placeholder="เบอร์พร้อมเพย์ร้าน (เช่น 0812345678)"
               />
               <input
                 value={form.store_location.latitude}

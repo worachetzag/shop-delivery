@@ -15,11 +15,11 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(StoreLocation)
 class StoreLocationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'latitude', 'longitude', 'updated_at')
+    list_display = ('id', 'name', 'promptpay_number', 'latitude', 'longitude', 'updated_at')
     search_fields = ('name', 'address')
     fieldsets = (
         (None, {
-            'fields': ('name', 'address', 'latitude', 'longitude'),
+            'fields': ('name', 'address', 'promptpay_number', 'latitude', 'longitude'),
             'description': 'ตั้งพิกัดร้านที่นี่ได้โดยไม่ต้องแก้ .env — ใช้แถวเดียวพอ (ระบบใช้แถวแรกเท่านั้น)',
         }),
     )

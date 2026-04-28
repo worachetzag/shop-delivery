@@ -74,6 +74,7 @@ class AdminStoreSettingsView(APIView):
             'store_location': {
                 'name': (loc.name if loc else '') or '',
                 'address': (loc.address if loc else '') or '',
+                'promptpay_number': (loc.promptpay_number if loc else '') or '',
                 'latitude': loc.latitude if loc else None,
                 'longitude': loc.longitude if loc else None,
                 'updated_at': loc.updated_at if loc else None,
@@ -116,12 +117,14 @@ class AdminStoreSettingsView(APIView):
                 loc = StoreLocation.objects.create(
                     name=(location_data.get('name') or '').strip(),
                     address=(location_data.get('address') or '').strip(),
+                    promptpay_number=''.join(ch for ch in str(location_data.get('promptpay_number') or '') if ch.isdigit()),
                     latitude=lat,
                     longitude=lng,
                 )
             else:
                 loc.name = (location_data.get('name') or '').strip()
                 loc.address = (location_data.get('address') or '').strip()
+                loc.promptpay_number = ''.join(ch for ch in str(location_data.get('promptpay_number') or '') if ch.isdigit())
                 loc.latitude = lat
                 loc.longitude = lng
                 loc.save()
@@ -479,7 +482,12 @@ class PromptPayQRCodeView(APIView):
         if order.payment_method != 'promptpay':
             return Response({'error': 'คำสั่งซื้อนี้ไม่ได้เลือกชำระด้วย PromptPay'}, status=status.HTTP_400_BAD_REQUEST)
 
-        promptpay_number = getattr(settings, 'PROMPTPAY_NUMBER', '') or getattr(settings, 'PROMPTPAY_MERCHANT_ID', '')
+        loc = StoreLocation.objects.order_by('id').first()
+        promptpay_number = (
+            (getattr(loc, 'promptpay_number', '') or '')
+            or getattr(settings, 'PROMPTPAY_NUMBER', '')
+            or getattr(settings, 'PROMPTPAY_MERCHANT_ID', '')
+        )
         if not promptpay_number:
             return Response({'error': 'ยังไม่ได้ตั้งค่า PromptPay Number ในระบบ'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
