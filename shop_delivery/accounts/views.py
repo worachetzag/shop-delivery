@@ -1,0 +1,1017 @@
+from rest_framework import generics, status, permissions
+from rest_framework.response import Response
+from shop_delivery.pagination import StandardPagination
+from rest_framework.authtoken.models import Token
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from django.http import HttpResponseRedirect, JsonResponse
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.sites.models import Site
+from django.db import transaction
+from django.db.models import Q
+import requests
+import logging
+import secrets
+from urllib.parse import urlencode
+from urllib.parse import quote_plus
+
+logger = logging.getLogger(__name__)
+
+from .models import Customer, CustomerAddress, LineUser, UserRole, DriverProfile, AdminProfile, StaffAuditLog
+from .serializers import (
+    CustomerSerializer,
+    CustomerAddressSerializer,
+    CustomerCreateSerializer,
+    CustomerLoginSerializer,
+    LineLoginSerializer,
+    StaffAuditLogSerializer,
+)
+from .permissions import is_admin_user, can_manage_staff_accounts
+from .staff_audit import log_staff_audit
+
+
+class CustomerLoginView(generics.GenericAPIView):
+    """เข้าสู่ระบบลูกค้า"""
+    serializer_class = CustomerLoginSerializer
+    authentication_classes = []
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+        
+        user = authenticate(username=username, password=password)
+        if user:
+            # Login session สำหรับ Django
+            from django.contrib.auth import login
+            login(request, user)
+            
+            # สร้างหรือดึง token
+            token, created = Token.objects.get_or_create(user=user)
+            
+            # ดึงข้อมูล role
+            try:
+                user_role = user.user_role
+                role = user_role.role
+            except:
+                role = 'customer'  # default
+            
+            # ตรวจสอบ role
+            if role != 'customer':
+                return Response({
+                    'error': 'บัญชีนี้ไม่ใช่บัญชีลูกค้า กรุณาใช้หน้าล็อกอินที่ถูกต้อง'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # ดึงข้อมูลลูกค้า
+            try:
+                customer = Customer.objects.get(user=user)
+                return Response({
+                    'message': 'เข้าสู่ระบบสำเร็จ',
+                    'token': token.key,
+                    'user_id': user.id,
+                    'customer_id': customer.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': role,
+                }, status=status.HTTP_200_OK)
+            except Customer.DoesNotExist:
+                return Response({
+                    'error': 'ไม่พบข้อมูลลูกค้า'
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({
+                'error': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class AdminLoginView(generics.GenericAPIView):
+    """เข้าสู่ระบบแอดมิน"""
+    serializer_class = CustomerLoginSerializer
+    authentication_classes = []
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+        
+        user = authenticate(username=username, password=password)
+        if user:
+            # Login session สำหรับ admin
+            from django.contrib.auth import login
+            login(request, user)
+            
+            # สร้างหรือดึง token
+            token, created = Token.objects.get_or_create(user=user)
+            
+            # Allow Django staff/superuser as admin even without UserRole.
+            if user.is_superuser or user.is_staff:
+                role = 'super_admin'
+            else:
+                try:
+                    user_role = user.user_role
+                    role = user_role.role
+                except Exception:
+                    if hasattr(user, 'admin_profile'):
+                        role = 'store_admin'
+                        UserRole.objects.update_or_create(user=user, defaults={'role': 'store_admin'})
+                    else:
+                        return Response({
+                            'error': 'บัญชีนี้ไม่ได้รับบทบาท กรุณาติดต่อผู้ดูแลระบบ'
+                        }, status=status.HTTP_403_FORBIDDEN)
+
+            # ตรวจสอบ role ต้องเป็น store_admin หรือ super_admin
+            if role not in ['store_admin', 'super_admin', 'admin']:
+                return Response({
+                    'error': 'บัญชีนี้ไม่มีสิทธิ์เข้าถึงหน้าแอดมิน'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # Redirect URL สำหรับ admin dashboard
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+            redirect_url = f'{frontend_url}/admin/dashboard'
+
+            log_staff_audit(
+                request,
+                StaffAuditLog.Action.ADMIN_LOGIN,
+                summary=f'เข้าสู่ระบบแอดมิน: {user.username}',
+                detail={'role': role},
+            )
+
+            return Response({
+                'message': 'เข้าสู่ระบบแอดมินสำเร็จ',
+                'token': token.key,
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': role,
+                'redirect_url': redirect_url,
+                'can_view_staff_audit': can_manage_staff_accounts(user),
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class DriverLoginView(generics.GenericAPIView):
+    """เข้าสู่ระบบคนขับ"""
+    serializer_class = CustomerLoginSerializer
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({'error': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        role_obj = getattr(user, 'user_role', None)
+        role = role_obj.role if role_obj else ''
+        if role != 'driver':
+            return Response({'error': 'บัญชีนี้ไม่มีสิทธิ์เข้าหน้าคนขับ'}, status=status.HTTP_403_FORBIDDEN)
+
+        if not hasattr(user, 'driver_profile'):
+            return Response({'error': 'ไม่พบข้อมูลโปรไฟล์คนขับ'}, status=status.HTTP_404_NOT_FOUND)
+
+        from django.contrib.auth import login
+        login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'message': 'เข้าสู่ระบบคนขับสำเร็จ',
+            'token': token.key,
+            'username': user.username,
+            'role': role,
+        }, status=status.HTTP_200_OK)
+
+
+class StaffAuditLogListView(generics.ListAPIView):
+    """ประวัติการทำงาน — เฉพาะเจ้าของร้าน (super_admin / admin ระดับบน)"""
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffAuditLogSerializer
+    queryset = StaffAuditLog.objects.select_related('actor').all()
+
+    def get_queryset(self):
+        if not can_manage_staff_accounts(self.request.user):
+            return StaffAuditLog.objects.none()
+        qs = StaffAuditLog.objects.select_related('actor').all()
+        action = self.request.query_params.get('action')
+        if action:
+            qs = qs.filter(action=action)
+        username = self.request.query_params.get('username')
+        if username:
+            qs = qs.filter(actor__username__icontains=username.strip())
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        if not can_manage_staff_accounts(request.user):
+            return Response({'error': 'ไม่มีสิทธิ์ดูประวัติพนักงาน'}, status=status.HTTP_403_FORBIDDEN)
+        return super().list(request, *args, **kwargs)
+
+
+class AdminLogoutView(generics.GenericAPIView):
+    """ออกจากระบบแอดมิน + บันทึกประวัติ"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return Response({'error': 'ไม่ใช่บัญชีแอดมิน'}, status=status.HTTP_403_FORBIDDEN)
+        actor = request.user
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.ADMIN_LOGOUT,
+            summary=f'ออกจากระบบ: {actor.username}',
+            actor=actor,
+        )
+        from django.contrib.auth import logout
+
+        logout(request)
+        return Response({'message': 'ออกจากระบบแล้ว'}, status=status.HTTP_200_OK)
+
+
+class AdminStaffListCreateView(generics.GenericAPIView):
+    """จัดการพนักงาน (store admin/super admin)"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return Response({'error': 'ไม่มีสิทธิ์เข้าถึงข้อมูลแอดมิน'}, status=status.HTTP_403_FORBIDDEN)
+
+        if can_manage_staff_accounts(request.user):
+            users = (
+                User.objects.filter(
+                    Q(user_role__role__in=['store_admin', 'super_admin', 'admin']) |
+                    Q(is_staff=True) |
+                    Q(is_superuser=True)
+                )
+                .distinct()
+                .order_by('-date_joined')
+            )
+        else:
+            users = User.objects.filter(id=request.user.id).order_by('-date_joined')
+
+        data = []
+        for user in users:
+            role_obj = getattr(user, 'user_role', None)
+            role = role_obj.role if role_obj else ('super_admin' if user.is_superuser else 'store_admin')
+            data.append({
+                'id': user.id,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'role': role,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
+            })
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(data, request, self)
+        if page is not None:
+            return paginator.get_paginated_response(list(page))
+        return Response(data, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        if not can_manage_staff_accounts(request.user):
+            return Response({'error': 'บัญชีนี้ไม่มีสิทธิ์เพิ่มพนักงาน'}, status=status.HTTP_403_FORBIDDEN)
+
+        username = (request.data.get('username') or '').strip()
+        password = (request.data.get('password') or '').strip()
+        first_name = (request.data.get('first_name') or '').strip()
+        last_name = (request.data.get('last_name') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        role = (request.data.get('role') or 'store_admin').strip()
+
+        if not username or not password:
+            return Response({'error': 'กรุณากรอก username และ password'}, status=status.HTTP_400_BAD_REQUEST)
+        if role not in ['store_admin', 'super_admin', 'admin']:
+            return Response({'error': 'role ไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'username นี้ถูกใช้งานแล้ว'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+        )
+        # Do not grant Django admin-site access for staff created from this screen.
+        user.is_staff = False
+        user.is_superuser = False
+        user.save()
+        UserRole.objects.update_or_create(user=user, defaults={'role': role})
+
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.STAFF_CREATE,
+            target_type='user',
+            target_id=str(user.id),
+            summary=f'เพิ่มบัญชีพนักงาน {username} ({role})',
+            detail={'username': username, 'role': role},
+        )
+
+        return Response({
+            'message': 'เพิ่มพนักงานสำเร็จ',
+            'id': user.id,
+            'username': user.username,
+        }, status=status.HTTP_201_CREATED)
+
+
+class AdminStaffDetailView(generics.GenericAPIView):
+    """แก้ไข/ลบพนักงาน"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request, user_id, *args, **kwargs):
+        can_manage = can_manage_staff_accounts(request.user)
+        is_self_edit = is_admin_user(request.user) and request.user.id == user_id
+        if not (can_manage or is_self_edit):
+            return Response({'error': 'บัญชีนี้ไม่มีสิทธิ์แก้ไขพนักงาน'}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, id=user_id)
+
+        username = (request.data.get('username') or user.username).strip()
+        first_name = (request.data.get('first_name') or '').strip()
+        last_name = (request.data.get('last_name') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        role = (request.data.get('role') or '').strip()
+        password = (request.data.get('password') or '').strip()
+
+        if not username:
+            return Response({'error': 'กรุณากรอก username'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exclude(id=user.id).exists():
+            return Response({'error': 'username นี้ถูกใช้งานแล้ว'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if role:
+            if not can_manage:
+                return Response({'error': 'ไม่มีสิทธิ์เปลี่ยนบทบาทผู้ใช้งาน'}, status=status.HTTP_403_FORBIDDEN)
+            if role not in ['store_admin', 'super_admin', 'admin']:
+                return Response({'error': 'role ไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
+            UserRole.objects.update_or_create(user=user, defaults={'role': role})
+
+        user.username = username
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        # Keep access flags off for accounts managed in this screen.
+        user.is_staff = False
+        user.is_superuser = False
+        if password:
+            user.set_password(password)
+        user.save()
+
+        role_obj = getattr(user, 'user_role', None)
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.STAFF_UPDATE,
+            target_type='user',
+            target_id=str(user.id),
+            summary=f'แก้ไขบัญชีพนักงาน {user.username}',
+            detail={
+                'username': user.username,
+                'role': role_obj.role if role_obj else None,
+                'password_changed': bool(password),
+            },
+        )
+
+        return Response({
+            'message': 'แก้ไขข้อมูลพนักงานสำเร็จ',
+            'id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'role': role_obj.role if role_obj else 'store_admin',
+        }, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    def delete(self, request, user_id, *args, **kwargs):
+        if not can_manage_staff_accounts(request.user):
+            return Response({'error': 'บัญชีนี้ไม่มีสิทธิ์ลบพนักงาน'}, status=status.HTTP_403_FORBIDDEN)
+
+        if request.user.id == user_id:
+            return Response({'error': 'ไม่สามารถลบบัญชีที่กำลังใช้งานอยู่'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = get_object_or_404(User, id=user_id)
+        uname = user.username
+        uid = user.id
+        user.delete()
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.STAFF_DELETE,
+            target_type='user',
+            target_id=str(uid),
+            summary=f'ลบบัญชีพนักงาน {uname}',
+            detail={'username': uname},
+        )
+        return Response({'message': 'ลบพนักงานสำเร็จ'}, status=status.HTTP_200_OK)
+
+
+class AdminDriverListCreateView(generics.GenericAPIView):
+    """จัดการคนขับ"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return Response({'error': 'ไม่มีสิทธิ์เข้าถึงข้อมูลคนขับ'}, status=status.HTTP_403_FORBIDDEN)
+
+        from orders.models import DriverAssignment
+        drivers = DriverProfile.objects.select_related('user').order_by('-created_at')
+        data = []
+        for driver in drivers:
+            active_jobs = DriverAssignment.objects.filter(
+                driver=driver.user
+            ).exclude(status__in=['delivered', 'cancelled'])
+            has_active_assignment = active_jobs.exists()
+            effective_available = bool(driver.is_available) and not has_active_assignment
+            data.append({
+                'id': driver.id,
+                'user_id': driver.user_id,
+                'username': driver.user.username,
+                'first_name': driver.user.first_name,
+                'last_name': driver.user.last_name,
+                'email': driver.user.email,
+                'full_name': f"{driver.user.first_name} {driver.user.last_name}".strip() or driver.user.username,
+                'phone_number': driver.phone_number,
+                'license_number': driver.license_number,
+                'vehicle_type': driver.vehicle_type,
+                'vehicle_number': driver.vehicle_number,
+                'is_available': effective_available,
+                'has_active_assignment': has_active_assignment,
+                'active_assignment_count': active_jobs.count(),
+            })
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(data, request, self)
+        if page is not None:
+            return paginator.get_paginated_response(list(page))
+        return Response(data, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return Response({'error': 'ไม่มีสิทธิ์เพิ่มคนขับ'}, status=status.HTTP_403_FORBIDDEN)
+
+        username = (request.data.get('username') or '').strip()
+        password = (request.data.get('password') or '').strip()
+        first_name = (request.data.get('first_name') or '').strip()
+        last_name = (request.data.get('last_name') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        phone_number = (request.data.get('phone_number') or '').strip()
+        license_number = (request.data.get('license_number') or '').strip()
+        vehicle_type = (request.data.get('vehicle_type') or '').strip()
+        vehicle_number = (request.data.get('vehicle_number') or '').strip()
+
+        if not username or not password:
+            return Response({'error': 'กรุณากรอก username และ password'}, status=status.HTTP_400_BAD_REQUEST)
+        if not phone_number or not license_number or not vehicle_type or not vehicle_number:
+            return Response({'error': 'กรุณากรอกข้อมูลคนขับให้ครบถ้วน'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'username นี้ถูกใช้งานแล้ว'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+        )
+        UserRole.objects.update_or_create(user=user, defaults={'role': 'driver'})
+        DriverProfile.objects.create(
+            user=user,
+            license_number=license_number,
+            vehicle_type=vehicle_type,
+            vehicle_number=vehicle_number,
+            phone_number=phone_number,
+            is_available=True,
+        )
+
+        return Response({
+            'message': 'เพิ่มคนขับสำเร็จ',
+            'username': user.username,
+        }, status=status.HTTP_201_CREATED)
+
+
+class AdminDriverDetailView(generics.GenericAPIView):
+    """แก้ไข/ลบคนขับ"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request, driver_id, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return Response({'error': 'ไม่มีสิทธิ์แก้ไขข้อมูลคนขับ'}, status=status.HTTP_403_FORBIDDEN)
+
+        driver = get_object_or_404(DriverProfile.objects.select_related('user'), id=driver_id)
+        user = driver.user
+
+        username = (request.data.get('username') or user.username).strip()
+        first_name = (request.data.get('first_name') or '').strip()
+        last_name = (request.data.get('last_name') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        phone_number = (request.data.get('phone_number') or driver.phone_number).strip()
+        license_number = (request.data.get('license_number') or driver.license_number).strip()
+        vehicle_type = (request.data.get('vehicle_type') or driver.vehicle_type).strip()
+        vehicle_number = (request.data.get('vehicle_number') or driver.vehicle_number).strip()
+        password = (request.data.get('password') or '').strip()
+        is_available_raw = request.data.get('is_available', driver.is_available)
+
+        if not username:
+            return Response({'error': 'กรุณากรอก username'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exclude(id=user.id).exists():
+            return Response({'error': 'username นี้ถูกใช้งานแล้ว'}, status=status.HTTP_400_BAD_REQUEST)
+        if not phone_number or not license_number or not vehicle_type or not vehicle_number:
+            return Response({'error': 'กรุณากรอกข้อมูลคนขับให้ครบถ้วน'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if isinstance(is_available_raw, str):
+            is_available = is_available_raw.strip().lower() in ['true', '1', 'yes', 'y', 'on']
+        else:
+            is_available = bool(is_available_raw)
+
+        user.username = username
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        if password:
+            user.set_password(password)
+        user.save()
+
+        driver.phone_number = phone_number
+        driver.license_number = license_number
+        driver.vehicle_type = vehicle_type
+        driver.vehicle_number = vehicle_number
+        driver.is_available = is_available
+        driver.save()
+
+        return Response({
+            'message': 'แก้ไขข้อมูลคนขับสำเร็จ',
+            'id': driver.id,
+            'user_id': user.id,
+            'username': user.username,
+            'full_name': f"{user.first_name} {user.last_name}".strip() or user.username,
+            'phone_number': driver.phone_number,
+            'license_number': driver.license_number,
+            'vehicle_type': driver.vehicle_type,
+            'vehicle_number': driver.vehicle_number,
+            'is_available': driver.is_available,
+        }, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    def delete(self, request, driver_id, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return Response({'error': 'ไม่มีสิทธิ์ลบคนขับ'}, status=status.HTTP_403_FORBIDDEN)
+
+        driver = get_object_or_404(DriverProfile.objects.select_related('user'), id=driver_id)
+        driver.user.delete()
+        return Response({'message': 'ลบคนขับสำเร็จ'}, status=status.HTTP_200_OK)
+
+
+class LineLoginView(generics.GenericAPIView):
+    """เข้าสู่ระบบผ่าน LINE"""
+    serializer_class = LineLoginSerializer
+    
+    def get(self, request, *args, **kwargs):
+        """LINE Login Callback URL"""
+        code = request.GET.get('code')
+        state = request.GET.get('state')
+        
+        if not code:
+            return Response({
+                'error': 'ไม่พบ authorization code'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # TODO: ใช้ code เพื่อขอ access token จาก LINE
+        # และดึงข้อมูล user profile
+        
+        return Response({
+            'message': 'LINE Login Callback สำเร็จ',
+            'code': code,
+            'state': state,
+        }, status=status.HTTP_200_OK)
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        line_user_id = serializer.validated_data['line_user_id']
+        display_name = serializer.validated_data['display_name']
+        picture_url = serializer.validated_data.get('picture_url')
+        status_message = serializer.validated_data.get('status_message')
+        
+        # หาหรือสร้าง LineUser ก่อน
+        try:
+            line_user = LineUser.objects.get(line_user_id=line_user_id)
+            user = line_user.user
+            customer = Customer.objects.get(user=user)
+        except LineUser.DoesNotExist:
+            # สร้าง User ใหม่
+            username = f"line_{line_user_id}"
+            user = User.objects.create_user(
+                username=username,
+                email=f"{line_user_id}@line.local",
+                first_name=display_name.split()[0] if display_name else '',
+                last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
+            )
+            
+            # สร้าง Customer
+            customer = Customer.objects.create(
+                user=user,
+                phone_number=f"LINE_{line_user_id}",
+                address="LINE User",
+            )
+            
+            # สร้าง LineUser
+            line_user = LineUser.objects.create(
+                user=user,
+                line_user_id=line_user_id,
+                display_name=display_name,
+                picture_url=picture_url,
+                status_message=status_message,
+            )
+            
+            # สร้าง UserRole
+            UserRole.objects.create(user=user, role='customer')
+        
+        # อัปเดตข้อมูลถ้ามีการเปลี่ยนแปลง
+        if line_user.display_name != display_name:
+            line_user.display_name = display_name
+        if line_user.picture_url != picture_url:
+            line_user.picture_url = picture_url
+        if line_user.status_message != status_message:
+            line_user.status_message = status_message
+        line_user.save()
+        
+        # สร้างหรือดึง token
+        token, created = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            'message': 'เข้าสู่ระบบผ่าน LINE สำเร็จ',
+            'token': token.key,
+            'user_id': user.id,
+            'customer_id': customer.id,
+            'line_user_id': line_user_id,
+            'display_name': display_name,
+            'is_new_user': not line_user.user,
+        }, status=status.HTTP_200_OK)
+
+
+class CustomerRegistrationView(generics.CreateAPIView):
+    """ลงทะเบียนลูกค้าใหม่"""
+    serializer_class = CustomerCreateSerializer
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        customer = serializer.save()
+        
+        # สร้าง UserRole
+        UserRole.objects.create(user=customer.user, role='customer')
+        
+        return Response({
+            'message': 'ลงทะเบียนสำเร็จ',
+            'customer_id': customer.id,
+            'user_id': customer.user.id
+        }, status=status.HTTP_201_CREATED)
+
+
+class CustomerProfileView(generics.RetrieveUpdateDestroyAPIView):
+    """จัดการโปรไฟล์ลูกค้า"""
+    serializer_class = CustomerSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        # ดึง customer จาก session ถ้ามี
+        if self.request.user.is_authenticated:
+            try:
+                return Customer.objects.get(user=self.request.user)
+            except Customer.DoesNotExist:
+                return None
+            except:
+                return None
+        else:
+            return None
+    
+    def update(self, request, *args, **kwargs):
+        """อัพเดทข้อมูล Customer"""
+        instance = self.get_object()
+        if instance is None or not request.user.is_authenticated:
+            return Response({
+                'error': 'กรุณาเข้าสู่ระบบเพื่ออัพเดทข้อมูล',
+                'is_authenticated': request.user.is_authenticated
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # อัพเดทข้อมูลโดยตรง
+        if 'address' in request.data:
+            instance.address = request.data['address']
+        if 'phone_number' in request.data:
+            instance.phone_number = request.data['phone_number']
+        if 'latitude' in request.data and request.data['latitude']:
+            instance.latitude = request.data['latitude']
+        if 'longitude' in request.data and request.data['longitude']:
+            instance.longitude = request.data['longitude']
+        
+        instance.save()
+        
+        serializer = self.get_serializer(instance)
+        
+        return Response({
+            'message': 'อัพเดทข้อมูลสำเร็จ',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    def destroy(self, request, *args, **kwargs):
+        """ลบข้อมูลส่วนบุคคล (Right to be Forgotten)"""
+        customer = self.get_object()
+        
+        # ลบข้อมูล
+        customer.user.delete()
+        
+        return Response({
+            'message': 'ลบข้อมูลส่วนบุคคลสำเร็จ'
+        }, status=status.HTTP_200_OK)
+
+
+class CustomerAddressListCreateView(generics.ListCreateAPIView):
+    """รายการที่อยู่จัดส่งของลูกค้า / เพิ่มที่อยู่ใหม่"""
+    serializer_class = CustomerAddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        customer = get_object_or_404(Customer, user=self.request.user)
+        return CustomerAddress.objects.filter(customer=customer).order_by('-is_default', '-updated_at')
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        customer = get_object_or_404(Customer, user=self.request.user)
+        is_default = serializer.validated_data.get('is_default', False)
+
+        if is_default or not CustomerAddress.objects.filter(customer=customer).exists():
+            CustomerAddress.objects.filter(customer=customer, is_default=True).update(is_default=False)
+            serializer.save(customer=customer, is_default=True)
+            return
+
+        serializer.save(customer=customer)
+
+
+class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """ดู/แก้ไข/ลบที่อยู่จัดส่ง"""
+    serializer_class = CustomerAddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        customer = get_object_or_404(Customer, user=self.request.user)
+        return CustomerAddress.objects.filter(customer=customer)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        customer = get_object_or_404(Customer, user=self.request.user)
+        is_default = serializer.validated_data.get('is_default', None)
+        if is_default is True:
+            CustomerAddress.objects.filter(customer=customer, is_default=True).update(is_default=False)
+            serializer.save(is_default=True)
+            return
+        serializer.save()
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        customer = instance.customer
+        was_default = instance.is_default
+        instance.delete()
+        if was_default:
+            next_address = CustomerAddress.objects.filter(customer=customer).order_by('-updated_at').first()
+            if next_address:
+                next_address.is_default = True
+                next_address.save(update_fields=['is_default'])
+
+
+class DataExportView(generics.RetrieveAPIView):
+    """ส่งออกข้อมูลส่วนบุคคล"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        customer = get_object_or_404(Customer, user=request.user)
+        
+        # รวบรวมข้อมูลส่วนบุคคล
+        data = {
+            'personal_info': {
+                'name': customer.user.get_full_name(),
+                'email': customer.user.email,
+                'phone': customer.phone_number,
+                'address': customer.address,
+                'id_card': customer.id_card_number,
+                'date_of_birth': customer.date_of_birth,
+            },
+            'orders': list(customer.orders.values(
+                'id', 'order_type', 'status', 'total_amount', 'created_at'
+            )),
+        }
+        
+        return Response(data, status=status.HTTP_200_OK)
+
+
+def profile_view(request):
+    """Profile view สำหรับ redirect หลัง LINE Login"""
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+    if request.user.is_authenticated:
+        # Redirect กลับไปที่ frontend พร้อม token
+        try:
+            token = Token.objects.get(user=request.user)
+            return HttpResponseRedirect(f"{frontend_url}?token={token.key}&login=success")
+        except Token.DoesNotExist:
+            # ถ้าไม่มี token ให้สร้างใหม่
+            token = Token.objects.create(user=request.user)
+            return HttpResponseRedirect(f"{frontend_url}?token={token.key}&login=success")
+    else:
+        # ถ้ายังไม่ได้ login ให้ redirect ไปหน้า login
+        return HttpResponseRedirect(f"{frontend_url}/login")
+
+
+def line_login_start(request):
+    """Start LINE OAuth flow without allauth dependency."""
+    state = secrets.token_urlsafe(24)
+    request.session['line_oauth_state'] = state
+
+    # Use configured/Site domain for LINE callback to avoid localhost redirect_uri mismatch.
+    redirect_uri = getattr(settings, 'LINE_LOGIN_CALLBACK_URL', '').strip()
+    if not redirect_uri:
+        try:
+            site_domain = Site.objects.get_current().domain.strip()
+            if site_domain and site_domain not in ('localhost', '127.0.0.1'):
+                redirect_uri = f"https://{site_domain}/accounts/line/login/callback/"
+            else:
+                redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
+        except Exception:
+            redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
+    logger.info(f"LINE OAuth start redirect_uri={redirect_uri}")
+
+    params = {
+        'response_type': 'code',
+        'client_id': settings.LINE_LOGIN_CHANNEL_ID,
+        'redirect_uri': redirect_uri,
+        'state': state,
+        # Keep scope minimal for stable LIFF login flow.
+        'scope': 'profile',
+    }
+    auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(params)}"
+    return HttpResponseRedirect(auth_url)
+
+
+@csrf_exempt
+def line_login_callback(request):
+    """LINE Login Callback"""
+    code = request.GET.get('code')
+    state = request.GET.get('state')
+    error = request.GET.get('error')
+    
+    logger.info(f"LINE Login Callback - code: {code}, state: {state}, error: {error}")
+    
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+    login_url = f"{frontend_url}/login"
+
+    if error:
+        # ถ้ามี error ให้ redirect กลับไปหน้า login
+        return HttpResponseRedirect(f"{login_url}?error={error}")
+    
+    if not code:
+        # ถ้าไม่มี code ให้ redirect กลับไปหน้า login
+        return HttpResponseRedirect(f"{login_url}?error=no_code")
+
+    expected_state = request.session.pop('line_oauth_state', None)
+    if expected_state and state != expected_state:
+        logger.error(f"LINE state mismatch. expected={expected_state}, got={state}")
+        return HttpResponseRedirect(f"{login_url}?error=state_mismatch")
+    
+    try:
+        # ขอ access token จาก LINE
+        channel_id = settings.LINE_LOGIN_CHANNEL_ID
+        channel_secret = settings.LINE_LOGIN_CHANNEL_SECRET
+        redirect_uri = getattr(settings, 'LINE_LOGIN_CALLBACK_URL', '').strip()
+        if not redirect_uri:
+            try:
+                site_domain = Site.objects.get_current().domain.strip()
+                if site_domain and site_domain not in ('localhost', '127.0.0.1'):
+                    redirect_uri = f"https://{site_domain}/accounts/line/login/callback/"
+                else:
+                    redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
+            except Exception:
+                redirect_uri = request.build_absolute_uri('/accounts/line/login/callback/')
+        logger.info(f"LINE OAuth token exchange redirect_uri={redirect_uri}")
+        
+        token_url = "https://api.line.me/oauth2/v2.1/token"
+        token_data = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': redirect_uri,
+            'client_id': channel_id,
+            'client_secret': channel_secret
+        }
+        
+        response = requests.post(token_url, data=token_data)
+        
+        if response.status_code != 200:
+            logger.error(f"LINE Token Error: {response.status_code} - {response.text}")
+            return HttpResponseRedirect(f"{login_url}?error=token_error&reason={quote_plus(str(response.status_code))}")
+        
+        token_response = response.json()
+        access_token = token_response.get('access_token')
+        
+        # ดึงข้อมูล user profile จาก LINE
+        profile_url = "https://api.line.me/v2/profile"
+        headers = {'Authorization': f'Bearer {access_token}'}
+        profile_response = requests.get(profile_url, headers=headers)
+        
+        if profile_response.status_code != 200:
+            logger.error(f"LINE Profile Error: {profile_response.status_code} - {profile_response.text}")
+            return HttpResponseRedirect(f"{login_url}?error=profile_error&reason={quote_plus(str(profile_response.status_code))}")
+        
+        profile_data = profile_response.json()
+        line_user_id = profile_data.get('userId')
+        display_name = profile_data.get('displayName', '')
+        picture_url = profile_data.get('pictureUrl', '')
+        status_message = profile_data.get('statusMessage', '')
+        
+        # หาหรือสร้าง LineUser
+        try:
+            line_user = LineUser.objects.get(line_user_id=line_user_id)
+            user = line_user.user
+            customer = Customer.objects.get(user=user)
+        except LineUser.DoesNotExist:
+            # สร้าง User ใหม่
+            username_base = f"line_{line_user_id}"
+            username = username_base
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{username_base[:140]}_{counter}"
+                counter += 1
+
+            user = User.objects.create_user(
+                username=username,
+                email=f"{line_user_id}@line.local",
+                first_name=display_name.split()[0] if display_name else '',
+                last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
+            )
+
+            digits = ''.join(ch for ch in line_user_id if ch.isdigit())
+            if not digits:
+                digits = str(user.id)
+            id_card_candidate = (digits + ('0' * 13))[:13]
+            suffix = 1
+            while Customer.objects.filter(id_card_number=id_card_candidate).exists():
+                suffix_str = str(suffix)
+                id_card_candidate = id_card_candidate[:13 - len(suffix_str)] + suffix_str
+                suffix += 1
+
+            # สร้าง Customer
+            customer = Customer.objects.create(
+                user=user,
+                id_card_number=id_card_candidate,
+                date_of_birth='2000-01-01',
+                phone_number=f"LINE_{line_user_id}"[:15],
+                address="LINE User",
+            )
+            
+            # สร้าง LineUser
+            line_user = LineUser.objects.create(
+                user=user,
+                line_user_id=line_user_id,
+                display_name=display_name,
+                picture_url=picture_url,
+                status_message=status_message,
+            )
+            
+            # สร้าง UserRole
+            UserRole.objects.create(user=user, role='customer')
+        
+        # อัปเดตข้อมูลถ้ามีการเปลี่ยนแปลง
+        if line_user.display_name != display_name:
+            line_user.display_name = display_name
+        if line_user.picture_url != picture_url:
+            line_user.picture_url = picture_url
+        if line_user.status_message != status_message:
+            line_user.status_message = status_message
+        line_user.save()
+        
+        # สร้างหรือดึง token
+        token, created = Token.objects.get_or_create(user=user)
+        
+        # ทำ login เพื่อสร้าง session
+        from django.contrib.auth import login
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        
+        # Redirect กลับไปที่ frontend พร้อม token
+        logger.info(f"Redirecting to frontend with token for user: {user.username}")
+        return HttpResponseRedirect(f"{frontend_url}?token={token.key}&login=success&username={user.username}")
+        
+    except Exception as e:
+        logger.exception("LINE Login Error")
+        return HttpResponseRedirect(f"{login_url}?error=line_login_failed&reason={quote_plus(e.__class__.__name__)}")

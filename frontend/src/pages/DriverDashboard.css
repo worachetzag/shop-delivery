@@ -1,0 +1,163 @@
+.driver-dashboard-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.driver-assignment-list {
+  display: grid;
+  gap: 12px;
+}
+
+.driver-assignment-card {
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.driver-assignment-clickable {
+  cursor: pointer;
+}
+
+.driver-assignment-clickable:hover {
+  border-color: #cfd8ea;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.driver-assignment-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.driver-assignment-total-row {
+  justify-content: flex-end;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.driver-status {
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+.driver-location-input {
+  width: 100%;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0;
+}
+
+.driver-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.driver-actions button {
+  border: 1px solid #cfd8ea;
+  border-radius: 6px;
+  background: #f7f9ff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.driver-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.driver-actions .btn-primary {
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+}
+
+.driver-actions .danger {
+  background: #fff5f5;
+  border-color: #f3c6cb;
+  color: #b4232d;
+}
+
+.driver-next-step {
+  display: inline-flex;
+  margin-bottom: 8px;
+  background: #eef3ff;
+  color: #2f4a98;
+  border: 1px solid #cfd8ea;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.driver-open-job-hint {
+  color: #0d6efd;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.driver-empty {
+  text-align: center;
+  color: #666;
+  padding: 24px;
+  border: 1px dashed #d8d8d8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+/* ข้อมูลลูกค้าสำหรับคนขับ */
+.driver-customer-block {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  background: #f6f8fc;
+  border: 1px solid #e2e8f5;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.driver-customer-heading {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.driver-customer-line {
+  margin-bottom: 6px;
+}
+
+.driver-customer-line:last-child {
+  margin-bottom: 0;
+}
+
+.driver-customer-notes {
+  color: #4a5568;
+  white-space: pre-wrap;
+}
+
+.driver-address-text {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  color: #2d3748;
+}
+
+.muted-small {
+  font-size: 12px;
+  color: #718096;
+}
+
+.driver-tel-link {
+  color: #0d6efd;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.driver-tel-link:hover {
+  text-decoration: underline;
+}

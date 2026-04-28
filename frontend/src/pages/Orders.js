@@ -1,0 +1,257 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import config from '../config';
+import ApiPaginationBar from '../components/ApiPaginationBar';
+import './Orders.css';
+
+const PAGE_SIZE = 10;
+
+const Orders = () => {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('page_size', String(PAGE_SIZE));
+        if (filter === 'preparing') {
+          params.set('status', 'preparing');
+        } else if (filter === 'out_for_delivery') {
+          params.set('group', 'shipping');
+        } else if (filter === 'delivered') {
+          params.set('status', 'delivered');
+        }
+
+        const response = await fetch(`${config.API_BASE_URL}orders/list/?${params.toString()}`, {
+          headers: {
+            ...(token ? { Authorization: `Token ${token}` } : {}),
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const sourceOrders = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.results)
+              ? data.results
+              : [];
+          const transformedOrders = sourceOrders.map((order) => ({
+            id: order.id,
+            date: order.created_at,
+            status: order.status,
+            statusDisplay: order.status_display,
+            paymentMethod: order.payment_method,
+            paymentSlipStatus: order.payment_slip_status,
+            paymentSlipStatusDisplay: order.payment_slip_status_display,
+            total: Number(order.total_amount || order.total_price || 0),
+            itemCount: (order.items || order.order_items || []).length,
+            totalQuantity: (order.items || order.order_items || []).reduce(
+              (sum, item) => sum + Number(item.quantity || 0),
+              0
+            ),
+            trackingNumber: order.tracking_number || null,
+          }));
+          setOrders(transformedOrders);
+          setTotalCount(typeof data.count === 'number' ? data.count : transformedOrders.length);
+        } else {
+          setOrders([]);
+          setTotalCount(0);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        setOrders([]);
+        setTotalCount(0);
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [page, filter]);
+
+  const getStatusText = (status) => {
+    const statusMap = {
+      pending: 'รอดำเนินการ',
+      confirmed: 'ยืนยันคำสั่งซื้อ',
+      preparing: 'กำลังเตรียมสินค้า',
+      ready: 'พร้อมจัดส่ง',
+      out_for_delivery: 'กำลังจัดส่ง',
+      delivering: 'กำลังจัดส่ง',
+      delivered: 'จัดส่งแล้ว',
+      cancelled: 'ยกเลิก',
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status) => {
+    const colorMap = {
+      pending: '#6c757d',
+      confirmed: '#20c997',
+      preparing: '#ffc107',
+      ready: '#0d6efd',
+      out_for_delivery: '#17a2b8',
+      delivering: '#17a2b8',
+      delivered: '#28a745',
+      cancelled: '#dc3545',
+    };
+    return colorMap[status] || '#6c757d';
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('th-TH', {
+      style: 'currency',
+      currency: 'THB',
+    }).format(price);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="loading">
+        กำลังโหลดคำสั่งซื้อ...
+      </div>
+    );
+  }
+
+  if (totalCount === 0 && page === 1) {
+    const isAll = filter === 'all';
+    return (
+      <div className="orders-page">
+        <div className="container">
+          <div className="page-header">
+            <h1 className="page-title">คำสั่งซื้อของฉัน</h1>
+          </div>
+
+          <div className="empty-orders">
+            <div className="empty-orders-icon">📦</div>
+            <h3>{isAll ? 'ยังไม่มีคำสั่งซื้อ' : 'ไม่มีคำสั่งซื้อในหมวดนี้'}</h3>
+            <p>{isAll ? 'เริ่มต้นการช้อปปิ้งของคุณ' : 'ลองเลือกแท็บอื่นหรือดูทั้งหมด'}</p>
+            {isAll ? (
+              <Link to="/customer/products" className="btn btn-primary">
+                ดูสินค้า
+              </Link>
+            ) : (
+              <button type="button" className="btn btn-primary" onClick={() => setFilter('all')}>
+                ดูทั้งหมด
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="orders-page">
+      <div className="container">
+        <div className="page-header">
+          <h1 className="page-title">คำสั่งซื้อของฉัน</h1>
+          <p className="page-subtitle">ติดตามสถานะคำสั่งซื้อของคุณ · ทั้งหมดในหมวดนี้ {totalCount} รายการ</p>
+        </div>
+
+        <div className="filter-tabs">
+          <button
+            type="button"
+            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            ทั้งหมด
+          </button>
+          <button
+            type="button"
+            className={`filter-tab ${filter === 'preparing' ? 'active' : ''}`}
+            onClick={() => setFilter('preparing')}
+          >
+            กำลังเตรียม
+          </button>
+          <button
+            type="button"
+            className={`filter-tab ${filter === 'out_for_delivery' ? 'active' : ''}`}
+            onClick={() => setFilter('out_for_delivery')}
+          >
+            พร้อมส่ง / กำลังส่ง
+          </button>
+          <button
+            type="button"
+            className={`filter-tab ${filter === 'delivered' ? 'active' : ''}`}
+            onClick={() => setFilter('delivered')}
+          >
+            จัดส่งแล้ว
+          </button>
+        </div>
+
+        <div className="orders-list">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="order-card order-card-clickable"
+              onClick={() => navigate(`/customer/orders/${order.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/customer/orders/${order.id}`);
+                }
+              }}
+            >
+              <div className="order-header order-list-row">
+                <div className="order-info">
+                  <h3 className="order-id">#{order.id}</h3>
+                  <p className="order-date">{formatDate(order.date)}</p>
+                </div>
+                <div className="order-list-summary">
+                  <span>
+                    {order.itemCount} รายการ ({order.totalQuantity} ชิ้น)
+                  </span>
+                  <span className="total-amount">{formatPrice(order.total)}</span>
+                </div>
+                <div className="order-status">
+                  <span
+                    className="status-badge"
+                    style={{ backgroundColor: getStatusColor(order.status) }}
+                  >
+                    {order.statusDisplay || getStatusText(order.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {orders.length === 0 && (
+          <div className="no-orders">
+            <div className="no-orders-icon">🔍</div>
+            <h3>ไม่พบคำสั่งซื้อในหน้านี้</h3>
+            <p>ลองเปลี่ยนตัวกรองหรือเลือกหน้าถัดไป</p>
+          </div>
+        )}
+
+        <ApiPaginationBar count={totalCount} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </div>
+    </div>
+  );
+};
+
+export default Orders;

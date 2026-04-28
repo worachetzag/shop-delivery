@@ -1,0 +1,24 @@
+"""สิทธิ์แอดมินร้าน — แยกไฟล์เพื่อใช้จาก views อื่นโดยไม่ circular import"""
+
+
+def is_admin_user(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or user.is_staff:
+        return True
+    role_obj = getattr(user, 'user_role', None)
+    if not role_obj:
+        return hasattr(user, 'admin_profile')
+    return role_obj.role in ['store_admin', 'super_admin', 'admin']
+
+
+def can_manage_staff_accounts(user):
+    """เจ้าของร้าน / ผู้จัดการระดับบน — ดูประวัติพนักงาน, จัดการบัญชีพนักงาน"""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    role_obj = getattr(user, 'user_role', None)
+    if not role_obj:
+        return False
+    return role_obj.role in ['super_admin', 'admin']

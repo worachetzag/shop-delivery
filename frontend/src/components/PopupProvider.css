@@ -1,0 +1,132 @@
+.popup-toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1200;
+}
+
+.popup-toast {
+  min-width: 260px;
+  max-width: 360px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  animation: popup-slide-up 180ms ease-out;
+}
+
+.popup-toast-info {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.popup-toast-success {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.popup-toast-error {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.popup-toast button {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.popup-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(1px);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.popup-dialog {
+  width: min(460px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 48px rgba(2, 6, 23, 0.28);
+  overflow: hidden;
+  animation: popup-scale-in 170ms ease-out;
+}
+
+.popup-dialog-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 700;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.popup-dialog-body {
+  padding: 16px;
+  color: #334155;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.popup-dialog-actions {
+  padding: 12px 16px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.popup-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.popup-btn-cancel {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.popup-btn-confirm {
+  background: #2563eb;
+  color: #fff;
+}
+
+.popup-btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+@keyframes popup-slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popup-scale-in {
+  from {
+    transform: scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

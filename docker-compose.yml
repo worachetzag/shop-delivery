@@ -1,0 +1,88 @@
+# Samsung Panich Delivery System - Docker Compose
+
+version: '3.8'
+
+services:
+  # Django Backend
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./shop_delivery:/app/shop_delivery
+      - ./media:/app/shop_delivery/media
+      - ./staticfiles:/app/shop_delivery/staticfiles
+      - ./logs:/app/shop_delivery/logs
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-here
+      - DATABASE_URL=sqlite:///db.sqlite3
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=samsung_panich_delivery
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  # Redis (for caching and sessions)
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  # Nginx (for production)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8000/api/
+      - REACT_APP_LIFF_ID=your-liff-id
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
+
+
+

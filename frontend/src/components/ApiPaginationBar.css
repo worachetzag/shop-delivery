@@ -1,0 +1,45 @@
+.api-pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.api-pagination-info {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.api-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.api-pagination-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.api-pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.api-pagination-page {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  min-width: 88px;
+  text-align: center;
+}

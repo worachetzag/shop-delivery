@@ -1,0 +1,43 @@
+# Samsung Panich Delivery System - Code Owners
+
+# Global owners
+* @samsung-panich-dev-team
+
+# Backend (Django)
+shop_delivery/ @samsung-panich-dev-team
+requirements.txt @samsung-panich-dev-team
+Dockerfile @samsung-panich-dev-team
+docker-compose.yml @samsung-panich-dev-team
+
+# Frontend (React)
+frontend/ @samsung-panich-dev-team
+
+# Documentation
+README.md @samsung-panich-dev-team
+SCOPE.md @samsung-panich-dev-team
+API_Endpoints_Summary.md @samsung-panich-dev-team
+LINE_Integration_Guide.md @samsung-panich-dev-team
+CONTRIBUTING.md @samsung-panich-dev-team
+CHANGELOG.md @samsung-panich-dev-team
+CONTRIBUTORS.md @samsung-panich-dev-team
+
+# Configuration files
+.gitignore @samsung-panich-dev-team
+.gitattributes @samsung-panich-dev-team
+.editorconfig @samsung-panich-dev-team
+Makefile @samsung-panich-dev-team
+nginx.conf @samsung-panich-dev-team
+.dockerignore @samsung-panich-dev-team
+
+# CI/CD
+.github/ @samsung-panich-dev-team
+
+# Environment files
+.env.example @samsung-panich-dev-team
+env.example @samsung-panich-dev-team
+
+# License
+LICENSE @samsung-panich-dev-team
+
+
+

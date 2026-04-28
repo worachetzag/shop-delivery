@@ -1,0 +1,281 @@
+/* Products Page Styles */
+.products-page {
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+}
+
+/* Filters Section */
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.search-box {
+  margin-bottom: 2rem;
+}
+
+.search-box .form-input {
+  font-size: 1.1rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group .form-label {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.filter-group .form-input {
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* Results Section */
+.results-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.results-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.results-count {
+  font-size: 1.1rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+/* No Results */
+.no-results {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6c757d;
+}
+
+.no-results-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-results h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.no-results p {
+  font-size: 1rem;
+}
+
+.floating-cart-wrapper {
+  position: fixed;
+  right: 16px;
+  bottom: 88px;
+  z-index: 50;
+  display: grid;
+  gap: 8px;
+}
+
+.floating-cart-button {
+  border: none;
+  border-radius: 999px;
+  background: #00b900;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(0, 185, 0, 0.35);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.floating-cart-icon {
+  font-size: 1rem;
+}
+
+.floating-cart-text {
+  font-size: 0.85rem;
+}
+
+.floating-cart-summary {
+  width: 280px;
+  max-height: 320px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e6edf7;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  padding: 10px;
+}
+
+.floating-cart-summary-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.floating-cart-items {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.floating-cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.floating-cart-item-name {
+  font-size: 0.82rem;
+  color: #333;
+}
+
+.floating-cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.floating-cart-item-actions button {
+  border: 1px solid #d0d7e5;
+  background: #fff;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.floating-cart-link {
+  display: block;
+  text-align: center;
+  background: #00b900;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.floating-checkout-link {
+  display: block;
+  text-align: center;
+  background: #1d4ed8;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .products-page {
+    padding: 1rem 0;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+  
+  .page-subtitle {
+    font-size: 1rem;
+  }
+  
+  .filters-section {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .filters {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .results-section {
+    padding: 1.5rem;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .no-results {
+    padding: 2rem 1rem;
+  }
+  
+  .no-results-icon {
+    font-size: 3rem;
+  }
+  
+  .no-results h3 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-section {
+    padding: 1rem;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .floating-cart-wrapper {
+    right: 10px;
+    bottom: 76px;
+  }
+
+  .floating-cart-summary {
+    width: min(86vw, 280px);
+  }
+}
+

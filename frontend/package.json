@@ -1,0 +1,45 @@
+{
+  "name": "shop-delivery-web",
+  "version": "1.0.0",
+  "description": "Samsung Panich Delivery Frontend - LINE LIFF Application",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development --open",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react",
+    "liff",
+    "line",
+    "delivery",
+    "ecommerce"
+  ],
+  "author": "Samsung Panich Development Team",
+  "license": "ISC",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-keywords": "^5.1.0",
+    "axios": "^1.12.2",
+    "leaflet": "^1.9.4",
+    "liff": "^1.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-react": "^7.27.1",
+    "babel-loader": "^8.4.1",
+    "css-loader": "^7.1.2",
+    "dotenv": "^17.3.1",
+    "html-webpack-plugin": "^5.6.4",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^4.15.1"
+  }
+}
