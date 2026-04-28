@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { productsService, cartService } from '../services/api';
 import { usePopup } from '../components/PopupProvider';
+import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -131,11 +132,11 @@ const ProductDetail = () => {
         <div className="product-detail-card">
           <div className="product-detail-image-wrap">
             <img
-              src={product.image}
+              src={resolveMediaUrl(product.image, PLACEHOLDER_IMAGES.xl)}
               alt={product.name}
               className="product-detail-image"
               onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/600x400/f8f9fa/6c757d?text=No+Image';
+                e.target.src = PLACEHOLDER_IMAGES.xl;
               }}
             />
           </div>
@@ -179,10 +180,10 @@ const ProductDetail = () => {
               {relatedProducts.map((item) => (
                 <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
                   <img
-                    src={item.image}
+                    src={resolveMediaUrl(item.image, PLACEHOLDER_IMAGES.lg)}
                     alt={item.name}
                     onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/300x200/f8f9fa/6c757d?text=No+Image';
+                      e.target.src = PLACEHOLDER_IMAGES.lg;
                     }}
                   />
                   <div className="related-product-info">

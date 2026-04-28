@@ -4,7 +4,10 @@ import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
+import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './Checkout.css';
+
+const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
 
 /** ตรวจข้อมูลจัดส่ง + ชำระเงินก่อนยืนยันคำสั่งซื้อ */
 function checkoutShippingIssues(shippingInfo, paymentMethod) {
@@ -103,7 +106,7 @@ const Checkout = () => {
           price: Number(item.product?.price || item.price || 0),
           unitLabel: item.product?.unit_label || item.unit_label || 'ชิ้น',
           unitDetail: item.product?.unit_detail || item.unit_detail || '',
-          image: item.product?.image || item.image || 'https://via.placeholder.com/100x100/f8f9fa/6c757d?text=No+Image',
+          image: resolveMediaUrl(item.product?.image || item.image, FALLBACK_IMAGE),
           quantity: Number(item.quantity || 1),
           category: item.product?.category?.name || item.category || 'ทั่วไป',
         }));
@@ -494,7 +497,14 @@ const Checkout = () => {
               <div className="order-items">
                 {cartItems.map(item => (
                   <div key={item.id} className="order-item">
-                    <img src={item.image} alt={item.name} className="item-image" />
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="item-image"
+                      onError={(e) => {
+                        e.currentTarget.src = FALLBACK_IMAGE;
+                      }}
+                    />
                     <div className="item-details">
                       <h4 className="item-name">{item.name}</h4>
                       <p className="item-category">{item.category}</p>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
+import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './Cart.css';
 
 const Cart = () => {
@@ -123,10 +124,10 @@ const Cart = () => {
               <div key={item.id} className="cart-item">
                 <div className="item-image">
                   <img 
-                    src={item.image} 
+                    src={resolveMediaUrl(item.image, PLACEHOLDER_IMAGES.md)}
                     alt={displayProductLineName(item)}
                     onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/100x100/f8f9fa/6c757d?text=No+Image';
+                      e.target.src = PLACEHOLDER_IMAGES.md;
                     }}
                   />
                 </div>
