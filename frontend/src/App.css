@@ -27,7 +27,9 @@
 }
 
 .App.app-role-admin .main-content {
-  padding-top: 96px;
+  padding-top: 24px;
+  padding-left: 264px;
+  padding-right: 16px;
   padding-bottom: 24px;
 }
 
@@ -290,6 +292,12 @@ button.btn:disabled {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
+  .App.app-role-admin .main-content {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 90px;
+  }
+
   .main-content {
     padding-top: 8px;
   }

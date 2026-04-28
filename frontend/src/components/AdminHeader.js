@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
 
@@ -6,12 +6,19 @@ const AdminHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [username] = useState(localStorage.getItem('username') || 'Admin');
+  const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
   const showAuditLog = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const role = localStorage.getItem('user_role') || '';
     if (localStorage.getItem('admin_can_view_audit') === '1') return true;
     return ['super_admin', 'admin'].includes(role);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const onResize = () => setIsCompact(window.innerWidth <= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -38,34 +45,36 @@ const AdminHeader = () => {
     <header style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       color: 'white',
-      padding: '15px 30px',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+      padding: '16px 14px',
+      boxShadow: '2px 0 16px rgba(0,0,0,0.14)',
       position: 'fixed',
       top: 0,
       left: 0,
-      right: 0,
+      right: isCompact ? 0 : 'auto',
+      bottom: isCompact ? 'auto' : 0,
+      width: isCompact ? 'auto' : 240,
       zIndex: 1000
     }}>
       <div style={{
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        maxWidth: '1400px',
-        margin: '0 auto'
+        flexDirection: isCompact ? 'row' : 'column',
+        height: '100%',
+        gap: 14,
+        alignItems: isCompact ? 'center' : 'stretch',
       }}>
-        <Link to="/admin/orders" style={{ color: 'white', textDecoration: 'none' }}>
-          <h1 style={{ margin: 0, fontSize: '24px' }}>
+        <Link to="/admin/orders" style={{ color: 'white', textDecoration: 'none', marginBottom: 8 }}>
+          <h1 style={{ margin: 0, fontSize: '20px' }}>
             👨‍💼 Admin Dashboard
           </h1>
         </Link>
         
-        <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <nav style={{ display: 'flex', flexDirection: isCompact ? 'row' : 'column', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
           <Link 
             to="/admin/orders" 
             style={{ 
               color: 'white', 
               textDecoration: 'none',
-              padding: '8px 15px',
+              padding: '10px 12px',
               borderRadius: '5px',
               background: location.pathname.startsWith('/admin/orders') ? 'rgba(255,255,255,0.2)' : 'transparent'
             }}
@@ -77,7 +86,7 @@ const AdminHeader = () => {
             style={{
               color: 'white',
               textDecoration: 'none',
-              padding: '8px 15px',
+              padding: '10px 12px',
               borderRadius: '5px',
               background: location.pathname.startsWith('/admin/products') ? 'rgba(255,255,255,0.2)' : 'transparent'
             }}
@@ -89,7 +98,7 @@ const AdminHeader = () => {
             style={{
               color: 'white',
               textDecoration: 'none',
-              padding: '8px 15px',
+              padding: '10px 12px',
               borderRadius: '5px',
               background: location.pathname.startsWith('/admin/categories') ? 'rgba(255,255,255,0.2)' : 'transparent'
             }}
@@ -101,7 +110,7 @@ const AdminHeader = () => {
             style={{
               color: 'white',
               textDecoration: 'none',
-              padding: '8px 15px',
+              padding: '10px 12px',
               borderRadius: '5px',
               background: location.pathname.startsWith('/admin/personnel') ? 'rgba(255,255,255,0.2)' : 'transparent'
             }}
@@ -113,7 +122,7 @@ const AdminHeader = () => {
             style={{
               color: 'white',
               textDecoration: 'none',
-              padding: '8px 15px',
+              padding: '10px 12px',
               borderRadius: '5px',
               background: location.pathname.startsWith('/admin/store-settings') ? 'rgba(255,255,255,0.2)' : 'transparent'
             }}
@@ -125,7 +134,7 @@ const AdminHeader = () => {
             style={{
               color: 'white',
               textDecoration: 'none',
-              padding: '8px 15px',
+              padding: '10px 12px',
               borderRadius: '5px',
               background: location.pathname.startsWith('/admin/inventory') ? 'rgba(255,255,255,0.2)' : 'transparent'
             }}
@@ -138,7 +147,7 @@ const AdminHeader = () => {
               style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '8px 15px',
+                padding: '10px 12px',
                 borderRadius: '5px',
                 background: location.pathname.startsWith('/admin/audit-log') ? 'rgba(255,255,255,0.2)' : 'transparent'
               }}
@@ -146,12 +155,16 @@ const AdminHeader = () => {
               ประวัติพนักงาน
             </Link>
           ) : null}
-          <span style={{ opacity: 0.7 }}>|</span>
-          <span style={{ opacity: 0.9 }}>{username}</span>
+          <div style={{ opacity: 0.8, paddingTop: isCompact ? 0 : 8, borderTop: isCompact ? 'none' : '1px solid rgba(255,255,255,0.2)', marginTop: isCompact ? 0 : 8 }}>
+            {username}
+          </div>
+        </nav>
+        <div style={{ marginTop: isCompact ? 0 : 'auto' }}>
           <button 
             onClick={handleLogout}
             style={{
-              padding: '8px 15px',
+              width: isCompact ? 'auto' : '100%',
+              padding: '10px 12px',
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
               borderRadius: '5px',
@@ -161,7 +174,7 @@ const AdminHeader = () => {
           >
             ออกจากระบบ
           </button>
-        </nav>
+        </div>
       </div>
     </header>
   );

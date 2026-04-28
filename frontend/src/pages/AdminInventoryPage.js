@@ -12,7 +12,11 @@ const AdminInventoryPage = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [adjustForm, setAdjustForm] = useState({ product_id: '', quantity_change: '', note: '', reference: '' });
   const [supplierForm, setSupplierForm] = useState({ name: '', contact_name: '', phone: '' });
-  const [poForm, setPoForm] = useState({ supplier: '', notes: '', itemsText: '' });
+  const [poForm, setPoForm] = useState({
+    supplier: '',
+    notes: '',
+    items: [{ product: '', ordered_quantity: '', unit_cost: '' }],
+  });
 
   const authHeaders = {
     Authorization: `Token ${token}`,
@@ -92,19 +96,14 @@ const AdminInventoryPage = () => {
   const submitPurchaseOrder = async (e) => {
     e.preventDefault();
     try {
-      const lines = poForm.itemsText
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const [productId, qty, cost] = line.split(',').map((x) => x.trim());
-          return {
-            product: Number(productId),
-            ordered_quantity: Number(qty),
-            received_quantity: 0,
-            unit_cost: Number(cost || 0),
-          };
-        });
+      const lines = (poForm.items || [])
+        .map((line) => ({
+          product: Number(line.product),
+          ordered_quantity: Number(line.ordered_quantity),
+          received_quantity: 0,
+          unit_cost: Number(line.unit_cost || 0),
+        }))
+        .filter((line) => line.product > 0 && line.ordered_quantity > 0);
       if (!lines.length) throw new Error('กรุณาระบุรายการสินค้า');
       const res = await fetch(`${config.API_BASE_URL}products/admin/inventory/purchase-orders/`, {
         method: 'POST',
@@ -119,12 +118,40 @@ const AdminInventoryPage = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'สร้างใบสั่งซื้อไม่สำเร็จ');
-      setPoForm({ supplier: '', notes: '', itemsText: '' });
+      setPoForm({
+        supplier: '',
+        notes: '',
+        items: [{ product: '', ordered_quantity: '', unit_cost: '' }],
+      });
       popup.info('สร้างใบสั่งซื้อแล้ว');
       loadAll();
     } catch (error) {
       popup.error(error.message);
     }
+  };
+
+  const updatePoItem = (idx, key, value) => {
+    setPoForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) => (i === idx ? { ...item, [key]: value } : item)),
+    }));
+  };
+
+  const addPoItemRow = () => {
+    setPoForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { product: '', ordered_quantity: '', unit_cost: '' }],
+    }));
+  };
+
+  const removePoItemRow = (idx) => {
+    setPoForm((prev) => {
+      const next = prev.items.filter((_, i) => i !== idx);
+      return {
+        ...prev,
+        items: next.length ? next : [{ product: '', ordered_quantity: '', unit_cost: '' }],
+      };
+    });
   };
 
   const receiveAll = async (po) => {
@@ -203,12 +230,42 @@ const AdminInventoryPage = () => {
             <option value="">ไม่ระบุผู้จำหน่าย</option>
             {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <textarea
-            rows="3"
-            placeholder="รายการสินค้า: product_id,quantity,cost ต่อบรรทัด"
-            value={poForm.itemsText}
-            onChange={(e) => setPoForm((p) => ({ ...p, itemsText: e.target.value }))}
-          />
+          <div style={{ display: 'grid', gap: 8 }}>
+            {(poForm.items || []).map((item, idx) => (
+              <div key={`po-item-${idx}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8 }}>
+                <select
+                  value={item.product}
+                  onChange={(e) => updatePoItem(idx, 'product', e.target.value)}
+                  required
+                >
+                  <option value="">เลือกสินค้า</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="จำนวน"
+                  value={item.ordered_quantity}
+                  onChange={(e) => updatePoItem(idx, 'ordered_quantity', e.target.value)}
+                  required
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="ต้นทุน/หน่วย"
+                  value={item.unit_cost}
+                  onChange={(e) => updatePoItem(idx, 'unit_cost', e.target.value)}
+                />
+                <button type="button" className="btn-secondary" onClick={() => removePoItemRow(idx)}>
+                  ลบ
+                </button>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="btn-outline" onClick={addPoItemRow}>+ เพิ่มรายการสินค้า</button>
           <input placeholder="หมายเหตุ" value={poForm.notes} onChange={(e) => setPoForm((p) => ({ ...p, notes: e.target.value }))} />
           <button type="submit" className="btn-primary">สร้างใบสั่งซื้อ</button>
         </form>
