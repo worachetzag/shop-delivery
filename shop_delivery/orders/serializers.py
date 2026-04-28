@@ -154,6 +154,12 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             if ca.latitude is not None and ca.longitude is not None:
                 data['delivery_latitude'] = ca.latitude
                 data['delivery_longitude'] = ca.longitude
+            else:
+                raise serializers.ValidationError({
+                    'customer_address_id': (
+                        'ที่อยู่ที่เลือกยังไม่มีพิกัดแผนที่ กรุณาแก้ไขที่อยู่ให้มีละติจูด/ลองจิจูดก่อนสั่งซื้อ'
+                    ),
+                })
 
         addr = (data.get('delivery_address') or '').strip()
         if not addr:
@@ -167,6 +173,13 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         o_lat, o_lng = get_delivery_origin_lat_lng()
         lat = data.get('delivery_latitude')
         lng = data.get('delivery_longitude')
+
+        # โหมดเข้มงวด: งานจัดส่งต้องมีพิกัดปลายทางเสมอ
+        if lat is None or lng is None:
+            raise serializers.ValidationError({
+                'delivery_latitude': 'จำเป็นต้องมีพิกัดปลายทาง (ละติจูด/ลองจิจูด) สำหรับการจัดส่ง',
+                'delivery_longitude': 'จำเป็นต้องมีพิกัดปลายทาง (ละติจูด/ลองจิจูด) สำหรับการจัดส่ง',
+            })
 
         if o_lat is not None and o_lng is not None and lat is not None and lng is not None:
             km = haversine_distance_km(

@@ -43,10 +43,10 @@ const Tracking = () => {
             trackingNumber: data.order_number || `#${data.order_id}`,
             status: data.order_status,
             currentLocation: data.current_location_text || 'กำลังจัดส่ง',
-            currentLatitude: data.current_latitude ? Number(data.current_latitude) : null,
-            currentLongitude: data.current_longitude ? Number(data.current_longitude) : null,
-            deliveryLatitude: data.delivery_latitude ? Number(data.delivery_latitude) : null,
-            deliveryLongitude: data.delivery_longitude ? Number(data.delivery_longitude) : null,
+            currentLatitude: data.current_latitude !== null && data.current_latitude !== undefined ? Number(data.current_latitude) : null,
+            currentLongitude: data.current_longitude !== null && data.current_longitude !== undefined ? Number(data.current_longitude) : null,
+            deliveryLatitude: data.delivery_latitude !== null && data.delivery_latitude !== undefined ? Number(data.delivery_latitude) : null,
+            deliveryLongitude: data.delivery_longitude !== null && data.delivery_longitude !== undefined ? Number(data.delivery_longitude) : null,
             lastLocationAt: data.last_location_at,
             driver: data.driver || {
               name: 'กำลังรอการมอบหมาย',
@@ -153,11 +153,11 @@ const Tracking = () => {
   }
 
   const isDeliveryCompleted = trackingInfo.status === 'delivered';
-  const shouldShowDriverMap = !isDeliveryCompleted
-    && trackingInfo.currentLatitude !== null
+  const hasDriverPosition = trackingInfo.currentLatitude !== null
     && trackingInfo.currentLongitude !== null;
   const hasDeliveryDestination = trackingInfo.deliveryLatitude !== null && trackingInfo.deliveryLongitude !== null;
-  const shouldShowRoute = trackingInfo.status === 'delivering' && shouldShowDriverMap && hasDeliveryDestination;
+  const shouldShowMap = !isDeliveryCompleted && (hasDriverPosition || hasDeliveryDestination);
+  const shouldShowRoute = trackingInfo.status === 'delivering' && hasDriverPosition && hasDeliveryDestination;
 
   return (
     <div className={`tracking-page ${isAdminTracking ? 'admin-tracking-page' : ''}`}>
@@ -224,7 +224,7 @@ const Tracking = () => {
                 </button>
               </div>
             </div>
-            {shouldShowDriverMap && (
+            {shouldShowMap && (
               <div className="driver-map-wrap">
                 <MapContainer
                   center={
@@ -233,7 +233,9 @@ const Tracking = () => {
                         (trackingInfo.currentLatitude + trackingInfo.deliveryLatitude) / 2,
                         (trackingInfo.currentLongitude + trackingInfo.deliveryLongitude) / 2,
                       ]
-                      : [trackingInfo.currentLatitude, trackingInfo.currentLongitude]
+                      : hasDriverPosition
+                        ? [trackingInfo.currentLatitude, trackingInfo.currentLongitude]
+                        : [trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude]
                   }
                   zoom={15}
                   scrollWheelZoom
@@ -243,12 +245,14 @@ const Tracking = () => {
                     attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  <CircleMarker center={[trackingInfo.currentLatitude, trackingInfo.currentLongitude]} radius={10} pathOptions={{ color: '#00B900' }}>
-                    <Popup>
-                      {trackingInfo.driver?.name || 'คนขับ'}<br />
-                      {trackingInfo.currentLocation}
-                    </Popup>
-                  </CircleMarker>
+                  {hasDriverPosition && (
+                    <CircleMarker center={[trackingInfo.currentLatitude, trackingInfo.currentLongitude]} radius={10} pathOptions={{ color: '#00B900' }}>
+                      <Popup>
+                        {trackingInfo.driver?.name || 'คนขับ'}<br />
+                        {trackingInfo.currentLocation}
+                      </Popup>
+                    </CircleMarker>
+                  )}
                   {hasDeliveryDestination && (
                     <CircleMarker center={[trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude]} radius={9} pathOptions={{ color: '#ef4444' }}>
                       <Popup>ตำแหน่งลูกค้า (ปลายทาง)</Popup>
@@ -275,6 +279,11 @@ const Tracking = () => {
                     <span>จุดสีแดง: ลูกค้า</span>
                     {shouldShowRoute && <span>เส้นสีน้ำเงิน: เส้นทางไปส่ง</span>}
                   </div>
+                )}
+                {!hasDriverPosition && (
+                  <small className="driver-location-time">
+                    ยังไม่ได้รับพิกัด GPS จากคนขับ (ให้คนขับกด "อัปเดตพิกัด" ในหน้าคนขับ)
+                  </small>
                 )}
               </div>
             )}
