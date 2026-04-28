@@ -17,7 +17,7 @@ from accounts.models import DriverProfile, StaffAuditLog
 from accounts.permissions import is_admin_user as _is_admin_user
 from accounts.staff_audit import log_staff_audit
 from products.models import Product
-from .models import Order, OrderItem, DriverAssignment
+from .models import Order, OrderItem, DriverAssignment, StoreLocation
 from .store_location import get_store_location_payload
 from .stock_helpers import (
     format_order_stock_audit_label,
@@ -36,6 +36,114 @@ class StoreLocationPublicView(APIView):
 
     def get(self, request):
         return Response(get_store_location_payload())
+
+
+class AdminStoreSettingsView(APIView):
+    """ตั้งค่าร้านสำหรับเจ้าของร้าน (พิกัด/ข้อมูลร้าน + เวลาทำการรับเอง/จัดส่ง)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _deny_if_not_admin(self, user):
+        if not _is_admin_user(user):
+            return Response(
+                {'error': 'ไม่มีสิทธิ์เข้าถึงการตั้งค่าร้าน'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return None
+
+    @staticmethod
+    def _serialize_hours():
+        # import ภายในเพื่อเลี่ยง circular import (logistics -> orders)
+        from logistics.models import ServiceHours
+
+        data = {}
+        for row in ServiceHours.objects.filter(service_type__in=['pickup', 'delivery']):
+            data[row.service_type] = {
+                'start_time': row.start_time.strftime('%H:%M:%S'),
+                'end_time': row.end_time.strftime('%H:%M:%S'),
+                'is_active': bool(row.is_active),
+            }
+        return data
+
+    def get(self, request):
+        denied = self._deny_if_not_admin(request.user)
+        if denied:
+            return denied
+
+        loc = StoreLocation.objects.order_by('id').first()
+        payload = {
+            'store_location': {
+                'name': (loc.name if loc else '') or '',
+                'address': (loc.address if loc else '') or '',
+                'latitude': loc.latitude if loc else None,
+                'longitude': loc.longitude if loc else None,
+                'updated_at': loc.updated_at if loc else None,
+            },
+            'service_hours': self._serialize_hours(),
+        }
+        return Response(payload)
+
+    def put(self, request):
+        denied = self._deny_if_not_admin(request.user)
+        if denied:
+            return denied
+
+        # import ภายในเพื่อเลี่ยง circular import (logistics -> orders)
+        from logistics.models import ServiceHours
+
+        location_data = request.data.get('store_location') or {}
+        hours_data = request.data.get('service_hours') or {}
+
+        lat = location_data.get('latitude')
+        lng = location_data.get('longitude')
+        if lat not in (None, ''):
+            try:
+                lat = Decimal(str(lat))
+            except Exception:
+                return Response({'error': 'latitude ไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            lat = None
+        if lng not in (None, ''):
+            try:
+                lng = Decimal(str(lng))
+            except Exception:
+                return Response({'error': 'longitude ไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            lng = None
+
+        with transaction.atomic():
+            loc = StoreLocation.objects.order_by('id').first()
+            if not loc:
+                loc = StoreLocation.objects.create(
+                    name=(location_data.get('name') or '').strip(),
+                    address=(location_data.get('address') or '').strip(),
+                    latitude=lat,
+                    longitude=lng,
+                )
+            else:
+                loc.name = (location_data.get('name') or '').strip()
+                loc.address = (location_data.get('address') or '').strip()
+                loc.latitude = lat
+                loc.longitude = lng
+                loc.save()
+
+            for service_type in ['pickup', 'delivery']:
+                row = hours_data.get(service_type)
+                if not isinstance(row, dict):
+                    continue
+                start_time = row.get('start_time')
+                end_time = row.get('end_time')
+                if not start_time or not end_time:
+                    continue
+                ServiceHours.objects.update_or_create(
+                    service_type=service_type,
+                    defaults={
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'is_active': bool(row.get('is_active', True)),
+                    },
+                )
+
+        return self.get(request)
 
 
 def _cart_cache_key(user_id):

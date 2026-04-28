@@ -5,6 +5,7 @@ app_name = 'orders'
 
 urlpatterns = [
     path('store-location/', views.StoreLocationPublicView.as_view(), name='store-location'),
+    path('admin/store-settings/', views.AdminStoreSettingsView.as_view(), name='admin-store-settings'),
     path('', views.OrderCreateView.as_view(), name='order-create'),
     path('list/', views.OrderListView.as_view(), name='order-list'),
     path('<int:order_id>/assign-driver/', views.AdminAssignDriverView.as_view(), name='admin-assign-driver'),

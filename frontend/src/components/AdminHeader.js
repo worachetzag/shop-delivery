@@ -108,6 +108,18 @@ const AdminHeader = () => {
           >
             บุคลากร
           </Link>
+          <Link
+            to="/admin/store-settings"
+            style={{
+              color: 'white',
+              textDecoration: 'none',
+              padding: '8px 15px',
+              borderRadius: '5px',
+              background: location.pathname.startsWith('/admin/store-settings') ? 'rgba(255,255,255,0.2)' : 'transparent'
+            }}
+          >
+            ตั้งค่าร้าน
+          </Link>
           {showAuditLog ? (
             <Link
               to="/admin/audit-log"
