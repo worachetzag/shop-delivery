@@ -5,6 +5,25 @@ import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './Cart.css';
 
+function pickItemImage(item) {
+  const candidates = [
+    item?.product?.image,
+    item?.product?.image_url,
+    item?.product_image,
+    item?.image_url,
+    item?.image,
+  ];
+  const hit = candidates.find((value) => {
+    if (!value) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'object' && typeof value.url === 'string') return value.url.trim().length > 0;
+    return false;
+  });
+  if (!hit) return PLACEHOLDER_IMAGES.md;
+  if (typeof hit === 'object' && typeof hit.url === 'string') return resolveMediaUrl(hit.url, PLACEHOLDER_IMAGES.md);
+  return resolveMediaUrl(hit, PLACEHOLDER_IMAGES.md);
+}
+
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +143,7 @@ const Cart = () => {
               <div key={item.id} className="cart-item">
                 <div className="item-image">
                   <img 
-                    src={resolveMediaUrl(item.image, PLACEHOLDER_IMAGES.md)}
+                    src={pickItemImage(item)}
                     alt={displayProductLineName(item)}
                     onError={(e) => {
                       e.target.src = PLACEHOLDER_IMAGES.md;

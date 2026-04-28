@@ -124,7 +124,9 @@ const AdminHeader = () => {
       right: isCompact ? 0 : 'auto',
       bottom: isCompact ? 'auto' : 0,
       width: isCompact ? 'auto' : 240,
-      zIndex: 1000
+      zIndex: 1000,
+      overflowY: isCompact ? 'visible' : 'auto',
+      WebkitOverflowScrolling: 'touch'
     }}>
       <div style={{
         display: 'flex',
@@ -132,6 +134,7 @@ const AdminHeader = () => {
         height: '100%',
         gap: 14,
         alignItems: isCompact ? 'center' : 'stretch',
+        minHeight: 0,
       }}>
         <Link to="/admin/dashboard" style={{ color: 'white', textDecoration: 'none', marginBottom: 8 }}>
           <h1 style={{ margin: 0, fontSize: '20px' }}>
@@ -139,7 +142,15 @@ const AdminHeader = () => {
           </h1>
         </Link>
         
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+        <nav style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          alignItems: 'stretch',
+          flexWrap: 'wrap',
+          flex: isCompact ? 'unset' : 1,
+          minHeight: 0,
+        }}>
           <Link
             to="/admin/dashboard"
             style={subLinkStyle(isActivePath('/admin/dashboard'))}

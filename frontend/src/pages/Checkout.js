@@ -9,6 +9,25 @@ import './Checkout.css';
 
 const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
 
+function pickItemImage(item) {
+  const candidates = [
+    item?.product?.image,
+    item?.product?.image_url,
+    item?.product_image,
+    item?.image_url,
+    item?.image,
+  ];
+  const hit = candidates.find((value) => {
+    if (!value) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'object' && typeof value.url === 'string') return value.url.trim().length > 0;
+    return false;
+  });
+  if (!hit) return FALLBACK_IMAGE;
+  if (typeof hit === 'object' && typeof hit.url === 'string') return resolveMediaUrl(hit.url, FALLBACK_IMAGE);
+  return resolveMediaUrl(hit, FALLBACK_IMAGE);
+}
+
 /** ตรวจข้อมูลจัดส่ง + ชำระเงินก่อนยืนยันคำสั่งซื้อ */
 function checkoutShippingIssues(shippingInfo, paymentMethod) {
   const issues = [];
@@ -106,7 +125,7 @@ const Checkout = () => {
           price: Number(item.product?.price || item.price || 0),
           unitLabel: item.product?.unit_label || item.unit_label || 'ชิ้น',
           unitDetail: item.product?.unit_detail || item.unit_detail || '',
-          image: resolveMediaUrl(item.product?.image || item.image, FALLBACK_IMAGE),
+          image: pickItemImage(item),
           quantity: Number(item.quantity || 1),
           category: item.product?.category?.name || item.category || 'ทั่วไป',
         }));
