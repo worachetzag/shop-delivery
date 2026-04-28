@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
 
@@ -8,6 +8,7 @@ const AdminHeader = () => {
   const [username] = useState(localStorage.getItem('username') || 'Admin');
   const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
   const [openGroup, setOpenGroup] = useState(null);
+  const hoverTimerRef = useRef(null);
   const showAuditLog = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const role = localStorage.getItem('user_role') || '';
@@ -19,6 +20,14 @@ const AdminHeader = () => {
     const onResize = () => setIsCompact(window.innerWidth <= 1024);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -95,6 +104,13 @@ const AdminHeader = () => {
     borderLeft: '2px solid rgba(255,255,255,0.24)',
   };
   const toggleGroup = (name) => setOpenGroup((prev) => (prev === name ? null : name));
+  const handleGroupHoverOpen = (name) => {
+    if (isCompact) return;
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setOpenGroup(name);
+    }, 250);
+  };
 
   return (
     <header style={{
@@ -150,7 +166,7 @@ const AdminHeader = () => {
           </Link>
 
           <div style={groupTitleStyle}>บุคลากร</div>
-          <div onMouseEnter={() => !isCompact && setOpenGroup('personnel')}>
+          <div onMouseEnter={() => handleGroupHoverOpen('personnel')}>
             <button type="button" style={groupButtonStyle(openGroup === 'personnel')} onClick={() => toggleGroup('personnel')}>
               บุคลากร {openGroup === 'personnel' ? '▾' : '▸'}
             </button>
@@ -163,7 +179,7 @@ const AdminHeader = () => {
           </div>
 
           <div style={groupTitleStyle}>ตั้งค่าร้าน</div>
-          <div onMouseEnter={() => !isCompact && setOpenGroup('store')}>
+          <div onMouseEnter={() => handleGroupHoverOpen('store')}>
             <button type="button" style={groupButtonStyle(openGroup === 'store')} onClick={() => toggleGroup('store')}>
               ตั้งค่าร้าน {openGroup === 'store' ? '▾' : '▸'}
             </button>
@@ -178,7 +194,7 @@ const AdminHeader = () => {
           </div>
 
           <div style={groupTitleStyle}>จัดการสต็อก</div>
-          <div onMouseEnter={() => !isCompact && setOpenGroup('inventory')}>
+          <div onMouseEnter={() => handleGroupHoverOpen('inventory')}>
             <button type="button" style={groupButtonStyle(openGroup === 'inventory')} onClick={() => toggleGroup('inventory')}>
               จัดการสต็อก {openGroup === 'inventory' ? '▾' : '▸'}
             </button>

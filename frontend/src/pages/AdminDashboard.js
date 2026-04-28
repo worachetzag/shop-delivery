@@ -959,28 +959,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
   return (
     <div className="admin-dashboard">
-      <div className="admin-header">
-        <h1>📊 แอดมินร้านค้า</h1>
-        <div className="admin-stats">
-          <div className="stat-card">
-            <h3>{stats.totalOrders}</h3>
-            <p>คำสั่งซื้อทั้งหมด</p>
-          </div>
-          <div className="stat-card pending">
-            <h3>{stats.pendingOrders}</h3>
-            <p>รอจัดเตรียม</p>
-          </div>
-          <div className="stat-card revenue">
-            <h3>฿{stats.totalRevenue.toLocaleString()}</h3>
-            <p>รายได้</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.activeDrivers}</h3>
-            <p>คนขับพร้อม</p>
-          </div>
-        </div>
-      </div>
-
       <div className="admin-content">
         {activeTab === 'orders' && (
           <div className="orders-table">
