@@ -218,20 +218,28 @@ def _driver_order_stock_audit_worthy(old_os: str, new_os: str, stock_meta: dict)
 
 def _build_promptpay_payload(promptpay_number, amount):
     sanitized = ''.join(ch for ch in str(promptpay_number or '') if ch.isdigit())
+    proxy_tag = None
     if sanitized.startswith('0') and len(sanitized) == 10:
         # Thai mobile number -> PromptPay proxy format (0066 + 9 digits)
         sanitized = f"0066{sanitized[1:]}"
+        proxy_tag = '01'
     elif sanitized.startswith('66') and len(sanitized) == 11:
         sanitized = f"00{sanitized}"
+        proxy_tag = '01'
+    elif sanitized.startswith('0066') and len(sanitized) == 13:
+        proxy_tag = '01'
+    elif len(sanitized) == 13:
+        # Thai national ID / tax ID (PromptPay proxy)
+        proxy_tag = '02'
 
-    if not (sanitized.startswith('0066') and len(sanitized) == 13):
-        raise ValueError('รูปแบบเบอร์พร้อมเพย์ไม่ถูกต้อง')
+    if proxy_tag is None:
+        raise ValueError('รูปแบบพร้อมเพย์ไม่ถูกต้อง (รองรับเบอร์มือถือไทย 10 หลัก หรือเลข 13 หลัก)')
 
     amount_decimal = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     merchant_account_info = (
         _format_tlv('00', 'A000000677010111')
-        + _format_tlv('01', sanitized)
+        + _format_tlv(proxy_tag, sanitized)
     )
 
     payload_without_crc = (
