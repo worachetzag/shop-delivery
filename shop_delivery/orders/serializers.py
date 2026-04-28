@@ -343,6 +343,8 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     delivery_address = serializers.CharField(source='order.delivery_address', read_only=True)
     delivery_phone = serializers.CharField(source='order.delivery_phone', read_only=True, allow_blank=True)
     delivery_notes = serializers.CharField(source='order.delivery_notes', read_only=True, allow_blank=True)
+    delivery_latitude = serializers.DecimalField(source='order.delivery_latitude', max_digits=18, decimal_places=15, read_only=True, allow_null=True)
+    delivery_longitude = serializers.DecimalField(source='order.delivery_longitude', max_digits=18, decimal_places=15, read_only=True, allow_null=True)
     customer_name = serializers.CharField(source='order.customer.user.get_full_name', read_only=True, allow_blank=True)
     customer_username = serializers.CharField(source='order.customer.user.username', read_only=True, allow_blank=True)
     customer_phone = serializers.CharField(source='order.customer.phone_number', read_only=True, allow_blank=True)
@@ -356,7 +358,7 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'notes',
             'current_latitude', 'current_longitude', 'current_location_text', 'last_location_at',
             'assigned_at', 'updated_at', 'order_total_amount', 'delivery_address',
-            'delivery_phone', 'delivery_notes',
+            'delivery_phone', 'delivery_notes', 'delivery_latitude', 'delivery_longitude',
             'customer_name', 'customer_username', 'customer_phone', 'order_type_display',
         ]
         read_only_fields = ['assigned_at', 'updated_at']

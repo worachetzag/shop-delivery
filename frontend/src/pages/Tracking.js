@@ -12,6 +12,7 @@ const Tracking = () => {
   const location = useLocation();
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [routePath, setRoutePath] = useState([]);
   const isAdminTracking = location.pathname.startsWith('/admin/');
 
   useEffect(() => {
@@ -90,6 +91,34 @@ const Tracking = () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [orderId]);
+
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (
+        !trackingInfo
+        || trackingInfo.status !== 'delivering'
+        || trackingInfo.currentLatitude == null
+        || trackingInfo.currentLongitude == null
+        || trackingInfo.deliveryLatitude == null
+        || trackingInfo.deliveryLongitude == null
+      ) {
+        setRoutePath([]);
+        return;
+      }
+
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${trackingInfo.currentLongitude},${trackingInfo.currentLatitude};${trackingInfo.deliveryLongitude},${trackingInfo.deliveryLatitude}?overview=full&geometries=geojson`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const coords = data?.routes?.[0]?.geometry?.coordinates || [];
+        const latLng = coords.map((pair) => [pair[1], pair[0]]);
+        setRoutePath(Array.isArray(latLng) ? latLng : []);
+      } catch (error) {
+        setRoutePath([]);
+      }
+    };
+    fetchRoute();
+  }, [trackingInfo]);
 
   const getStatusText = (status) => {
     const statusMap = {
@@ -260,10 +289,12 @@ const Tracking = () => {
                   )}
                   {shouldShowRoute && (
                     <Polyline
-                      positions={[
-                        [trackingInfo.currentLatitude, trackingInfo.currentLongitude],
-                        [trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude],
-                      ]}
+                      positions={routePath.length > 1
+                        ? routePath
+                        : [
+                          [trackingInfo.currentLatitude, trackingInfo.currentLongitude],
+                          [trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude],
+                        ]}
                       pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.85 }}
                     />
                   )}

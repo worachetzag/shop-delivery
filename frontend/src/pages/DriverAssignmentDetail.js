@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { assignmentContactPhone, assignmentCustomerLabel } from '../utils/driverAssignmentCustomer';
+import 'leaflet/dist/leaflet.css';
 import './DriverDashboard.css';
 
 const DriverAssignmentDetail = () => {
@@ -12,6 +14,7 @@ const DriverAssignmentDetail = () => {
   const [loading, setLoading] = useState(true);
   const [locationText, setLocationText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [routePath, setRoutePath] = useState([]);
   const gpsIntervalRef = useRef(null);
   const gpsUpdatingRef = useRef(false);
 
@@ -177,6 +180,32 @@ const DriverAssignmentDetail = () => {
     };
   }, [assignment?.status]);
 
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (
+        !assignment
+        || assignment.status !== 'on_the_way'
+        || assignment.current_latitude == null
+        || assignment.current_longitude == null
+        || assignment.delivery_latitude == null
+        || assignment.delivery_longitude == null
+      ) {
+        setRoutePath([]);
+        return;
+      }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${assignment.current_longitude},${assignment.current_latitude};${assignment.delivery_longitude},${assignment.delivery_latitude}?overview=full&geometries=geojson`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const coords = data?.routes?.[0]?.geometry?.coordinates || [];
+        setRoutePath(coords.map((pair) => [pair[1], pair[0]]));
+      } catch (error) {
+        setRoutePath([]);
+      }
+    };
+    fetchRoute();
+  }, [assignment]);
+
   if (loading) {
     return <div className="loading">กำลังโหลดงานจัดส่ง...</div>;
   }
@@ -197,6 +226,9 @@ const DriverAssignmentDetail = () => {
   const nextAction = getNextAction(assignment.status);
   const contactTel = assignmentContactPhone(assignment);
   const telHref = contactTel ? contactTel.replace(/\s/g, '') : '';
+  const hasDriverPosition = assignment.current_latitude != null && assignment.current_longitude != null;
+  const hasDeliveryPosition = assignment.delivery_latitude != null && assignment.delivery_longitude != null;
+  const showMap = hasDriverPosition || hasDeliveryPosition;
 
   return (
     <div className="driver-dashboard-page">
@@ -237,6 +269,59 @@ const DriverAssignmentDetail = () => {
             </div>
           ) : null}
         </div>
+        {showMap && (
+          <div className="driver-map-wrap">
+            <MapContainer
+              center={
+                hasDriverPosition
+                  ? [Number(assignment.current_latitude), Number(assignment.current_longitude)]
+                  : [Number(assignment.delivery_latitude), Number(assignment.delivery_longitude)]
+              }
+              zoom={15}
+              scrollWheelZoom
+              className="driver-map"
+            >
+              <TileLayer
+                attribution='&copy; OpenStreetMap contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {hasDriverPosition && (
+                <CircleMarker
+                  center={[Number(assignment.current_latitude), Number(assignment.current_longitude)]}
+                  radius={10}
+                  pathOptions={{ color: '#00B900' }}
+                >
+                  <Popup>ตำแหน่งคนขับ</Popup>
+                </CircleMarker>
+              )}
+              {hasDeliveryPosition && (
+                <CircleMarker
+                  center={[Number(assignment.delivery_latitude), Number(assignment.delivery_longitude)]}
+                  radius={9}
+                  pathOptions={{ color: '#ef4444' }}
+                >
+                  <Popup>ตำแหน่งลูกค้า (ปลายทาง)</Popup>
+                </CircleMarker>
+              )}
+              {hasDriverPosition && hasDeliveryPosition && (
+                <Polyline
+                  positions={routePath.length > 1
+                    ? routePath
+                    : [
+                      [Number(assignment.current_latitude), Number(assignment.current_longitude)],
+                      [Number(assignment.delivery_latitude), Number(assignment.delivery_longitude)],
+                    ]}
+                  pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.85 }}
+                />
+              )}
+            </MapContainer>
+            <div className="route-legend">
+              <span>จุดสีเขียว: คนขับ</span>
+              <span>จุดสีแดง: ลูกค้า</span>
+              <span>เส้นสีน้ำเงิน: เส้นทางตามถนน</span>
+            </div>
+          </div>
+        )}
         <div className="driver-assignment-row">
           <span>ยอดรวมออเดอร์: ฿{Number(assignment.order_total_amount || 0).toLocaleString()}</span>
         </div>

@@ -112,6 +112,13 @@ class ProductListView(generics.ListAPIView):
         return queryset
 
 
+class ProductDetailView(generics.RetrieveAPIView):
+    """รายละเอียดสินค้า (public)"""
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.AllowAny]
+    queryset = Product.objects.filter(is_available=True).select_related('category')
+
+
 class CategoryListView(generics.ListAPIView):
     """รายการหมวดหมู่สินค้า (ไม่แบ่งหน้า — ใช้เติม dropdown / filter)"""
     queryset = Category.objects.all()
