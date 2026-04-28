@@ -1,0 +1,29 @@
+# Render Blueprint — สร้าง Web Service จาก Dockerfile (แก้ env / เพิ่ม DATABASE_URL จาก Neon)
+# ใช้งาน: Dashboard Render → Blueprints → New Blueprint Instance → เลือก repo นี้
+#
+# DATABASE_URL ไม่ได้สร้างให้อัตโนมัติ — ให้ไปที่ Neon แล้วใส่ใน Environment (Dashboard)
+
+services:
+  - type: web
+    name: shop-delivery-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /healthz
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS_EXTRA
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS_EXTRA
+        sync: false
+      - key: NGROK_CROSS_SITE_COOKIES
+        value: "True"

@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
@@ -7,13 +9,39 @@ import json
 from django.conf import settings
 
 
+def _external_frontend_base():
+    """
+    Redirect ไป SPA เฉพาะเมื่อตั้ง FRONTEND_URL เป็น URL จริง (https และไม่ใช่ localhost)
+    ถ้ายังไม่มีหน้าบ้าน / ยังเป็น localhost → คืน None ให้แสดงหน้า Django แทน
+    """
+    raw = (getattr(settings, 'FRONTEND_URL', '') or '').strip()
+    if not raw.startswith('https://'):
+        return None
+    host = urlparse(raw).hostname or ''
+    if host in ('localhost', '127.0.0.1'):
+        return None
+    return raw.rstrip('/')
+
+
 class LiffView(View):
-    """LIFF Main Page - Redirect to Frontend"""
-    
+    """หน้าแรก /liff/ — มี SPA แล้ว redirect ไปที่นั้น ไม่มีแสดงข้อความบน Django"""
+
     def get(self, request):
-        # Redirect to React frontend
-        frontend_url = "http://localhost:3000"
-        return HttpResponseRedirect(frontend_url)
+        target = _external_frontend_base()
+        if target:
+            return HttpResponseRedirect(f'{target}/')
+        base = request.build_absolute_uri('/').rstrip('/')
+        return render(
+            request,
+            'liff/no_frontend.html',
+            {
+                'liff_id': settings.LINE_LIFF_ID,
+                'api_base': base,
+                'healthz': f'{base}/healthz/',
+                'admin_url': f'{base}/admin/',
+                'liff_products': f'{base}/liff/products/',
+            },
+        )
 
 
 class LiffProductsView(View):

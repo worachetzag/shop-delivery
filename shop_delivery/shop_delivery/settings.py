@@ -11,11 +11,24 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from urllib.parse import urlparse
+
 from decouple import config
 import os
 
+import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# โหลด .env จากราก repo (shop-delivery/.env) หรือใต้ shop_delivery/.env — ให้ migrate จากเครื่องเห็น DATABASE_URL ได้โดยไม่พึ่ง cwd
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(BASE_DIR.parent / '.env')
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:
+    pass
 
 def _optional_coord(name):
     """พิกัดร้าน — ใช้คำนวณระยะ Haversine เมื่อลูกค้าส่งพิกัดปลายทาง (ไม่ใช่ระยะถนน)"""
@@ -55,10 +68,23 @@ if LINE_CONFIG_ENV.exists():
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6#njm!w0(%lik#z&3^=6h)!wbporyu3@myuo$+cednwm_2h0vb'
+SECRET_KEY = config(
+    'SECRET_KEY',
+    default='django-insecure-6#njm!w0(%lik#z&3^=6h)!wbporyu3@myuo$+cednwm_2h0vb',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
+
+# Render ตั้ง RENDER_EXTERNAL_HOSTNAME / RENDER_EXTERNAL_URL — ใส่ใน ALLOWED_HOSTS ให้ชัดเพื่อไม่ให้ DisallowedHost
+_allowed_hosts_extra = _comma_separated_list('ALLOWED_HOSTS_EXTRA', default='')
+_render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+if not _render_hostname:
+    _render_url = os.environ.get('RENDER_EXTERNAL_URL', '').strip()
+    if _render_url.startswith('http'):
+        _render_hostname = urlparse(_render_url).hostname or ''
+if _render_hostname and _render_hostname not in _allowed_hosts_extra:
+    _allowed_hosts_extra.insert(0, _render_hostname)
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -67,7 +93,11 @@ ALLOWED_HOSTS = [
     '.ngrok-free.app',  # สำหรับ ngrok subdomain อื่นๆ
     '.ngrok.app',  # โดเมน ngrok รุ่นใหม่
     '.ngrok.io',
-] + _comma_separated_list('ALLOWED_HOSTS_EXTRA', default='')
+    '.onrender.com',  # subdomain *.onrender.com
+] + _allowed_hosts_extra
+
+# URL ของ SPA (Cloudflare Pages / dev) — ใช้ใน LOGIN_REDIRECT และ CORS
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 
 
 # Application definition
@@ -102,7 +132,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # ต้องอยู่ด้านบนสุด
+    'corsheaders.middleware.CorsMiddleware',  # อยู่สูงเพื่อจัดการ preflight ได้เร็ว
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -136,12 +167,18 @@ WSGI_APPLICATION = 'shop_delivery.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = config('DATABASE_URL', default='')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600),
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -181,6 +218,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -210,13 +250,22 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings - รองรับ credentials: 'include'
+_cors_extra = _comma_separated_list('CORS_ALLOWED_ORIGINS_EXTRA', default='')
+_fe = (FRONTEND_URL or '').strip()
+if _fe.startswith('http'):
+    _po = urlparse(_fe)
+    if _po.scheme and _po.netloc:
+        _origin = f'{_po.scheme}://{_po.netloc}'
+        if _origin not in _cors_extra:
+            _cors_extra.insert(0, _origin)
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://liff.line.me",
-] + _comma_separated_list('CORS_ALLOWED_ORIGINS_EXTRA', default='')
+] + _cors_extra
 
-# Allow dynamic ngrok domains without editing settings each run.
+# Allow dynamic ngrok / Cloudflare Pages preview URLs without editing env each deploy.
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://[a-zA-Z0-9.-]+\.ngrok-free\.app$",
     r"^http://[a-zA-Z0-9.-]+\.ngrok-free\.app$",
@@ -224,6 +273,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://[a-zA-Z0-9.-]+\.ngrok\.app$",
     r"^https://[a-zA-Z0-9.-]+\.ngrok\.io$",
     r"^http://[a-zA-Z0-9.-]+\.ngrok\.io$",
+    r"^https://[a-zA-Z0-9.-]+\.pages\.dev$",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False  # ต้องระบุ origin แบบเจาะจง
@@ -286,8 +336,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_EMAIL_REQUIRED = False
 
-# Redirect after social login
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+# Redirect after social login (FRONTEND_URL นิยามด้านบน)
 LOGIN_REDIRECT_URL = f"{FRONTEND_URL.rstrip('/')}/"  # Redirect กลับไปหน้าแรกของ frontend
 SOCIALACCOUNT_LOGIN_ON_GET = True  # โดยpass confirmation page
 SOCIALACCOUNT_AUTO_SIGNUP = True  # สร้าง user อัตโนมัติ
@@ -305,7 +354,19 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# CSRF settings for allauth + SPA ที่ยิงมาที่ API คนละ origin (localhost ↔ ngrok)
+# CSRF settings for allauth + SPA ที่ยิงมาที่ API คนละ origin (localhost ↔ ngrok / Pages / Render)
+_csrf_extra = _comma_separated_list('CSRF_TRUSTED_ORIGINS_EXTRA', default='')
+_render_ext = os.environ.get('RENDER_EXTERNAL_URL', '').strip().rstrip('/')
+if _render_ext.startswith('http') and _render_ext not in _csrf_extra:
+    _csrf_extra.append(_render_ext)
+_fe_csrf = (FRONTEND_URL or '').strip()
+if _fe_csrf.startswith('http'):
+    _fcp = urlparse(_fe_csrf)
+    if _fcp.scheme and _fcp.netloc:
+        _fe_origin = f'{_fcp.scheme}://{_fcp.netloc}'
+        if _fe_origin not in _csrf_extra:
+            _csrf_extra.insert(0, _fe_origin)
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -316,7 +377,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok.io',
     'http://*.ngrok.io',
     'https://liff.line.me',
-] + _comma_separated_list('CSRF_TRUSTED_ORIGINS_EXTRA', default='')
+] + _csrf_extra
 
 # Security settings for ngrok HTTPS
 # ถ้า frontend อยู่คนละ site กับ API (เช่น http://localhost:3000 → https://xxx.ngrok-free.app)
@@ -331,22 +392,42 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'None' if _NGROK_CROSS_SITE else 'Lax'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # สำหรับ ngrok
 
-# Logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
+# Logging — production / Docker ใช้ stdout (Render / Gunicorn)
+if DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'file': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'filename': BASE_DIR / 'logs' / 'django.log',
+            },
         },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
+        'loggers': {
+            'django': {
+                'handlers': ['file'],
+                'level': 'INFO',
+                'propagate': True,
+            },
         },
-    },
-}
+    }
+else:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'root': {'handlers': ['console'], 'level': 'INFO'},
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }

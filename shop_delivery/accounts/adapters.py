@@ -1,5 +1,6 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.models import SocialLogin
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from accounts.models import Customer, LineUser
@@ -12,8 +13,15 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     """
     
     def get_login_redirect_url(self, request):
-        """Redirect to frontend after social login"""
-        return 'http://localhost:3000/'
+        """Redirect to frontend after social login — ถ้า FRONTEND_URL ยังเป็น localhost แต่รันบน server ให้กลับไปหน้า LIFF ใน Django"""
+        from urllib.parse import urlparse
+
+        raw = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').strip()
+        host = urlparse(raw).hostname or ''
+        if host in ('localhost', '127.0.0.1') and not getattr(settings, 'DEBUG', True):
+            return '/liff/products/'
+        base = raw.rstrip('/')
+        return f'{base}/'
     
     def save_user(self, request, sociallogin, form=None):
         """

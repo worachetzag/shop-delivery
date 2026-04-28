@@ -1,13 +1,22 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+from django.views.static import serve
 from rest_framework.routers import DefaultRouter
+
+
+def healthz(request):
+    """สำหรับ health check (Render / load balancer)."""
+    return HttpResponse('ok', content_type='text/plain')
+
 
 # API Router
 router = DefaultRouter()
 
 urlpatterns = [
+    path('healthz/', healthz),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     
@@ -24,7 +33,15 @@ urlpatterns = [
     path('liff/', include('liff.urls')),
 ]
 
-# Serve media files in development
+# Serve uploads — development (DEBUG); production ใช้ Django serve (ไฟล์อยู่บนดิสก์ของ container / ephemeral)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    urlpatterns += [
+        re_path(
+            r'^media/(?P<path>.*)$',
+            serve,
+            {'document_root': settings.MEDIA_ROOT},
+        ),
+    ]

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIFF — ยังไม่มีหน้าบ้าน (SPA)</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+        }
+        .box {
+            max-width: 520px;
+            margin: 40px auto;
+            padding: 28px;
+            background: rgba(255,255,255,.06);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,.12);
+        }
+        h1 { font-size: 1.35rem; margin: 0 0 12px; }
+        p { line-height: 1.55; opacity: .92; margin: 12px 0; }
+        code {
+            background: rgba(0,0,0,.35);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: .88rem;
+            word-break: break-all;
+        }
+        ul { padding-left: 20px; line-height: 1.7; }
+        a {
+            color: #7dd3fc;
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+        .hint { font-size: .9rem; opacity: .85; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>ยังไม่มีหน้าบ้าน (React)</h1>
+        <p>
+            ตอนนี้ยังไม่ได้ตั้ง <code>FRONTEND_URL</code> เป็น URL ของ SPA บน Production (เช่น Cloudflare Pages)
+            จึง<strong>ไม่ redirect</strong>ไปที่ใด และแสดงหน้านี้แทน
+        </p>
+        <p><strong>API ของคุณ:</strong> <code>{{ api_base }}</code></p>
+        <ul>
+            <li><a href="{{ healthz }}">ตรวจสุขภาพ (/healthz)</a></li>
+            <li><a href="{{ admin_url }}">Django Admin</a></li>
+            <li><a href="{{ liff_products }}">ทดหน้า LIFF ตัวอย่าง (/liff/products/)</a></li>
+        </ul>
+        <p class="hint">
+            พอ deploy frontend แล้ว ให้ใส่ใน Render → Environment:<br>
+            <code>FRONTEND_URL=https://ชื่อของคุณ.pages.dev</code><br>
+            จากนั้นเปิด <code>/liff/</code> อีกครั้งจะพาไปหน้าบ้านอัตโนมัติ
+        </p>
+        <p class="hint">LIFF ID (อ้างอิง): <code>{{ liff_id }}</code></p>
+    </div>
+</body>
+</html>

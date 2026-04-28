@@ -34,15 +34,11 @@ RUN mkdir -p /app/shop_delivery/logs \
 # Set permissions
 RUN chmod +x /app/shop_delivery/manage.py
 
-# Expose port
+# Render / Docker จะส่ง PORT เข้ามา — default 8000 ตอนรันในเครื่อง
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/ || exit 1
-
-# Run the application
-CMD ["python", "shop_delivery/manage.py", "runserver", "0.0.0.0:8000"]
+# migrate → collectstatic → gunicorn (production)
+CMD ["sh", "-c", "cd /app/shop_delivery && python manage.py migrate --noinput && python manage.py collectstatic --noinput && exec gunicorn shop_delivery.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"]
 
 
 

@@ -167,6 +167,7 @@ shop-delivery/
 
 ## 📚 Documentation
 
+- [docs/DEPLOY.md](docs/DEPLOY.md) - Deploy ฟรี (Neon + Render + Cloudflare Pages)
 - [SCOPE.md](SCOPE.md) - Project scope and requirements
 - [API_Endpoints_Summary.md](API_Endpoints_Summary.md) - Complete API documentation
 - [LINE_Integration_Guide.md](LINE_Integration_Guide.md) - LINE integration guide
