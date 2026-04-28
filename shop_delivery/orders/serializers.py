@@ -192,9 +192,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         validated_data.pop('customer_address_id', None)
-        validated_data.pop('delivery_latitude', None)
-        validated_data.pop('delivery_longitude', None)
-
         subtotal = Decimal('0')
         for item_data in items_data:
             product = Product.objects.get(id=item_data['product_id'])

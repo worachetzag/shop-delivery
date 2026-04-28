@@ -178,6 +178,15 @@
   color: #6c757d;
 }
 
+.route-legend {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #4b5563;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 /* Tracking Timeline */
 .tracking-timeline {
   grid-column: 1 / -1;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import 'leaflet/dist/leaflet.css';
@@ -45,6 +45,8 @@ const Tracking = () => {
             currentLocation: data.current_location_text || 'กำลังจัดส่ง',
             currentLatitude: data.current_latitude ? Number(data.current_latitude) : null,
             currentLongitude: data.current_longitude ? Number(data.current_longitude) : null,
+            deliveryLatitude: data.delivery_latitude ? Number(data.delivery_latitude) : null,
+            deliveryLongitude: data.delivery_longitude ? Number(data.delivery_longitude) : null,
             lastLocationAt: data.last_location_at,
             driver: data.driver || {
               name: 'กำลังรอการมอบหมาย',
@@ -154,6 +156,8 @@ const Tracking = () => {
   const shouldShowDriverMap = !isDeliveryCompleted
     && trackingInfo.currentLatitude !== null
     && trackingInfo.currentLongitude !== null;
+  const hasDeliveryDestination = trackingInfo.deliveryLatitude !== null && trackingInfo.deliveryLongitude !== null;
+  const shouldShowRoute = trackingInfo.status === 'delivering' && shouldShowDriverMap && hasDeliveryDestination;
 
   return (
     <div className={`tracking-page ${isAdminTracking ? 'admin-tracking-page' : ''}`}>
@@ -223,7 +227,14 @@ const Tracking = () => {
             {shouldShowDriverMap && (
               <div className="driver-map-wrap">
                 <MapContainer
-                  center={[trackingInfo.currentLatitude, trackingInfo.currentLongitude]}
+                  center={
+                    shouldShowRoute
+                      ? [
+                        (trackingInfo.currentLatitude + trackingInfo.deliveryLatitude) / 2,
+                        (trackingInfo.currentLongitude + trackingInfo.deliveryLongitude) / 2,
+                      ]
+                      : [trackingInfo.currentLatitude, trackingInfo.currentLongitude]
+                  }
                   zoom={15}
                   scrollWheelZoom
                   className="driver-map"
@@ -238,11 +249,32 @@ const Tracking = () => {
                       {trackingInfo.currentLocation}
                     </Popup>
                   </CircleMarker>
+                  {hasDeliveryDestination && (
+                    <CircleMarker center={[trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude]} radius={9} pathOptions={{ color: '#ef4444' }}>
+                      <Popup>ตำแหน่งลูกค้า (ปลายทาง)</Popup>
+                    </CircleMarker>
+                  )}
+                  {shouldShowRoute && (
+                    <Polyline
+                      positions={[
+                        [trackingInfo.currentLatitude, trackingInfo.currentLongitude],
+                        [trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude],
+                      ]}
+                      pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.85 }}
+                    />
+                  )}
                 </MapContainer>
                 {trackingInfo.lastLocationAt && (
                   <small className="driver-location-time">
                     อัปเดตล่าสุด: {formatDate(trackingInfo.lastLocationAt)}
                   </small>
+                )}
+                {(hasDeliveryDestination || shouldShowRoute) && (
+                  <div className="route-legend">
+                    <span>จุดสีเขียว: คนขับ</span>
+                    <span>จุดสีแดง: ลูกค้า</span>
+                    {shouldShowRoute && <span>เส้นสีน้ำเงิน: เส้นทางไปส่ง</span>}
+                  </div>
                 )}
               </div>
             )}

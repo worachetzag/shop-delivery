@@ -909,6 +909,8 @@ class OrderDriverTrackingView(APIView):
             'current_location_text': assignment.current_location_text if assignment else '',
             'current_latitude': assignment.current_latitude if assignment else None,
             'current_longitude': assignment.current_longitude if assignment else None,
+            'delivery_latitude': order.delivery_latitude,
+            'delivery_longitude': order.delivery_longitude,
             'last_location_at': assignment.last_location_at if assignment else None,
             'driver': driver_payload,
             'delivery_address': order.delivery_address,

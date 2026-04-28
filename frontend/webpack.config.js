@@ -48,6 +48,25 @@ module.exports = {
       template: './public/index.html',
       title: 'Samsung Panich Delivery',
     }),
+    // Ensure SPA routes work on static hosts (e.g. Cloudflare Pages).
+    {
+      apply: (compiler) => {
+        compiler.hooks.thisCompilation.tap('EmitRedirectsFilePlugin', (compilation) => {
+          compilation.hooks.processAssets.tap(
+            {
+              name: 'EmitRedirectsFilePlugin',
+              stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
+            },
+            () => {
+              compilation.emitAsset(
+                '_redirects',
+                new compiler.webpack.sources.RawSource('/* /index.html 200\n')
+              );
+            }
+          );
+        });
+      },
+    },
     new webpack.DefinePlugin({
       'process.env': JSON.stringify({
         REACT_APP_API_BASE_URL,

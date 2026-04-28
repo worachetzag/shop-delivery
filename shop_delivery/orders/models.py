@@ -57,6 +57,20 @@ class Order(models.Model):
         null=True,
         verbose_name="ระยะทางจัดส่ง (กม.)",
     )
+    delivery_latitude = models.DecimalField(
+        max_digits=18,
+        decimal_places=15,
+        blank=True,
+        null=True,
+        verbose_name="พิกัดละติจูดปลายทาง",
+    )
+    delivery_longitude = models.DecimalField(
+        max_digits=18,
+        decimal_places=15,
+        blank=True,
+        null=True,
+        verbose_name="พิกัดลองจิจูดปลายทาง",
+    )
     
     # ข้อมูลการชำระเงิน
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ยอดรวมสินค้า")
