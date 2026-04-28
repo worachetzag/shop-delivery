@@ -53,6 +53,18 @@ const ProductCard = ({
   const remainingStock = Math.max(0, stockQuantity - effectiveCartQuantity);
   const isOutOfStock = remainingStock <= 0;
   const hasInCart = effectiveCartQuantity > 0;
+  const categoryLabel = (() => {
+    if (typeof product.category_name === 'string' && product.category_name.trim()) {
+      return product.category_name.trim();
+    }
+    if (typeof product.category === 'object' && typeof product.category?.name === 'string' && product.category.name.trim()) {
+      return product.category.name.trim();
+    }
+    if (typeof product.category === 'string' && product.category.trim() && Number.isNaN(Number(product.category.trim()))) {
+      return product.category.trim();
+    }
+    return '';
+  })();
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
@@ -119,13 +131,13 @@ const ProductCard = ({
               e.target.src = 'https://via.placeholder.com/300x200/f8f9fa/6c757d?text=No+Image';
             }}
           />
-          {product.category && (
-            <span className="product-category">{product.category}</span>
-          )}
         </div>
         
         <div className="product-info">
           <h3 className="product-name">{product.name}</h3>
+          {categoryLabel && (
+            <p className="product-category-inline">• {categoryLabel}</p>
+          )}
           <p className="product-description">{product.description}</p>
           <div className="product-price">
             {formatPrice(product.price)} / {product.unit_label || 'ชิ้น'}

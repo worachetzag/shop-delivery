@@ -389,7 +389,8 @@ class CartView(APIView):
             current_quantity = int(cart.get(str(product_id), 0))
             new_quantity = current_quantity + quantity
 
-            if product.stock_quantity < new_quantity:
+            available_qty = max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0))
+            if available_qty < new_quantity:
                 return Response({
                     'error': 'สินค้าไม่เพียงพอ'
                 }, status=400)
@@ -404,6 +405,7 @@ class CartView(APIView):
                 'unit_detail': product.unit_detail,
                 'quantity': new_quantity,
                 'price': float(product.price),
+                'available_quantity': available_qty,
                 'total_price': float(product.price) * new_quantity
             }, status=200)
         
@@ -957,6 +959,7 @@ class CartListView(APIView):
                 'unit_detail': product.unit_detail,
                 'price': price,
                 'stock_quantity': product.stock_quantity,
+                'available_quantity': max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0)),
                 'image': product.image.url if product.image else None,
                 'category': product.category.name if product.category else '',
                 'quantity': qty,
@@ -995,7 +998,8 @@ class CartUpdateView(APIView):
                     'quantity': 0
                 }, status=status.HTTP_200_OK)
             
-            if product.stock_quantity < quantity:
+            available_qty = max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0))
+            if available_qty < quantity:
                 return Response({
                     'error': 'สินค้าไม่เพียงพอ'
                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -1011,6 +1015,7 @@ class CartUpdateView(APIView):
                 'unit_detail': product.unit_detail,
                 'quantity': quantity,
                 'price': float(product.price),
+                'available_quantity': available_qty,
                 'total_price': float(product.price) * quantity
             }, status=status.HTTP_200_OK)
         

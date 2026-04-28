@@ -25,6 +25,7 @@ import AdminAuditLogPage from './pages/AdminAuditLogPage';
 import AdminOrderDetail from './pages/AdminOrderDetail';
 import AdminProductFormPage from './pages/AdminProductFormPage';
 import AdminStoreSettingsPage from './pages/AdminStoreSettingsPage';
+import AdminInventoryPage from './pages/AdminInventoryPage';
 import { PopupProvider } from './components/PopupProvider';
 import './App.css';
 
@@ -236,6 +237,14 @@ function AppContent() {
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
                 <AdminStoreSettingsPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminInventoryPage />
               </ProtectedRoute>
             )}
           />

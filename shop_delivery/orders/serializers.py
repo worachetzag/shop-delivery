@@ -1,13 +1,13 @@
 from collections import Counter
 
 from django.db import transaction
-from django.db.models import F
 from rest_framework import serializers
 from decimal import Decimal
 from .delivery_pricing import fee_for_distance_km, haversine_distance_km, quantize_distance_km
 from .store_location import get_delivery_origin_lat_lng
 from .models import Order, OrderItem, DriverAssignment
 from products.models import Product
+from products.stock import apply_stock_movement
 from accounts.models import Customer, CustomerAddress
 
 
@@ -235,11 +235,12 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({
                         'items': f'สินค้า "{product.name}" ไม่พร้อมขาย',
                     })
-                if product.stock_quantity < need:
+                available = max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0))
+                if available < need:
                     raise serializers.ValidationError({
                         'items': (
-                            f'สินค้า "{product.name}" คงเหลือไม่พอ '
-                            f'(ต้องการ {need} {product.unit_label or "หน่วย"} มี {product.stock_quantity})'
+                            f'สินค้า "{product.name}" คงเหลือไม่พอสำหรับจอง '
+                            f'(ต้องการ {need} {product.unit_label or "หน่วย"} มีพร้อมขาย {available})'
                         ),
                     })
 
@@ -263,11 +264,17 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 )
 
             for pid, need in need_by_product.items():
-                n = Product.objects.filter(pk=pid, stock_quantity__gte=need).update(
-                    stock_quantity=F('stock_quantity') - need
+                apply_stock_movement(
+                    product_id=pid,
+                    movement_type='sale_reserve',
+                    quantity_change=0,
+                    reserved_change=need,
+                    source_type='order',
+                    source_id=order.order_number or str(order.id),
+                    reference=f'order:{order.id}',
+                    note=f'จองสต็อกจากคำสั่งซื้อ {order.order_number or order.id}',
+                    actor=getattr(self.context.get('request'), 'user', None),
                 )
-                if n != 1:
-                    raise serializers.ValidationError({'items': 'สต็อกสินค้าไม่เพียงพอ กรุณาลองใหม่'})
 
             Order.objects.filter(pk=order.pk).update(inventory_reserved=True)
 
@@ -285,6 +292,7 @@ class CartItemSerializer(serializers.Serializer):
     image = serializers.CharField(read_only=True, allow_null=True, required=False)
     category = serializers.CharField(read_only=True, allow_blank=True, required=False)
     stock_quantity = serializers.IntegerField(read_only=True, required=False)
+    available_quantity = serializers.IntegerField(read_only=True, required=False)
     quantity = serializers.IntegerField(min_value=1)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)

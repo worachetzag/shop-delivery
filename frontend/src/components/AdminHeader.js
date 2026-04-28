@@ -120,6 +120,18 @@ const AdminHeader = () => {
           >
             ตั้งค่าร้าน
           </Link>
+          <Link
+            to="/admin/inventory"
+            style={{
+              color: 'white',
+              textDecoration: 'none',
+              padding: '8px 15px',
+              borderRadius: '5px',
+              background: location.pathname.startsWith('/admin/inventory') ? 'rgba(255,255,255,0.2)' : 'transparent'
+            }}
+          >
+            สต็อกครบวงจร
+          </Link>
           {showAuditLog ? (
             <Link
               to="/admin/audit-log"

@@ -1112,6 +1112,8 @@ const AdminDashboard = ({ forcedTab = null }) => {
                       <th>หมวดหมู่</th>
                       <th>หน่วย</th>
                       <th>ราคา</th>
+                      <th>พร้อมขาย</th>
+                      <th>จอง</th>
                       <th>สต็อก</th>
                       <th>สถานะ</th>
                     </tr>
@@ -1128,6 +1130,8 @@ const AdminDashboard = ({ forcedTab = null }) => {
                         <td>{product.category_name || '-'}</td>
                         <td>{product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}</td>
                         <td>฿{Number(product.price || 0).toLocaleString()}</td>
+                        <td>{Number(product.available_quantity ?? ((product.stock_quantity || 0) - (product.reserved_quantity || 0)))}</td>
+                        <td>{Number(product.reserved_quantity || 0)}</td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="stock-editor">
                             <input
@@ -1146,7 +1150,10 @@ const AdminDashboard = ({ forcedTab = null }) => {
                             </button>
                           </div>
                         </td>
-                        <td>{product.is_available ? 'พร้อมขาย' : 'ปิดขาย'}</td>
+                        <td>
+                          {product.is_available ? 'พร้อมขาย' : 'ปิดขาย'}
+                          {product.is_low_stock ? ' · ใกล้หมด' : ''}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

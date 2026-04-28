@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product
+from .models import Category, Product, PurchaseOrder, PurchaseOrderItem, StockMovement, Supplier
 
 
 # Category Admin
@@ -19,3 +19,38 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
     list_editable = ('price', 'stock_quantity', 'is_available', 'is_special_offer')
+
+
+@admin.register(Supplier)
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contact_name', 'phone', 'is_active', 'updated_at')
+    search_fields = ('name', 'contact_name', 'phone', 'email')
+    list_filter = ('is_active',)
+
+
+class PurchaseOrderItemInline(admin.TabularInline):
+    model = PurchaseOrderItem
+    extra = 0
+
+
+@admin.register(PurchaseOrder)
+class PurchaseOrderAdmin(admin.ModelAdmin):
+    list_display = ('reference', 'supplier', 'status', 'expected_date', 'created_by', 'created_at')
+    list_filter = ('status', 'supplier', 'created_at')
+    search_fields = ('reference', 'supplier__name', 'notes')
+    inlines = [PurchaseOrderItemInline]
+
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = (
+        'created_at', 'product', 'movement_type', 'quantity_change',
+        'quantity_before', 'quantity_after', 'reserved_before', 'reserved_after', 'source_type', 'source_id',
+    )
+    list_filter = ('movement_type', 'source_type', 'created_at')
+    search_fields = ('product__name', 'reference', 'source_id', 'note')
+    readonly_fields = (
+        'product', 'movement_type', 'quantity_change', 'quantity_before', 'quantity_after',
+        'reserved_before', 'reserved_after', 'unit_cost', 'source_type', 'source_id',
+        'reference', 'note', 'created_by', 'created_at',
+    )
