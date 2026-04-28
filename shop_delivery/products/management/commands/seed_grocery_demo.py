@@ -10,13 +10,19 @@
     python manage.py seed_grocery_demo --reset --no-input
 """
 
+from urllib.parse import urlparse
+
+import requests
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils.text import slugify
 
 from products.models import Category, Product
 
 # (ชื่อหมวด, คำอธิบายหมวด, รายการสินค้า)
-# แต่ละสินค้า: name, description, price, unit_label, unit_detail, stock, is_special
+# แต่ละสินค้า:
+#   name, description, price, unit_label, unit_detail, stock, is_special[, image_url]
 SEED = [
     (
         'อาหารแห้งและบริโภค',
@@ -150,10 +156,57 @@ class Command(BaseCommand):
             action='store_true',
             help='ลบสินค้าและหมวดหมู่ทั้งหมดก่อน (ระวังข้อมูลเดิมหายตาม cascade)',
         )
+        parser.add_argument(
+            '--skip-images',
+            action='store_true',
+            help='ไม่ดาวน์โหลด/อัปเดตรูปสินค้า',
+        )
+        parser.add_argument(
+            '--refresh-images',
+            action='store_true',
+            help='บังคับโหลดรูปใหม่ แม้สินค้ามีรูปอยู่แล้ว',
+        )
+
+    @staticmethod
+    def _default_image_url(product_name):
+        seed = slugify(product_name) or 'product'
+        return f'https://picsum.photos/seed/{seed}/640/480'
+
+    @staticmethod
+    def _guess_ext_from_url(url):
+        path = urlparse(url).path or ''
+        lowered = path.lower()
+        if lowered.endswith('.png'):
+            return 'png'
+        if lowered.endswith('.webp'):
+            return 'webp'
+        if lowered.endswith('.gif'):
+            return 'gif'
+        return 'jpg'
+
+    def _attach_image_from_url(self, product, image_url):
+        try:
+            response = requests.get(image_url, timeout=15)
+            if response.status_code != 200:
+                self.stdout.write(self.style.WARNING(
+                    f'    - ข้ามรูป "{product.name}" (HTTP {response.status_code})'
+                ))
+                return False
+            ext = self._guess_ext_from_url(image_url)
+            filename = f'{slugify(product.name) or "product"}-{product.id}.{ext}'
+            product.image.save(filename, ContentFile(response.content), save=True)
+            return True
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(
+                f'    - โหลดรูปไม่สำเร็จ "{product.name}": {exc}'
+            ))
+            return False
 
     def handle(self, *args, **options):
         no_input = options['no_input']
         reset = options['reset']
+        skip_images = options['skip_images']
+        refresh_images = options['refresh_images']
 
         if reset and not no_input:
             self.stdout.write(
@@ -177,6 +230,7 @@ class Command(BaseCommand):
             total_products = 0
             total_created = 0
             total_updated = 0
+            total_images = 0
 
             for cat_name, cat_desc, items in SEED:
                 cat, _ = Category.objects.get_or_create(
@@ -195,8 +249,10 @@ class Command(BaseCommand):
                     unit_detail,
                     stock,
                     is_special,
+                    *extra,
                 ) in items:
-                    _, created = Product.objects.update_or_create(
+                    image_url = extra[0] if extra else self._default_image_url(name)
+                    product, created = Product.objects.update_or_create(
                         name=name,
                         defaults={
                             'description': desc or '',
@@ -214,12 +270,15 @@ class Command(BaseCommand):
                     else:
                         total_updated += 1
                     total_products += 1
+                    if not skip_images and (refresh_images or not product.image):
+                        if self._attach_image_from_url(product, image_url):
+                            total_images += 1
 
                 self.stdout.write(self.style.SUCCESS(f'  + หมวด "{cat_name}" ({len(items)} รายการ)'))
 
         self.stdout.write(
             self.style.SUCCESS(
                 f'เสร็จแล้ว: {len(SEED)} หมวดหมู่, {total_products} สินค้า '
-                f'(เพิ่มใหม่ {total_created}, อัปเดต {total_updated})'
+                f'(เพิ่มใหม่ {total_created}, อัปเดต {total_updated}, โหลดรูป {total_images})'
             )
         )
