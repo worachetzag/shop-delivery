@@ -20,7 +20,8 @@ import AdminLogin from './pages/AdminLogin';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
-import AdminPersonnelPage from './pages/AdminPersonnelPage';
+import AdminPersonnelStaffPage from './pages/AdminPersonnelStaffPage';
+import AdminPersonnelDriversPage from './pages/AdminPersonnelDriversPage';
 import AdminAuditLogPage from './pages/AdminAuditLogPage';
 import AdminOrderDetail from './pages/AdminOrderDetail';
 import AdminProductFormPage from './pages/AdminProductFormPage';
@@ -245,7 +246,23 @@ function AppContent() {
             path="/admin/personnel"
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
-                <AdminPersonnelPage />
+                <Navigate to="/admin/personnel/staff" replace />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/personnel/staff"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminPersonnelStaffPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/personnel/drivers"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminPersonnelDriversPage />
               </ProtectedRoute>
             )}
           />
@@ -253,7 +270,39 @@ function AppContent() {
             path="/admin/store-settings"
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
-                <AdminStoreSettingsPage />
+                <Navigate to="/admin/store-settings/store" replace />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/store-settings/store"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminStoreSettingsPage section="store" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/store-settings/location"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminStoreSettingsPage section="location" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/store-settings/payment"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminStoreSettingsPage section="payment" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/store-settings/hours"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminStoreSettingsPage section="hours" />
               </ProtectedRoute>
             )}
           />
@@ -261,7 +310,47 @@ function AppContent() {
             path="/admin/inventory"
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
-                <AdminInventoryPage />
+                <Navigate to="/admin/inventory/overview" replace />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory/overview"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminInventoryPage section="overview" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory/adjustments"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminInventoryPage section="adjustments" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory/suppliers"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminInventoryPage section="suppliers" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory/purchase-orders"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminInventoryPage section="purchase-orders" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory/movements"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminInventoryPage section="movements" />
               </ProtectedRoute>
             )}
           />

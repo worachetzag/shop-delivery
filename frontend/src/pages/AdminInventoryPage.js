@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 
-const AdminInventoryPage = () => {
+const AdminInventoryPage = ({ section = 'all' }) => {
   const popup = usePopup();
   const navigate = useNavigate();
   const token = useMemo(() => localStorage.getItem('admin_token') || localStorage.getItem('auth_token'), []);
@@ -199,13 +199,16 @@ const AdminInventoryPage = () => {
   return (
     <div className="admin-dashboard" style={{ padding: 16 }}>
       <h1>จัดการสต็อกแบบครบวงจร</h1>
+      {(section === 'all' || section === 'overview') && (
       <div className="admin-stats" style={{ marginBottom: 16 }}>
         <div className="stat-card"><h3>{overview?.total_products || 0}</h3><p>จำนวนสินค้า</p></div>
         <div className="stat-card"><h3>{overview?.total_on_hand || 0}</h3><p>คงเหลือในคลัง</p></div>
         <div className="stat-card"><h3>{overview?.total_reserved || 0}</h3><p>จองจากออเดอร์</p></div>
         <div className="stat-card pending"><h3>{overview?.low_stock_count || 0}</h3><p>สต็อกต่ำ</p></div>
       </div>
+      )}
 
+      {(section === 'all' || section === 'adjustments') && (
       <div className="products-section" style={{ marginBottom: 20 }}>
         <h3>ปรับสต็อกด้วยมือ</h3>
         <form className="personnel-form" onSubmit={submitAdjustment}>
@@ -227,7 +230,9 @@ const AdminInventoryPage = () => {
           <button type="submit" className="btn-primary">บันทึกปรับสต็อก</button>
         </form>
       </div>
+      )}
 
+      {(section === 'all' || section === 'suppliers') && (
       <div className="products-section" style={{ marginBottom: 20 }}>
         <h3>ผู้จำหน่าย</h3>
         <form className="personnel-form" onSubmit={submitSupplier}>
@@ -237,7 +242,9 @@ const AdminInventoryPage = () => {
           <button type="submit" className="btn-primary">เพิ่มผู้จำหน่าย</button>
         </form>
       </div>
+      )}
 
+      {(section === 'all' || section === 'purchase-orders') && (
       <div className="products-section" style={{ marginBottom: 20 }}>
         <h3>สร้างใบสั่งซื้อ (PO)</h3>
         <form className="personnel-form" onSubmit={submitPurchaseOrder}>
@@ -285,7 +292,9 @@ const AdminInventoryPage = () => {
           <button type="submit" className="btn-primary">สร้างใบสั่งซื้อ</button>
         </form>
       </div>
+      )}
 
+      {(section === 'all' || section === 'purchase-orders') && (
       <div className="products-manage-table" style={{ marginBottom: 20 }}>
         <h3>ใบสั่งซื้อล่าสุด</h3>
         <table>
@@ -318,7 +327,9 @@ const AdminInventoryPage = () => {
           </tbody>
         </table>
       </div>
+      )}
 
+      {(section === 'all' || section === 'movements') && (
       <div className="products-manage-table">
         <h3>ประวัติการเคลื่อนไหวสต็อก</h3>
         <table>
@@ -339,6 +350,7 @@ const AdminInventoryPage = () => {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 };

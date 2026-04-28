@@ -9,7 +9,7 @@ const emptyHours = {
 
 const toInputTime = (value) => (value ? String(value).slice(0, 5) : '');
 
-const AdminStoreSettingsPage = () => {
+const AdminStoreSettingsPage = ({ section = 'all' }) => {
   const popup = usePopup();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -150,6 +150,7 @@ const AdminStoreSettingsPage = () => {
         <div>กำลังโหลดข้อมูล...</div>
       ) : (
         <form onSubmit={submit} style={{ display: 'grid', gap: 16 }}>
+          {(section === 'all' || section === 'store') && (
           <section style={sectionStyle}>
             <h3 style={sectionTitleStyle}>1) ข้อมูลร้าน</h3>
             <p style={sectionHintStyle}>ข้อมูลพื้นฐานที่ลูกค้าเห็นหน้าร้านและในคำสั่งซื้อ</p>
@@ -167,7 +168,9 @@ const AdminStoreSettingsPage = () => {
               />
             </div>
           </section>
+          )}
 
+          {(section === 'all' || section === 'location') && (
           <section style={sectionStyle}>
             <h3 style={sectionTitleStyle}>2) พิกัดร้าน</h3>
             <p style={sectionHintStyle}>ใช้สำหรับคำนวณระยะทาง/ค่าส่ง และแสดงตำแหน่งบนแผนที่</p>
@@ -184,7 +187,9 @@ const AdminStoreSettingsPage = () => {
               />
             </div>
           </section>
+          )}
 
+          {(section === 'all' || section === 'payment') && (
           <section style={sectionStyle}>
             <h3 style={sectionTitleStyle}>3) การชำระเงิน (PromptPay)</h3>
             <p style={sectionHintStyle}>ใช้สร้าง QR รับเงินจากลูกค้า</p>
@@ -196,7 +201,9 @@ const AdminStoreSettingsPage = () => {
               />
             </div>
           </section>
+          )}
 
+          {(section === 'all' || section === 'hours') && (
           <section style={sectionStyle}>
             <h3 style={sectionTitleStyle}>4) เวลาทำการ</h3>
             <p style={sectionHintStyle}>กำหนดช่วงเวลาเปิดรับคำสั่งซื้อแยกตามประเภทบริการ</p>
@@ -232,6 +239,7 @@ const AdminStoreSettingsPage = () => {
               </div>
             ))}
           </section>
+          )}
 
           <div>
             <button type="submit" className="btn-primary" disabled={saving}>

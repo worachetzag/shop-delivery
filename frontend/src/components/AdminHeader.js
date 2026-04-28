@@ -41,6 +41,24 @@ const AdminHeader = () => {
     }
   };
 
+  const isActivePath = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const groupTitleStyle = {
+    fontSize: '0.72rem',
+    opacity: 0.85,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    margin: '6px 0 2px',
+    padding: '0 2px',
+  };
+  const subLinkStyle = (active) => ({
+    color: 'white',
+    textDecoration: 'none',
+    padding: '8px 10px',
+    borderRadius: '5px',
+    fontSize: '0.9rem',
+    background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.08)',
+  });
+
   return (
     <header style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -68,89 +86,47 @@ const AdminHeader = () => {
           </h1>
         </Link>
         
-        <nav style={{ display: 'flex', flexDirection: isCompact ? 'row' : 'column', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
-          <Link 
-            to="/admin/orders" 
-            style={{ 
-              color: 'white', 
-              textDecoration: 'none',
-              padding: '10px 12px',
-              borderRadius: '5px',
-              background: location.pathname.startsWith('/admin/orders') ? 'rgba(255,255,255,0.2)' : 'transparent'
-            }}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+          <Link
+            to="/admin/orders"
+            style={subLinkStyle(isActivePath('/admin/orders'))}
           >
             คำสั่งซื้อ
           </Link>
           <Link
             to="/admin/products"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              padding: '10px 12px',
-              borderRadius: '5px',
-              background: location.pathname.startsWith('/admin/products') ? 'rgba(255,255,255,0.2)' : 'transparent'
-            }}
+            style={subLinkStyle(isActivePath('/admin/products'))}
           >
             สินค้า
           </Link>
           <Link
             to="/admin/categories"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              padding: '10px 12px',
-              borderRadius: '5px',
-              background: location.pathname.startsWith('/admin/categories') ? 'rgba(255,255,255,0.2)' : 'transparent'
-            }}
+            style={subLinkStyle(isActivePath('/admin/categories'))}
           >
             หมวดหมู่
           </Link>
-          <Link
-            to="/admin/personnel"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              padding: '10px 12px',
-              borderRadius: '5px',
-              background: location.pathname.startsWith('/admin/personnel') ? 'rgba(255,255,255,0.2)' : 'transparent'
-            }}
-          >
-            บุคลากร
-          </Link>
-          <Link
-            to="/admin/store-settings"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              padding: '10px 12px',
-              borderRadius: '5px',
-              background: location.pathname.startsWith('/admin/store-settings') ? 'rgba(255,255,255,0.2)' : 'transparent'
-            }}
-          >
-            ตั้งค่าร้าน
-          </Link>
-          <Link
-            to="/admin/inventory"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              padding: '10px 12px',
-              borderRadius: '5px',
-              background: location.pathname.startsWith('/admin/inventory') ? 'rgba(255,255,255,0.2)' : 'transparent'
-            }}
-          >
-            สต็อกครบวงจร
-          </Link>
+
+          <div style={groupTitleStyle}>บุคลากร</div>
+          <Link to="/admin/personnel/staff" style={subLinkStyle(isActivePath('/admin/personnel/staff'))}>พนักงาน</Link>
+          <Link to="/admin/personnel/drivers" style={subLinkStyle(isActivePath('/admin/personnel/drivers'))}>คนขับ</Link>
+
+          <div style={groupTitleStyle}>ตั้งค่าร้าน</div>
+          <Link to="/admin/store-settings/store" style={subLinkStyle(isActivePath('/admin/store-settings/store'))}>ข้อมูลร้าน</Link>
+          <Link to="/admin/store-settings/location" style={subLinkStyle(isActivePath('/admin/store-settings/location'))}>พิกัดร้าน</Link>
+          <Link to="/admin/store-settings/payment" style={subLinkStyle(isActivePath('/admin/store-settings/payment'))}>PromptPay</Link>
+          <Link to="/admin/store-settings/hours" style={subLinkStyle(isActivePath('/admin/store-settings/hours'))}>เวลาทำการ</Link>
+
+          <div style={groupTitleStyle}>จัดการสต็อก</div>
+          <Link to="/admin/inventory/overview" style={subLinkStyle(isActivePath('/admin/inventory/overview'))}>ภาพรวม</Link>
+          <Link to="/admin/inventory/adjustments" style={subLinkStyle(isActivePath('/admin/inventory/adjustments'))}>ปรับสต็อก</Link>
+          <Link to="/admin/inventory/suppliers" style={subLinkStyle(isActivePath('/admin/inventory/suppliers'))}>ผู้จำหน่าย</Link>
+          <Link to="/admin/inventory/purchase-orders" style={subLinkStyle(isActivePath('/admin/inventory/purchase-orders'))}>ใบสั่งซื้อ (PO)</Link>
+          <Link to="/admin/inventory/movements" style={subLinkStyle(isActivePath('/admin/inventory/movements'))}>ประวัติสต็อก</Link>
+
           {showAuditLog ? (
             <Link
               to="/admin/audit-log"
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-                padding: '10px 12px',
-                borderRadius: '5px',
-                background: location.pathname.startsWith('/admin/audit-log') ? 'rgba(255,255,255,0.2)' : 'transparent'
-              }}
+              style={subLinkStyle(isActivePath('/admin/audit-log'))}
             >
               ประวัติพนักงาน
             </Link>

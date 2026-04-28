@@ -8,7 +8,7 @@ import './AdminDashboard.css';
 const ADMIN_ORDERS_PAGE_SIZE = 15;
 const ADMIN_PRODUCTS_PAGE_SIZE = 20;
 
-const AdminDashboard = ({ forcedTab = null }) => {
+const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const popup = usePopup();
   const UNIT_OPTIONS = ['ชิ้น', 'แพ็ค', 'ขวด', 'กิโลกรัม', 'กรัม', 'มิลลิลิตร', 'ลิตร', 'อื่นๆ'];
   const UNIT_DETAIL_OPTIONS = ['มล.', 'ลิตร', 'กรัม', 'กก.', 'ชิ้น', 'แพ็ค', 'ขวด', 'กล่อง', 'ซอง', 'ถุง'];
@@ -25,6 +25,8 @@ const AdminDashboard = ({ forcedTab = null }) => {
     return 'orders';
   };
   const activeTab = forcedTab || resolveActiveTab(location.pathname);
+  const showStaffSection = !forcedSubsection || forcedSubsection === 'staff';
+  const showDriverSection = !forcedSubsection || forcedSubsection === 'drivers';
   const [orders, setOrders] = useState([]);
   const [ordersPage, setOrdersPage] = useState(1);
   const [ordersTotalCount, setOrdersTotalCount] = useState(0);
@@ -1259,14 +1261,16 @@ const AdminDashboard = ({ forcedTab = null }) => {
         {activeTab === 'drivers' && (
           <div className="drivers-section">
             <div className="personnel-create-actions">
-              {canManageStaff && (
+              {canManageStaff && showStaffSection && (
                 <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('staff')}>
                   ➕ เพิ่มพนักงาน
                 </button>
               )}
+              {showDriverSection && (
               <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('driver')}>
                 ➕ เพิ่มคนขับ
               </button>
+              )}
               {personnelCreateMode && (
                 <button type="button" className="btn-secondary" onClick={() => setPersonnelCreateMode(null)}>
                   ปิดฟอร์ม
@@ -1274,7 +1278,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
               )}
             </div>
 
-            {selfStaffProfile && !canManageStaff && !editingStaff && (
+            {showStaffSection && selfStaffProfile && !canManageStaff && !editingStaff && (
               <div className="personnel-card">
                 <h3>ข้อมูลบัญชีของฉัน</h3>
                 <p><strong>Username:</strong> {selfStaffProfile.username}</p>
@@ -1287,7 +1291,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
               </div>
             )}
 
-            {canManageStaff && personnelCreateMode === 'staff' && (
+            {showStaffSection && canManageStaff && personnelCreateMode === 'staff' && (
               <div className="personnel-card">
                 <h3>เพิ่มพนักงาน</h3>
                 <form className="personnel-form" onSubmit={handleCreateStaff}>
@@ -1307,7 +1311,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
               </div>
             )}
 
-            {editingStaff && (
+            {showStaffSection && editingStaff && (
               <div className="personnel-card">
                 <h3>แก้ไขพนักงาน</h3>
                 <form className="personnel-form" onSubmit={saveEditStaff}>
@@ -1337,7 +1341,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
               </div>
             )}
 
-            {personnelCreateMode === 'driver' && (
+            {showDriverSection && personnelCreateMode === 'driver' && (
               <div className="personnel-card">
                 <h3>เพิ่มคนขับ</h3>
                 <form className="personnel-form" onSubmit={handleCreateDriver}>
@@ -1357,7 +1361,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
               </div>
             )}
 
-            {editingDriver && (
+            {showDriverSection && editingDriver && (
               <div className="personnel-card">
                 <h3>แก้ไขคนขับ</h3>
                 <form className="personnel-form" onSubmit={saveEditDriver}>
@@ -1391,6 +1395,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
             )}
 
             <div className="personnel-tables">
+              {showStaffSection && (
               <div className="personnel-table">
                 <h3>รายการพนักงาน</h3>
                 {editingStaff || personnelCreateMode === 'staff' ? (
@@ -1425,7 +1430,9 @@ const AdminDashboard = ({ forcedTab = null }) => {
                   </table>
                 )}
               </div>
+              )}
 
+              {showDriverSection && (
               <div className="personnel-table">
                 <h3>รายการคนขับ</h3>
                 {editingDriver || personnelCreateMode === 'driver' ? (
@@ -1460,6 +1467,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
                   </table>
                 )}
               </div>
+              )}
             </div>
           </div>
         )}
