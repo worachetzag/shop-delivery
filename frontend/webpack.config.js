@@ -5,11 +5,13 @@ const webpack = require('webpack');
 // โหลด .env ที่ root โปรเจกต์ (ไม่ commit ค่าจริง — ใช้ .env.example เป็นตัวอย่าง)
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
-/** ค่า default = Django ที่เครื่อง — ถ้าใช้ ngrok ให้ตั้งใน .env หรือตอนรัน: REACT_APP_API_BASE_URL=... npm start */
-const REACT_APP_API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api/';
-const REACT_APP_LIFF_ENDPOINT_URL =
-  process.env.REACT_APP_LIFF_ENDPOINT_URL || 'http://localhost:8000';
+/**
+ * Build-time env สำหรับ frontend
+ * - production: ถ้าไม่ตั้งจะปล่อยว่าง แล้ว src/config จะ fallback เป็น same-origin
+ * - development: สามารถตั้ง .env ให้ชี้ localhost/ngrok ได้
+ */
+const REACT_APP_API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+const REACT_APP_LIFF_ENDPOINT_URL = process.env.REACT_APP_LIFF_ENDPOINT_URL || '';
 
 module.exports = {
   entry: './src/index.js',

@@ -7,7 +7,7 @@ function backendOriginFromApiUrl(apiUrl) {
   return trimmed;
 }
 
-// ค่า default เมื่อไม่มี env (ตรงกับ webpack.config.js) — ถ้าเปิดผ่าน ngrok/LIFF ต้องตั้ง REACT_APP_* ใน .env
+// ค่า default สำหรับ local dev (webpack dev server + Django local)
 const localApiBase = 'http://localhost:8000/api/';
 const localBackendBase = 'http://localhost:8000';
 
@@ -23,10 +23,15 @@ if (
   derivedLiffFromApi = window.location.origin;
 }
 
-// ไม่ฮาร์ดโค้ด URL ngrok — ถ้าไม่ตั้ง env ให้ใช้ localhost (รัน Django ที่เครื่องเดียวกับ dev server)
-const resolvedApiBase = envApiBase || localApiBase;
+// ถ้าไม่ตั้ง env: production ให้ยิง API ที่ origin เดียวกัน (/api/), dev ค่อย fallback localhost
+const sameOriginApiBase =
+  typeof window !== 'undefined' ? `${window.location.origin}/api/` : '';
+const sameOriginLiffBase = typeof window !== 'undefined' ? window.location.origin : '';
+const isProdBuild = process.env.REACT_APP_ENVIRONMENT === 'production';
+
+const resolvedApiBase = envApiBase || (isProdBuild ? sameOriginApiBase : localApiBase);
 const resolvedLiffBase =
-  envLiffBase || derivedLiffFromApi || localBackendBase;
+  envLiffBase || derivedLiffFromApi || (isProdBuild ? sameOriginLiffBase : localBackendBase);
 
 // Environment Configuration
 const config = {
