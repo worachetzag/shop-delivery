@@ -69,6 +69,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState(null);
+  const [createdOrderNumber, setCreatedOrderNumber] = useState('');
   const [promptPayInfo, setPromptPayInfo] = useState(null);
   const [selectedSlipFile, setSelectedSlipFile] = useState(null);
   const [uploadingSlip, setUploadingSlip] = useState(false);
@@ -369,6 +370,7 @@ const Checkout = () => {
         const result = await response.json();
         console.log('Order created:', result);
         const orderId = result?.order_id;
+        const orderNumber = result?.order_number || (orderId ? `#${orderId}` : '');
         try {
           localStorage.removeItem('products_cart_quantities');
         } catch (error) {
@@ -380,6 +382,7 @@ const Checkout = () => {
             throw new Error('ไม่พบเลขคำสั่งซื้อสำหรับสร้าง QR');
           }
           setCreatedOrderId(orderId);
+          setCreatedOrderNumber(orderNumber);
           const qrResponse = await fetch(`${config.API_BASE_URL}orders/${orderId}/promptpay-qr/`, {
             method: 'POST',
             headers: {
@@ -755,7 +758,7 @@ const Checkout = () => {
               {createdOrderId && paymentMethod === 'promptpay' && (
                 <div className="promptpay-box">
                   <h4>สแกนเพื่อชำระเงิน</h4>
-                  <p>คำสั่งซื้อ #{createdOrderId}</p>
+                  <p>คำสั่งซื้อ {createdOrderNumber || `#${createdOrderId}`}</p>
                   <p>พร้อมเพย์: {promptPayInfo?.promptpay_number || '-'}</p>
                   <p>ยอดชำระ: {formatPrice(Number(promptPayInfo?.amount || calculateTotal()))}</p>
                   {promptPayInfo?.qr_image ? (

@@ -125,19 +125,35 @@ const AdminStoreSettingsPage = () => {
     }
   };
 
+  const sectionStyle = {
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 12,
+    padding: 16,
+  };
+
+  const fieldGridStyle = {
+    display: 'grid',
+    gap: 12,
+  };
+
+  const sectionTitleStyle = { margin: '0 0 4px 0' };
+  const sectionHintStyle = { marginTop: 0, marginBottom: 12, color: '#6b7280', fontSize: 14 };
+
   return (
     <div style={{ maxWidth: 920, margin: '0 auto', padding: '16px' }}>
       <h2 style={{ marginBottom: 6 }}>ตั้งค่าร้าน</h2>
       <p style={{ marginTop: 0, color: '#666' }}>
-        จัดการข้อมูลร้าน พิกัด และเวลาทำการที่ใช้คำนวณ/แสดงผลในระบบ
+        จัดการข้อมูลร้านแบบแยกหมวด เพื่อให้ตั้งค่าได้ชัดเจนว่าแต่ละส่วนใช้ทำอะไร
       </p>
       {loading ? (
         <div>กำลังโหลดข้อมูล...</div>
       ) : (
         <form onSubmit={submit} style={{ display: 'grid', gap: 16 }}>
-          <section className="personnel-card">
-            <h3>ข้อมูลร้านและพิกัด</h3>
-            <div className="personnel-form">
+          <section style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>1) ข้อมูลร้าน</h3>
+            <p style={sectionHintStyle}>ข้อมูลพื้นฐานที่ลูกค้าเห็นหน้าร้านและในคำสั่งซื้อ</p>
+            <div style={fieldGridStyle}>
               <input
                 value={form.store_location.name}
                 onChange={(e) => onLocationChange('name', e.target.value)}
@@ -149,11 +165,13 @@ const AdminStoreSettingsPage = () => {
                 placeholder="ที่อยู่ร้าน"
                 rows={3}
               />
-              <input
-                value={form.store_location.promptpay_number}
-                onChange={(e) => onLocationChange('promptpay_number', e.target.value)}
-                placeholder="เบอร์พร้อมเพย์ร้าน (เช่น 0812345678)"
-              />
+            </div>
+          </section>
+
+          <section style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>2) พิกัดร้าน</h3>
+            <p style={sectionHintStyle}>ใช้สำหรับคำนวณระยะทาง/ค่าส่ง และแสดงตำแหน่งบนแผนที่</p>
+            <div style={fieldGridStyle}>
               <input
                 value={form.store_location.latitude}
                 onChange={(e) => onLocationChange('latitude', e.target.value)}
@@ -167,8 +185,21 @@ const AdminStoreSettingsPage = () => {
             </div>
           </section>
 
-          <section className="personnel-card">
-            <h3>เวลาทำการ</h3>
+          <section style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>3) การชำระเงิน (PromptPay)</h3>
+            <p style={sectionHintStyle}>ใช้สร้าง QR รับเงินจากลูกค้า</p>
+            <div style={fieldGridStyle}>
+              <input
+                value={form.store_location.promptpay_number}
+                onChange={(e) => onLocationChange('promptpay_number', e.target.value)}
+                placeholder="เบอร์พร้อมเพย์ร้าน (เช่น 0812345678)"
+              />
+            </div>
+          </section>
+
+          <section style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>4) เวลาทำการ</h3>
+            <p style={sectionHintStyle}>กำหนดช่วงเวลาเปิดรับคำสั่งซื้อแยกตามประเภทบริการ</p>
             {['pickup', 'delivery'].map((type) => (
               <div key={type} style={{ marginBottom: 16, borderBottom: '1px solid #eee', paddingBottom: 12 }}>
                 <strong>{type === 'pickup' ? 'รับสินค้าเอง (Pickup)' : 'จัดส่ง (Delivery)'}</strong>

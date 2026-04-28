@@ -1,5 +1,7 @@
 from django.db import models
+from django.db import transaction
 from django.contrib.auth.models import User
+from django.utils import timezone
 from accounts.models import Customer
 from products.models import Product
 
@@ -38,6 +40,7 @@ class Order(models.Model):
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders', verbose_name="ลูกค้า")
+    order_number = models.CharField(max_length=16, unique=True, blank=True, verbose_name="หมายเลขคำสั่งซื้อ")
     order_type = models.CharField(max_length=10, choices=ORDER_TYPE_CHOICES, verbose_name="ประเภทคำสั่งซื้อ")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, verbose_name="วิธีการชำระเงิน")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="สถานะ")
@@ -91,7 +94,34 @@ class Order(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"คำสั่งซื้อ #{self.id} - {self.customer}"
+        return f"คำสั่งซื้อ {self.order_number or f'#{self.id}'} - {self.customer}"
+
+    @staticmethod
+    def _generate_order_number_for_date(target_date):
+        with transaction.atomic():
+            sequence, _ = DailyOrderSequence.objects.select_for_update().get_or_create(
+                date=target_date,
+                defaults={'last_number': 0},
+            )
+            sequence.last_number += 1
+            sequence.save(update_fields=['last_number'])
+            return f"SP{target_date.strftime('%Y%m%d')}{sequence.last_number:03d}"
+
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            target_date = timezone.localdate()
+            self.order_number = self._generate_order_number_for_date(target_date)
+        super().save(*args, **kwargs)
+
+
+class DailyOrderSequence(models.Model):
+    """ตัวนับเลขออเดอร์รายวัน"""
+    date = models.DateField(unique=True)
+    last_number = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "ลำดับเลขออเดอร์รายวัน"
+        verbose_name_plural = "ลำดับเลขออเดอร์รายวัน"
 
 
 class OrderItem(models.Model):

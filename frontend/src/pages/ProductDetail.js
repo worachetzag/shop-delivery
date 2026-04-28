@@ -1,0 +1,184 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { productsService, cartService } from '../services/api';
+import { usePopup } from '../components/PopupProvider';
+import './ProductDetail.css';
+
+const ProductDetail = () => {
+  const { productId } = useParams();
+  const popup = usePopup();
+  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState(null);
+  const [cartQty, setCartQty] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+
+  const numericProductId = useMemo(() => Number(productId), [productId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [productData, cartData] = await Promise.all([
+          productsService.getProduct(numericProductId),
+          cartService.getCart().catch(() => ({ items: [] })),
+        ]);
+
+        if (cancelled) return;
+
+        setProduct(productData || null);
+        const relatedResponse = await productsService.getProducts({
+          category_id: productData?.category_id,
+          page_size: 8,
+          ordering: 'name',
+        }).catch(() => ({ results: [] }));
+        const relatedList = Array.isArray(relatedResponse?.results)
+          ? relatedResponse.results
+          : (Array.isArray(relatedResponse) ? relatedResponse : []);
+        const filtered = relatedList.filter((item) => Number(item.id) !== numericProductId).slice(0, 4);
+        setRelatedProducts(filtered);
+
+        const items = Array.isArray(cartData?.items) ? cartData.items : [];
+        const line = items.find((item) => Number(item.product_id || item.id) === numericProductId);
+        setCartQty(Number(line?.quantity || 0));
+      } catch (error) {
+        if (!cancelled) {
+          setProduct(null);
+          setRelatedProducts([]);
+          popup.error(error?.error || 'ไม่พบข้อมูลสินค้า');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [numericProductId, popup]);
+
+  const stock = Number(product?.stock_quantity || 0);
+  const remaining = Math.max(0, stock - Number(cartQty || 0));
+  const outOfStock = remaining <= 0;
+
+  const formatPrice = (price) => (
+    new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(Number(price || 0))
+  );
+
+  const updateQty = async (nextQty) => {
+    if (!product) return;
+    if (nextQty < 0 || nextQty > stock) return;
+    setSubmitting(true);
+    try {
+      if (nextQty === 0) {
+        await cartService.updateCartItem(product.id, 0);
+      } else if (cartQty === 0) {
+        await cartService.addToCart(product.id, nextQty);
+      } else {
+        await cartService.updateCartItem(product.id, nextQty);
+      }
+      setCartQty(nextQty);
+    } catch (error) {
+      popup.error(error?.error || 'ไม่สามารถอัปเดตตะกร้าได้');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">กำลังโหลดข้อมูลสินค้า...</div>;
+  }
+
+  if (!product) {
+    return (
+      <div className="product-detail-page">
+        <div className="container">
+          <div className="product-detail-empty">
+            <h2>ไม่พบสินค้า</h2>
+            <Link to="/customer/products" className="btn btn-primary">กลับไปหน้าสินค้า</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="product-detail-page">
+      <div className="container">
+        <div className="product-detail-breadcrumb">
+          <Link to="/customer/products">สินค้า</Link>
+          <span>/</span>
+          <span>{product.name}</span>
+        </div>
+
+        <div className="product-detail-card">
+          <div className="product-detail-image-wrap">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="product-detail-image"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/600x400/f8f9fa/6c757d?text=No+Image';
+              }}
+            />
+          </div>
+
+          <div className="product-detail-info">
+            <h1>{product.name}</h1>
+            {!!product.category && <p className="product-detail-category">หมวดหมู่: {product.category}</p>}
+            <p className="product-detail-price">
+              {formatPrice(product.price)} / {product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}
+            </p>
+            <p className={`product-detail-stock ${outOfStock ? 'out' : ''}`}>
+              {outOfStock ? 'สินค้าหมด' : `คงเหลือ ${remaining} ${product.unit_label || 'ชิ้น'}`}
+            </p>
+            <p className="product-detail-description">{product.description || 'ไม่มีรายละเอียดสินค้า'}</p>
+
+            <div className="product-detail-actions">
+              <div className="product-detail-qty">
+                <button type="button" disabled={submitting || cartQty <= 0} onClick={() => updateQty(cartQty - 1)}>-</button>
+                <span>{cartQty}</span>
+                <button type="button" disabled={submitting || outOfStock} onClick={() => updateQty(cartQty + 1)}>+</button>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={submitting || outOfStock}
+                onClick={() => updateQty(cartQty + 1)}
+              >
+                เพิ่มในตะกร้า
+              </button>
+              <Link to="/customer/cart" className="btn btn-outline">ไปตะกร้า</Link>
+            </div>
+          </div>
+        </div>
+
+        {relatedProducts.length > 0 && (
+          <section className="related-products-section">
+            <h2>สินค้าที่เกี่ยวข้อง</h2>
+            <div className="related-products-grid">
+              {relatedProducts.map((item) => (
+                <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/300x200/f8f9fa/6c757d?text=No+Image';
+                    }}
+                  />
+                  <div className="related-product-info">
+                    <div className="related-product-name">{item.name}</div>
+                    <div className="related-product-price">{formatPrice(item.price)}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProductDetail;

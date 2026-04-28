@@ -251,12 +251,13 @@ const OrderDetail = () => {
     <div className="orders-page">
       <div className="container">
         <div className="page-header">
-          <h1 className="page-title">คำสั่งซื้อ #{order.id}</h1>
+          <h1 className="page-title">คำสั่งซื้อ {order.order_number || `#${order.id}`}</h1>
           <p className="page-subtitle">สถานะ: {order.status_display || order.status}</p>
         </div>
 
         <div className="order-card">
           <div className="detail-meta">
+            <p><strong>หมายเลขคำสั่งซื้อ:</strong> {order.order_number || `#${order.id}`}</p>
             <p><strong>วันที่สั่งซื้อ:</strong> {formatDate(order.created_at)}</p>
             <p><strong>วิธีชำระเงิน:</strong> {order.payment_method_display || order.payment_method}</p>
             <p><strong>ที่อยู่จัดส่ง:</strong> {order.delivery_address || '-'}</p>

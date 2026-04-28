@@ -5,6 +5,7 @@ import AdminHeader from './components/AdminHeader';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Products from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
@@ -93,6 +94,7 @@ function AppContent() {
           <Route path="/" element={<Navigate to="/customer" replace />} />
           <Route path="/customer" element={<Home />} />
           <Route path="/customer/products" element={<Products />} />
+          <Route path="/customer/products/:productId" element={<ProductDetail />} />
           <Route
             path="/customer/cart"
             element={(
@@ -145,6 +147,7 @@ function AppContent() {
 
           {/* Legacy customer URLs -> canonical */}
           <Route path="/products" element={<Navigate to="/customer/products" replace />} />
+          <Route path="/products/:productId" element={<ProductDetail />} />
           <Route path="/cart" element={<Navigate to="/customer/cart" replace />} />
           <Route path="/checkout" element={<Navigate to="/customer/checkout" replace />} />
           <Route path="/orders" element={<Navigate to="/customer/orders" replace />} />

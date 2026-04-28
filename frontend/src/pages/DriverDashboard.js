@@ -67,7 +67,7 @@ const DriverDashboard = () => {
               }}
             >
               <div className="driver-assignment-row">
-                <strong>คำสั่งซื้อ #{assignment.order}</strong>
+                <strong>คำสั่งซื้อ {assignment.order_number || `#${assignment.order}`}</strong>
                 <span className="driver-status">{assignment.status_display || assignment.status}</span>
               </div>
               <div className="driver-customer-block" onClick={(e) => e.stopPropagation()}>

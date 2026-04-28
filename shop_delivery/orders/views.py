@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
@@ -277,6 +277,7 @@ class OrderCreateView(generics.CreateAPIView):
         return Response({
             'message': 'สร้างคำสั่งซื้อสำเร็จ',
             'order_id': order.id,
+            'order_number': order.order_number,
             'total_amount': order.total_amount,
             'subtotal': order.subtotal,
             'delivery_fee': order.delivery_fee,
@@ -310,6 +311,15 @@ class OrderListView(generics.ListAPIView):
             st = self.request.query_params.get('status')
             if st and st.strip():
                 qs = qs.filter(status=st.strip())
+        q = (self.request.query_params.get('q') or '').strip()
+        if q:
+            qs = qs.filter(
+                Q(order_number__icontains=q)
+                | Q(id__iexact=q)
+                | Q(customer__user__first_name__icontains=q)
+                | Q(customer__user__last_name__icontains=q)
+                | Q(customer__user__username__icontains=q)
+            )
         return qs
 
 
@@ -891,6 +901,7 @@ class OrderDriverTrackingView(APIView):
 
         return Response({
             'order_id': order.id,
+            'order_number': order.order_number,
             'order_status': order.status,
             'order_status_display': order.get_status_display(),
             'driver_assignment_status': assignment.status if assignment else None,

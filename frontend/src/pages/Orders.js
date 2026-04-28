@@ -51,6 +51,7 @@ const Orders = () => {
               : [];
           const transformedOrders = sourceOrders.map((order) => ({
             id: order.id,
+            orderNumber: order.order_number || `#${order.id}`,
             date: order.created_at,
             status: order.status,
             statusDisplay: order.status_display,
@@ -218,7 +219,7 @@ const Orders = () => {
             >
               <div className="order-header order-list-row">
                 <div className="order-info">
-                  <h3 className="order-id">#{order.id}</h3>
+                  <h3 className="order-id">{order.orderNumber}</h3>
                   <p className="order-date">{formatDate(order.date)}</p>
                 </div>
                 <div className="order-list-summary">

@@ -48,7 +48,7 @@ class OrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'customer_name', 'order_type', 'order_type_display',
+        fields = ['id', 'order_number', 'customer', 'customer_name', 'order_type', 'order_type_display',
                  'payment_method', 'payment_method_display', 'status', 'status_display',
                  'delivery_address', 'delivery_phone', 'delivery_notes',
                  'delivery_distance',
@@ -291,7 +291,7 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'customer_name', 'status', 'status_display', 'delivery_address',
+        fields = ['id', 'order_number', 'customer_name', 'status', 'status_display', 'delivery_address',
                  'delivery_phone', 'delivery_notes',
                  'delivery_distance', 'subtotal', 'delivery_fee', 'total_amount', 'items',
                  'driver_name', 'driver_phone', 'assignment_status',
@@ -325,6 +325,7 @@ class CartUpdateSerializer(serializers.Serializer):
 
 
 class DriverAssignmentSerializer(serializers.ModelSerializer):
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
     driver_name = serializers.CharField(source='driver.get_full_name', read_only=True)
     driver_phone = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -341,6 +342,7 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
         model = DriverAssignment
         fields = [
             'id', 'order', 'driver', 'driver_name', 'driver_phone',
+            'order_number',
             'status', 'status_display', 'notes',
             'current_latitude', 'current_longitude', 'current_location_text', 'last_location_at',
             'assigned_at', 'updated_at', 'order_total_amount', 'delivery_address',

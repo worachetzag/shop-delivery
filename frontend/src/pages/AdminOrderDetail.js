@@ -61,7 +61,8 @@ const AdminOrderDetail = () => {
           throw new Error('โหลดรายชื่อคนขับไม่สำเร็จ');
         }
         const data = await response.json();
-        setDrivers(Array.isArray(data) ? data : []);
+        const list = data && data.results !== undefined ? data.results : data;
+        setDrivers(Array.isArray(list) ? list : []);
       } catch (error) {
         setDrivers([]);
       }
@@ -245,7 +246,7 @@ const AdminOrderDetail = () => {
   return (
     <div className="admin-dashboard">
       <div className="admin-content">
-        <h2>รายละเอียดคำสั่งซื้อ #{order.id}</h2>
+        <h2>รายละเอียดคำสั่งซื้อ {order.order_number || `#${order.id}`}</h2>
         <p><strong>ลูกค้า:</strong> {order.customer_name || '-'}</p>
         <p><strong>สถานะ:</strong> {order.status_display || order.status}</p>
         <p><strong>วิธีชำระเงิน:</strong> {order.payment_method_display || order.payment_method}</p>

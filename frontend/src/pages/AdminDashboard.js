@@ -28,6 +28,8 @@ const AdminDashboard = ({ forcedTab = null }) => {
   const [orders, setOrders] = useState([]);
   const [ordersPage, setOrdersPage] = useState(1);
   const [ordersTotalCount, setOrdersTotalCount] = useState(0);
+  const [ordersSearchDraft, setOrdersSearchDraft] = useState('');
+  const [ordersSearch, setOrdersSearch] = useState('');
   const [products, setProducts] = useState([]);
   const [productsPage, setProductsPage] = useState(1);
   const [productsTotalCount, setProductsTotalCount] = useState(0);
@@ -141,7 +143,11 @@ const AdminDashboard = ({ forcedTab = null }) => {
     if (activeTab === 'orders') {
       loadOrders();
     }
-  }, [activeTab, ordersPage]);
+  }, [activeTab, ordersPage, ordersSearch]);
+
+  useEffect(() => {
+    setOrdersPage(1);
+  }, [ordersSearch]);
 
   useEffect(() => {
     if (activeTab === 'products') {
@@ -175,6 +181,9 @@ const AdminDashboard = ({ forcedTab = null }) => {
         page: String(ordersPage),
         page_size: String(ADMIN_ORDERS_PAGE_SIZE),
       });
+      if (ordersSearch.trim()) {
+        params.set('q', ordersSearch.trim());
+      }
       const response = await fetch(`${config.API_BASE_URL}orders/list/?${params.toString()}`, {
         headers: {
           Authorization: `Token ${token}`,
@@ -973,6 +982,40 @@ const AdminDashboard = ({ forcedTab = null }) => {
       <div className="admin-content">
         {activeTab === 'orders' && (
           <div className="orders-table">
+            <div style={{ padding: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                className="form-input"
+                style={{ minWidth: '280px' }}
+                placeholder="ค้นหาเลขคำสั่งซื้อ (เช่น SP20260428001) หรือลูกค้า"
+                value={ordersSearchDraft}
+                onChange={(e) => setOrdersSearchDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setOrdersSearch(ordersSearchDraft);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setOrdersSearch(ordersSearchDraft)}
+              >
+                ค้นหา
+              </button>
+              {(ordersSearch || ordersSearchDraft) && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setOrdersSearchDraft('');
+                    setOrdersSearch('');
+                  }}
+                >
+                  ล้าง
+                </button>
+              )}
+            </div>
             <table>
               <thead>
                 <tr>
@@ -993,7 +1036,7 @@ const AdminDashboard = ({ forcedTab = null }) => {
                       className="order-row-clickable"
                       onClick={() => navigate(`/admin/orders/${order.id}`)}
                     >
-                      <td>#{order.id}</td>
+                      <td>{order.order_number || `#${order.id}`}</td>
                       <td>{order.customer_name || 'N/A'}</td>
                       <td>{Array.isArray(order.items) ? order.items.length : (order.items_count || 0)} รายการ</td>
                       <td>฿{order.total_amount || 0}</td>

@@ -40,7 +40,7 @@ const Tracking = () => {
           
           const transformedTrackingInfo = {
             orderId: data.order_id,
-            trackingNumber: data.order_id,
+            trackingNumber: data.order_number || `#${data.order_id}`,
             status: data.order_status,
             currentLocation: data.current_location_text || 'กำลังจัดส่ง',
             currentLatitude: data.current_latitude ? Number(data.current_latitude) : null,
@@ -160,7 +160,7 @@ const Tracking = () => {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">ติดตามการจัดส่ง</h1>
-          <p className="page-subtitle">คำสั่งซื้อ #{trackingInfo.trackingNumber}</p>
+          <p className="page-subtitle">คำสั่งซื้อ {trackingInfo.trackingNumber}</p>
         </div>
 
         <div className="tracking-content">
@@ -168,7 +168,7 @@ const Tracking = () => {
           <div className="order-summary">
             <h3 className="section-title">สรุปคำสั่งซื้อ</h3>
             <div className="order-info">
-              <p><strong>หมายเลขคำสั่งซื้อ:</strong> #{trackingInfo.orderId}</p>
+              <p><strong>หมายเลขคำสั่งซื้อ:</strong> {trackingInfo.trackingNumber}</p>
               <p><strong>สถานะปัจจุบัน:</strong> 
                 <span 
                   className="status-badge"

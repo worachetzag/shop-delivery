@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { usePopup } from './PopupProvider';
@@ -13,10 +13,46 @@ const ProductCard = ({
   showCartInfo = true,
 }) => {
   const popup = usePopup();
+  const isControlled = useMemo(
+    () =>
+      typeof onAddToCart === 'function' ||
+      typeof onIncreaseQuantity === 'function' ||
+      typeof onDecreaseQuantity === 'function',
+    [onAddToCart, onIncreaseQuantity, onDecreaseQuantity]
+  );
+  const [localCartQuantity, setLocalCartQuantity] = useState(Number(cartQuantity || 0));
+
+  useEffect(() => {
+    if (isControlled) {
+      setLocalCartQuantity(Number(cartQuantity || 0));
+    }
+  }, [cartQuantity, isControlled]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cart = await cartService.getCart();
+        const items = Array.isArray(cart?.items) ? cart.items : [];
+        const line = items.find((item) => Number(item.product_id || item.id) === Number(product.id));
+        if (!cancelled) {
+          setLocalCartQuantity(Number(line?.quantity || 0));
+        }
+      } catch (error) {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isControlled, product.id]);
+
+  const effectiveCartQuantity = isControlled ? Number(cartQuantity || 0) : Number(localCartQuantity || 0);
   const stockQuantity = Number(product.stock_quantity || 0);
-  const remainingStock = Math.max(0, stockQuantity - Number(cartQuantity || 0));
+  const remainingStock = Math.max(0, stockQuantity - effectiveCartQuantity);
   const isOutOfStock = remainingStock <= 0;
-  const hasInCart = cartQuantity > 0;
+  const hasInCart = effectiveCartQuantity > 0;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
@@ -34,6 +70,7 @@ const ProductCard = ({
     }
     try {
       await cartService.addToCart(product.id, 1);
+      setLocalCartQuantity((prev) => prev + 1);
       popup.success('เพิ่มสินค้าในตะกร้าแล้ว');
     } catch (error) {
       console.error('Add to cart failed:', error);
@@ -46,7 +83,14 @@ const ProductCard = ({
     e.stopPropagation();
     if (onIncreaseQuantity) {
       onIncreaseQuantity(product);
+      return;
     }
+    const nextQty = effectiveCartQuantity + 1;
+    if (nextQty > stockQuantity) return;
+    cartService
+      .updateCartItem(product.id, nextQty)
+      .then(() => setLocalCartQuantity(nextQty))
+      .catch(() => popup.error('ไม่สามารถอัปเดตจำนวนสินค้าได้'));
   };
 
   const handleDecrease = (e) => {
@@ -54,12 +98,18 @@ const ProductCard = ({
     e.stopPropagation();
     if (onDecreaseQuantity) {
       onDecreaseQuantity(product);
+      return;
     }
+    const nextQty = Math.max(0, effectiveCartQuantity - 1);
+    cartService
+      .updateCartItem(product.id, nextQty)
+      .then(() => setLocalCartQuantity(nextQty))
+      .catch(() => popup.error('ไม่สามารถอัปเดตจำนวนสินค้าได้'));
   };
 
   return (
     <div className="product-card">
-      <Link to={`/products/${product.id}`} className="product-link">
+      <Link to={`/customer/products/${product.id}`} className="product-link">
         <div className="product-image-container">
           <img 
             src={product.image} 
@@ -91,14 +141,14 @@ const ProductCard = ({
         {showCartInfo && hasInCart && (
           <div className="cart-status">
             <span className="cart-icon">🛒</span>
-            <span>ใส่แล้ว {cartQuantity} ชิ้น</span>
+            <span>ใส่แล้ว {effectiveCartQuantity} ชิ้น</span>
           </div>
         )}
 
         {showCartInfo && hasInCart && (
           <div className="cart-qty-editor">
             <button className="qty-btn" onClick={handleDecrease}>-</button>
-            <span className="qty-value">{cartQuantity}</span>
+            <span className="qty-value">{effectiveCartQuantity}</span>
             <button
               className="qty-btn"
               onClick={handleIncrease}
