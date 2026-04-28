@@ -2,7 +2,7 @@ import logging
 from django.conf import settings
 from django.utils import timezone
 from linebot import LineBotApi
-from linebot.models import TextSendMessage
+from linebot.models import FlexSendMessage, TextSendMessage
 
 from .models import LineBotUser, LineNotification
 
@@ -19,7 +19,6 @@ STATUS_NOTIFICATION_TYPE = {
     'delivered': 'order_delivered',
     'cancelled': 'order_cancelled',
 }
-
 
 def _resolve_notification_type(order_status: str) -> str:
     return STATUS_NOTIFICATION_TYPE.get(order_status, 'order_created')
@@ -40,7 +39,23 @@ def _display_name(user):
     return (user.get_full_name() or user.username or '').strip()
 
 
-def send_order_status_notification(*, order, source: str, old_status: str, new_status: str, actor=None, driver_status: str = '') -> bool:
+def _order_detail_url(order_id: int) -> str:
+    frontend = (getattr(settings, 'FRONTEND_URL', '') or '').strip().rstrip('/')
+    if not frontend:
+        return f'/customer/orders/{order_id}'
+    return f'{frontend}/customer/orders/{order_id}'
+
+
+def send_order_status_notification(
+    *,
+    order,
+    source: str,
+    old_status: str,
+    new_status: str,
+    actor=None,
+    driver_status: str = '',
+    old_driver_status: str = '',
+) -> bool:
     """
     ส่งข้อความแจ้งสถานะคำสั่งซื้อไปหา customer ทาง LINE chat.
     คืนค่า True เมื่อส่งสำเร็จ, False เมื่อข้าม/ส่งไม่สำเร็จ
@@ -61,28 +76,92 @@ def send_order_status_notification(*, order, source: str, old_status: str, new_s
 
     actor_name = _display_name(actor) or ('คนขับ' if source == 'driver' else 'ร้านค้า')
     order_no = order.order_number or f'#{order.id}'
-    status_text = order.get_status_display()
+    order_status_text = order.get_status_display()
     old_status_text = old_status
     if old_status:
         old_status_text = dict(order._meta.get_field('status').choices).get(old_status, old_status)
     changed_at = timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M')
 
+    # กรณีคนขับอัปเดตสถานะ ให้โชว์สถานะงานคนขับเป็นหัวข้อหลัก
+    headline_status = driver_status if source == 'driver' and driver_status else order_status_text
     lines = [
         f'อัปเดตคำสั่งซื้อ {order_no}',
-        f'สถานะล่าสุด: {status_text}',
+        f'สถานะล่าสุด: {headline_status}',
         f'อัปเดตโดย: {actor_name}',
     ]
-    if old_status and old_status != new_status:
+    if source == 'driver':
+        if old_driver_status and driver_status and old_driver_status != driver_status:
+            lines.append(f'จาก: {old_driver_status}')
+        elif old_status and old_status != new_status:
+            # fallback เผื่อไม่ส่ง old_driver_status มา
+            lines.append(f'จาก: {old_status_text}')
+    elif old_status and old_status != new_status:
         lines.append(f'จาก: {old_status_text}')
     if source == 'driver' and driver_status:
-        lines.append(f'สถานะงานคนขับ: {driver_status}')
+        lines.append(f'สถานะออเดอร์: {order_status_text}')
+        if old_status and old_status != new_status:
+            lines.append(f'สถานะออเดอร์เดิม: {old_status_text}')
     lines.append(f'เวลา: {changed_at}')
-    lines.append('ตรวจสอบรายละเอียดได้ในเมนู "คำสั่งซื้อของฉัน"')
+    detail_url = _order_detail_url(order.id)
+    lines.append(f'ตรวจสอบรายละเอียด: {detail_url}')
     message_text = '\n'.join(lines)
 
     try:
         line_bot_api = LineBotApi(token)
-        line_bot_api.push_message(line_user_id, TextSendMessage(text=message_text))
+        flex_message = FlexSendMessage(
+            alt_text=f'อัปเดตสถานะคำสั่งซื้อ {order_no}: {headline_status}',
+            contents={
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"อัปเดตคำสั่งซื้อ {order_no}",
+                            "weight": "bold",
+                            "size": "md",
+                            "wrap": True
+                        },
+                        {
+                            "type": "text",
+                            "text": f"สถานะล่าสุด: {headline_status}",
+                            "size": "sm",
+                            "wrap": True
+                        },
+                        {
+                            "type": "text",
+                            "text": f"อัปเดตโดย: {actor_name}",
+                            "size": "sm",
+                            "color": "#666666",
+                            "wrap": True
+                        },
+                        {
+                            "type": "text",
+                            "text": f"เวลา: {changed_at}",
+                            "size": "xs",
+                            "color": "#999999",
+                            "wrap": True
+                        },
+                        {
+                            "type": "text",
+                            "text": "ตรวจสอบรายละเอียด",
+                            "size": "sm",
+                            "color": "#1E88E5",
+                            "decoration": "underline",
+                            "margin": "md",
+                            "action": {
+                                "type": "uri",
+                                "label": "ตรวจสอบรายละเอียด",
+                                "uri": detail_url
+                            }
+                        }
+                    ]
+                }
+            }
+        )
+        line_bot_api.push_message(line_user_id, [flex_message, TextSendMessage(text=message_text)])
 
         bot_user, _ = LineBotUser.objects.get_or_create(
             line_user_id=line_user_id,

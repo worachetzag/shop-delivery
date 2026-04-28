@@ -804,6 +804,7 @@ class DriverAssignmentStatusUpdateView(APIView):
                 )
                 order = Order.objects.select_for_update().get(pk=assignment.order_id)
                 cur = assignment.status
+                old_driver_status_text = dict(DriverAssignment.STATUS_CHOICES).get(cur, cur)
                 if next_status != cur and next_status not in transition_map.get(cur, []):
                     return Response(
                         {
@@ -874,6 +875,7 @@ class DriverAssignmentStatusUpdateView(APIView):
             new_status=order.status,
             actor=request.user,
             driver_status=assignment.get_status_display(),
+            old_driver_status=old_driver_status_text,
         )
 
         assignment = DriverAssignment.objects.select_related(
