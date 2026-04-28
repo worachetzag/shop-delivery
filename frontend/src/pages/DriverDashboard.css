@@ -1,7 +1,7 @@
 .driver-dashboard-page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 12px;
 }
 
 .driver-assignment-list {
@@ -10,10 +10,11 @@
 }
 
 .driver-assignment-card {
-  border: 1px solid #e7e7e7;
-  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
   padding: 12px;
   background: #fff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
 }
 
 .driver-assignment-clickable {
@@ -29,7 +30,7 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 
@@ -40,15 +41,15 @@
 }
 
 .driver-status {
-  font-weight: 600;
-  color: #0d6efd;
+  font-weight: 700;
+  color: #166534;
 }
 
 .driver-location-input {
   width: 100%;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  padding: 8px;
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  padding: 10px;
   margin: 8px 0;
 }
 
@@ -59,10 +60,11 @@
 }
 
 .driver-actions button {
-  border: 1px solid #cfd8ea;
-  border-radius: 6px;
-  background: #f7f9ff;
-  padding: 6px 10px;
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 8px 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -72,8 +74,8 @@
 }
 
 .driver-actions .btn-primary {
-  background: #0d6efd;
-  border-color: #0d6efd;
+  background: linear-gradient(135deg, #16a34a 0%, #0ea55b 100%);
+  border-color: #16a34a;
   color: #fff;
 }
 

@@ -15,6 +15,7 @@ const DriverAssignmentDetail = () => {
   const [locationText, setLocationText] = useState('');
   const [saving, setSaving] = useState(false);
   const [routePath, setRoutePath] = useState([]);
+  const [routeMeta, setRouteMeta] = useState(null);
   const gpsIntervalRef = useRef(null);
   const gpsUpdatingRef = useRef(false);
 
@@ -191,20 +192,38 @@ const DriverAssignmentDetail = () => {
         || assignment.delivery_longitude == null
       ) {
         setRoutePath([]);
+        setRouteMeta(null);
         return;
       }
       try {
         const url = `https://router.project-osrm.org/route/v1/driving/${assignment.current_longitude},${assignment.current_latitude};${assignment.delivery_longitude},${assignment.delivery_latitude}?overview=full&geometries=geojson`;
         const response = await fetch(url);
         const data = await response.json();
-        const coords = data?.routes?.[0]?.geometry?.coordinates || [];
+        const firstRoute = data?.routes?.[0];
+        const coords = firstRoute?.geometry?.coordinates || [];
         setRoutePath(coords.map((pair) => [pair[1], pair[0]]));
+        setRouteMeta(
+          firstRoute
+            ? {
+              distanceKm: Number(firstRoute.distance || 0) / 1000,
+              durationMin: Number(firstRoute.duration || 0) / 60,
+            }
+            : null
+        );
       } catch (error) {
         setRoutePath([]);
+        setRouteMeta(null);
       }
     };
     fetchRoute();
   }, [assignment]);
+
+  const formatRouteSummary = (meta) => {
+    if (!meta) return '';
+    const km = Number(meta.distanceKm || 0).toFixed(1);
+    const min = Math.max(1, Math.round(Number(meta.durationMin || 0)));
+    return `ระยะทางประมาณ ${km} กม. · ใช้เวลาประมาณ ${min} นาที`;
+  };
 
   if (loading) {
     return <div className="loading">กำลังโหลดงานจัดส่ง...</div>;
@@ -320,6 +339,9 @@ const DriverAssignmentDetail = () => {
               <span>จุดสีแดง: ลูกค้า</span>
               <span>เส้นสีน้ำเงิน: เส้นทางตามถนน</span>
             </div>
+            {hasDriverPosition && hasDeliveryPosition && routeMeta && (
+              <small className="driver-location-time">{formatRouteSummary(routeMeta)}</small>
+            )}
           </div>
         )}
         <div className="driver-assignment-row">

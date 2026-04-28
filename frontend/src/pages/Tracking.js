@@ -13,6 +13,7 @@ const Tracking = () => {
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [routePath, setRoutePath] = useState([]);
+  const [routeMeta, setRouteMeta] = useState(null);
   const isAdminTracking = location.pathname.startsWith('/admin/');
 
   useEffect(() => {
@@ -103,6 +104,7 @@ const Tracking = () => {
         || trackingInfo.deliveryLongitude == null
       ) {
         setRoutePath([]);
+        setRouteMeta(null);
         return;
       }
 
@@ -110,15 +112,32 @@ const Tracking = () => {
         const url = `https://router.project-osrm.org/route/v1/driving/${trackingInfo.currentLongitude},${trackingInfo.currentLatitude};${trackingInfo.deliveryLongitude},${trackingInfo.deliveryLatitude}?overview=full&geometries=geojson`;
         const response = await fetch(url);
         const data = await response.json();
-        const coords = data?.routes?.[0]?.geometry?.coordinates || [];
+        const firstRoute = data?.routes?.[0];
+        const coords = firstRoute?.geometry?.coordinates || [];
         const latLng = coords.map((pair) => [pair[1], pair[0]]);
         setRoutePath(Array.isArray(latLng) ? latLng : []);
+        setRouteMeta(
+          firstRoute
+            ? {
+              distanceKm: Number(firstRoute.distance || 0) / 1000,
+              durationMin: Number(firstRoute.duration || 0) / 60,
+            }
+            : null
+        );
       } catch (error) {
         setRoutePath([]);
+        setRouteMeta(null);
       }
     };
     fetchRoute();
   }, [trackingInfo]);
+
+  const formatRouteSummary = (meta) => {
+    if (!meta) return '';
+    const km = Number(meta.distanceKm || 0).toFixed(1);
+    const min = Math.max(1, Math.round(Number(meta.durationMin || 0)));
+    return `ระยะทางประมาณ ${km} กม. · ใช้เวลาประมาณ ${min} นาที`;
+  };
 
   const getStatusText = (status) => {
     const statusMap = {
@@ -310,6 +329,9 @@ const Tracking = () => {
                     <span>จุดสีแดง: ลูกค้า</span>
                     {shouldShowRoute && <span>เส้นสีน้ำเงิน: เส้นทางไปส่ง</span>}
                   </div>
+                )}
+                {shouldShowRoute && routeMeta && (
+                  <small className="driver-location-time">{formatRouteSummary(routeMeta)}</small>
                 )}
                 {!hasDriverPosition && (
                   <small className="driver-location-time">

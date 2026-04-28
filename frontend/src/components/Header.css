@@ -5,12 +5,12 @@
   z-index: 1000;
   background: linear-gradient(135deg, #06c755 0%, #00b14f 100%);
   color: #fff;
-  box-shadow: 0 8px 20px rgba(0, 134, 63, 0.18);
+  box-shadow: 0 8px 20px rgba(0, 134, 63, 0.16);
   padding-top: env(safe-area-inset-top);
 }
 
 .header-content {
-  height: 58px;
+  height: 60px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -31,7 +31,7 @@
 }
 
 .logo-text {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   letter-spacing: 0.2px;
 }
 
@@ -114,9 +114,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.985);
   border-top: 1px solid #e8edf1;
-  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -8px 18px rgba(15, 23, 42, 0.08);
   display: none;
   z-index: 1200;
   padding-bottom: env(safe-area-inset-bottom);
@@ -124,14 +124,14 @@
 
 .liff-bottom-nav a {
   flex: 1;
-  color: #5f6f7b;
+  color: #64748b;
   text-decoration: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 10px 4px 9px;
+  padding: 9px 4px 9px;
   font-size: 1.05rem;
 }
 
@@ -142,7 +142,8 @@
 }
 
 .liff-bottom-nav a.active {
-  color: #00b14f;
+  color: #16a34a;
+  font-weight: 700;
 }
 
 @media (max-width: 1024px) {
