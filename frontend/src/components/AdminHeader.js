@@ -125,8 +125,10 @@ const AdminHeader = () => {
       bottom: isCompact ? 'auto' : 0,
       width: isCompact ? 'auto' : 240,
       zIndex: 1000,
-      overflowY: isCompact ? 'visible' : 'auto',
-      WebkitOverflowScrolling: 'touch'
+      overflowY: isCompact ? 'visible' : 'scroll',
+      overflowX: 'hidden',
+      scrollbarGutter: isCompact ? 'auto' : 'stable',
+      WebkitOverflowScrolling: 'touch',
     }}>
       <div style={{
         display: 'flex',

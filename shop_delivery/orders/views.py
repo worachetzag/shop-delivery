@@ -17,6 +17,7 @@ from accounts.models import DriverProfile, StaffAuditLog
 from accounts.permissions import is_admin_user as _is_admin_user
 from accounts.staff_audit import log_staff_audit
 from products.models import Product
+from line_bot.notify import send_order_status_notification
 from .models import Order, OrderItem, DriverAssignment, StoreLocation
 from .store_location import get_store_location_payload
 from .stock_helpers import (
@@ -480,6 +481,13 @@ class OrderStatusUpdateView(APIView):
                 summary=action_label_th[:500],
                 detail=audit_detail,
             )
+            send_order_status_notification(
+                order=order,
+                source='admin',
+                old_status=old_status,
+                new_status=order.status,
+                actor=request.user,
+            )
             
             return Response({
                 'message': 'อัปเดตสถานะสำเร็จ',
@@ -858,6 +866,15 @@ class DriverAssignmentStatusUpdateView(APIView):
                     'source': 'driver',
                 },
             )
+
+        send_order_status_notification(
+            order=order,
+            source='driver',
+            old_status=old_os,
+            new_status=order.status,
+            actor=request.user,
+            driver_status=assignment.get_status_display(),
+        )
 
         assignment = DriverAssignment.objects.select_related(
             'order', 'order__customer', 'order__customer__user', 'driver'

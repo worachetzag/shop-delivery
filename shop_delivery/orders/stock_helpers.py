@@ -94,11 +94,15 @@ def sync_order_stock_for_status_change(order, old_status: str, new_status: str):
             commit_items = _aggregated_line_items(order)
             counts = _quantities_by_product(order)
             for pid, qty in counts.items():
+                product = Product.objects.select_for_update().get(pk=pid)
+                # บางออเดอร์เก่าหรือมีการแก้สต็อกมือ อาจทำให้ reserved ต่ำกว่า qty
+                # ให้ปล่อยจองเท่าที่มีจริง เพื่อไม่ให้ติดลบ แต่ยังตัด stock ตามยอดขายจริง
+                releasable_reserved = min(int(product.reserved_quantity or 0), int(qty))
                 apply_stock_movement(
                     product_id=pid,
                     movement_type='sale_commit',
                     quantity_change=-qty,
-                    reserved_change=-qty,
+                    reserved_change=-releasable_reserved,
                     source_type='order',
                     source_id=order.order_number or str(order.id),
                     reference=f'order:{order.id}',
