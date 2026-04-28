@@ -13,6 +13,22 @@ const ProductDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
 
+  const resolveCategoryId = (p) => {
+    if (!p) return undefined;
+    if (p.category_id) return p.category_id;
+    if (typeof p.category === 'object' && p.category?.id) return p.category.id;
+    return undefined;
+  };
+
+  const resolveCategoryLabel = (p) => {
+    if (!p?.category) return '';
+    if (typeof p.category === 'string') return p.category;
+    if (typeof p.category === 'object') {
+      return p.category.name || '';
+    }
+    return '';
+  };
+
   const numericProductId = useMemo(() => Number(productId), [productId]);
 
   useEffect(() => {
@@ -29,7 +45,7 @@ const ProductDetail = () => {
 
         setProduct(productData || null);
         const relatedResponse = await productsService.getProducts({
-          category_id: productData?.category_id,
+          category_id: resolveCategoryId(productData),
           page_size: 8,
           ordering: 'name',
         }).catch(() => ({ results: [] }));
@@ -126,7 +142,9 @@ const ProductDetail = () => {
 
           <div className="product-detail-info">
             <h1>{product.name}</h1>
-            {!!product.category && <p className="product-detail-category">หมวดหมู่: {product.category}</p>}
+            {!!resolveCategoryLabel(product) && (
+              <p className="product-detail-category">หมวดหมู่: {resolveCategoryLabel(product)}</p>
+            )}
             <p className="product-detail-price">
               {formatPrice(product.price)} / {product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}
             </p>

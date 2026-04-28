@@ -13,13 +13,25 @@ const Home = () => {
     // Fetch featured products from API
     const fetchFeaturedProducts = async () => {
       try {
-        const response = await productsService.getProducts({
+        const featuredResponse = await productsService.getProducts({
           special_offer: 'true',
           page_size: 48,
         });
-        console.log('API Response:', response); // Debug log
-        const products = response.results || response || [];
-        setFeaturedProducts(Array.isArray(products) ? products : []);
+
+        let products = featuredResponse.results || featuredResponse || [];
+        products = Array.isArray(products) ? products : [];
+
+        // fallback: ถ้าไม่มีสินค้าโปรโมชัน ให้ดึงสินค้าทั่วไปมาแสดงบนหน้าแรกแทน
+        if (products.length === 0) {
+          const fallbackResponse = await productsService.getProducts({
+            page_size: 12,
+            ordering: '-created_at',
+          });
+          const fallbackList = fallbackResponse.results || fallbackResponse || [];
+          products = Array.isArray(fallbackList) ? fallbackList : [];
+        }
+
+        setFeaturedProducts(products);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching featured products:', error);
