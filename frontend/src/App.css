@@ -33,6 +33,28 @@
   padding-bottom: 24px;
 }
 
+.route-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 1600;
+  background: rgba(22, 163, 74, 0.15);
+}
+
+.route-loading-spinner {
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+  animation: route-loading-slide 0.9s ease-in-out infinite;
+}
+
+@keyframes route-loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
 /* Button Styles */
 .btn {
   padding: 0.72rem 1.05rem;

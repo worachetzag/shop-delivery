@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import AdminHeader from './components/AdminHeader';
@@ -26,6 +26,7 @@ import AdminOrderDetail from './pages/AdminOrderDetail';
 import AdminProductFormPage from './pages/AdminProductFormPage';
 import AdminStoreSettingsPage from './pages/AdminStoreSettingsPage';
 import AdminInventoryPage from './pages/AdminInventoryPage';
+import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import { PopupProvider } from './components/PopupProvider';
 import './App.css';
 
@@ -35,6 +36,8 @@ function AppContent() {
   const isAdminPage = location.pathname.startsWith('/admin');
   const isDriverPage = location.pathname.startsWith('/driver');
   const appRoleClass = isAdminPage ? 'app-role-admin' : (isDriverPage || location.pathname.startsWith('/customer') ? 'app-role-mobile' : 'app-role-mobile');
+  const [routeLoading, setRouteLoading] = useState(false);
+  const previousPathRef = useRef(location.pathname + location.search);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -85,10 +88,24 @@ function AppContent() {
       navigate('/customer', { replace: true });
     }
   }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    const nextPath = location.pathname + location.search;
+    if (previousPathRef.current === nextPath) return;
+    previousPathRef.current = nextPath;
+    setRouteLoading(true);
+    const timer = setTimeout(() => setRouteLoading(false), 250);
+    return () => clearTimeout(timer);
+  }, [location.pathname, location.search]);
   
   return (
     <div className={`App ${appRoleClass}`}>
       {isAdminPage ? <AdminHeader /> : <Header />}
+      {routeLoading && (
+        <div className="route-loading-overlay" aria-live="polite" aria-label="กำลังเปลี่ยนหน้า">
+          <div className="route-loading-spinner" />
+        </div>
+      )}
       <main className="main-content">
         <Routes>
           {/* Customer Routes (canonical) */}
@@ -245,6 +262,14 @@ function AppContent() {
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
                 <AdminInventoryPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/inventory/purchase-orders/:poId"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminPurchaseOrderDetailPage />
               </ProtectedRoute>
             )}
           />
