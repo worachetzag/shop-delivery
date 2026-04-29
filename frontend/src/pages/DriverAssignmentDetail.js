@@ -232,13 +232,37 @@ const DriverAssignmentDetail = () => {
       popup.info('ยังไม่มีพิกัดปลายทางสำหรับนำทาง');
       return;
     }
-    const destination = `${Number(assignment.delivery_latitude)},${Number(assignment.delivery_longitude)}`;
+    const destLat = Number(assignment.delivery_latitude);
+    const destLon = Number(assignment.delivery_longitude);
+    const destination = `${destLat},${destLon}`;
     const hasOrigin = assignment.current_latitude != null && assignment.current_longitude != null;
     const origin = hasOrigin
       ? `&origin=${Number(assignment.current_latitude)},${Number(assignment.current_longitude)}`
       : '';
-    const url = `https://www.google.com/maps/dir/?api=1${origin}&destination=${destination}&travelmode=driving`;
-    window.location.assign(url);
+    const webUrl = `https://www.google.com/maps/dir/?api=1${origin}&destination=${destination}&travelmode=driving`;
+
+    // มือถือคนขับ: พยายามเปิดแอปแผนที่โดยตรงก่อน ลดโอกาสเด้งแท็บใหม่ใน Chrome
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+
+    if (isIOS) {
+      const iosUrl = hasOrigin
+        ? `comgooglemaps://?saddr=${Number(assignment.current_latitude)},${Number(assignment.current_longitude)}&daddr=${destLat},${destLon}&directionsmode=driving`
+        : `comgooglemaps://?daddr=${destLat},${destLon}&directionsmode=driving`;
+      window.location.assign(iosUrl);
+      setTimeout(() => window.location.assign(webUrl), 900);
+      return;
+    }
+
+    if (isAndroid) {
+      const androidUrl = `google.navigation:q=${destLat},${destLon}&mode=d`;
+      window.location.assign(androidUrl);
+      setTimeout(() => window.location.assign(webUrl), 900);
+      return;
+    }
+
+    window.location.assign(webUrl);
   };
 
   if (loading) {
@@ -304,12 +328,16 @@ const DriverAssignmentDetail = () => {
               <strong>หมายเหตุ:</strong> {assignment.delivery_notes}
             </div>
           ) : null}
-          <div className="driver-customer-line">
-            <strong>การชำระเงิน:</strong>{' '}
+          <div className={`driver-payment-banner ${isCodPayment ? 'is-cod' : 'is-paid'}`}>
+            <div className="driver-payment-title">สถานะการเก็บเงิน</div>
             {isCodPayment ? (
-              <span className="driver-payment-cod">เก็บเงินปลายทาง {formatPrice(assignment.order_total_amount)}</span>
+              <div className="driver-payment-value">
+                ต้องเก็บเงินจากลูกค้า {formatPrice(assignment.order_total_amount)}
+              </div>
             ) : (
-              <span className="driver-payment-paid">ชำระแล้ว ({assignment.payment_method_display || 'โอนเงิน'})</span>
+              <div className="driver-payment-value">
+                ไม่ต้องเก็บเงิน (ลูกค้าชำระแล้ว · {assignment.payment_method_display || 'โอนเงิน'})
+              </div>
             )}
           </div>
         </div>
@@ -401,15 +429,6 @@ const DriverAssignmentDetail = () => {
         <div className="driver-next-step">
           ขั้นตอนถัดไป: {nextAction?.label || 'ไม่มี (งานเสร็จแล้ว)'}
         </div>
-
-        {['picked_up', 'on_the_way'].includes(assignment.status) && (
-          <input
-            className="driver-location-input"
-            placeholder="ตำแหน่งล่าสุด เช่น หน้าโรงเรียน..."
-            value={locationText}
-            onChange={(e) => setLocationText(e.target.value)}
-          />
-        )}
 
         <div className="driver-actions">
           {nextAction && (

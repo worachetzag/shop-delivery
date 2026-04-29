@@ -101,16 +101,18 @@ const DriverDashboard = () => {
                   </div>
                 ) : null}
                 <div className="driver-customer-line">
-                  <strong>การชำระเงิน:</strong>{' '}
-                  {assignment.payment_method === 'cod' ? (
-                    <span className="driver-payment-cod">
-                      เก็บเงินปลายทาง ฿{Number(assignment.order_total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  ) : (
-                    <span className="driver-payment-paid">
-                      ชำระแล้ว ({assignment.payment_method_display || 'โอนเงิน'})
-                    </span>
-                  )}
+                  <div className={`driver-payment-banner ${assignment.payment_method === 'cod' ? 'is-cod' : 'is-paid'}`}>
+                    <div className="driver-payment-title">สถานะการเก็บเงิน</div>
+                    {assignment.payment_method === 'cod' ? (
+                      <div className="driver-payment-value">
+                        ต้องเก็บเงินจากลูกค้า ฿{Number(assignment.order_total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    ) : (
+                      <div className="driver-payment-value">
+                        ไม่ต้องเก็บเงิน (ลูกค้าชำระแล้ว · {assignment.payment_method_display || 'โอนเงิน'})
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="driver-assignment-row driver-assignment-total-row">

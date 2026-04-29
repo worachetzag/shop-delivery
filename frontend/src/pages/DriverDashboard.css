@@ -221,3 +221,32 @@
   font-weight: 700;
   color: #166534;
 }
+
+.driver-payment-banner {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #dbe3ef;
+}
+
+.driver-payment-banner.is-cod {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.driver-payment-banner.is-paid {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+}
+
+.driver-payment-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: #334155;
+}
+
+.driver-payment-value {
+  font-size: 13px;
+  font-weight: 800;
+}

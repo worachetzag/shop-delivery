@@ -235,7 +235,7 @@ const AddressPicker = ({ onLocationSelect, onAddressSelect, initialLat = 13.7563
 
   const handleOpenGoogleMaps = () => {
     const url = `https://www.google.com/maps/search/?api=1&query=${selectedLat},${selectedLon}`;
-    window.open(url, '_blank');
+    window.location.assign(url);
   };
 
   const handleSearch = async () => {

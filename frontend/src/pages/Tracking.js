@@ -173,6 +173,12 @@ const Tracking = () => {
     });
   };
 
+  const callDriver = () => {
+    const phone = (trackingInfo?.driver?.phone || '').trim();
+    if (!phone) return;
+    window.location.assign(`tel:${phone.replace(/\s/g, '')}`);
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -240,6 +246,17 @@ const Tracking = () => {
                 <p className="driver-vehicle">{trackingInfo.driver.vehicle}</p>
                 <p className="driver-location">{trackingInfo.currentLocation}</p>
               </div>
+              {!!trackingInfo.driver?.phone && (
+                <div className="driver-actions">
+                  <button
+                    className="btn btn-primary btn-compact"
+                    type="button"
+                    onClick={callDriver}
+                  >
+                    📞 โทรหาคนขับ
+                  </button>
+                </div>
+              )}
             </div>
             {shouldShowMap && (
               <div className="driver-map-wrap">
