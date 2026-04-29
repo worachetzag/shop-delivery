@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
-import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
+import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { displayProductLineName } from '../utils/helpers';
 import './Orders.css';
 
@@ -54,9 +54,7 @@ const Orders = () => {
           const transformedOrders = sourceOrders.map((order) => {
             const items = order.items || order.order_items || [];
             const firstItem = items[0] || null;
-            const imageCandidate = firstItem
-              ? (firstItem.product?.image || firstItem.product_image || firstItem.image || firstItem.image_url)
-              : null;
+            const previewImage = firstItem ? pickLineItemImage(firstItem, PLACEHOLDER_IMAGES.sm) : PLACEHOLDER_IMAGES.sm;
             return {
             id: order.id,
             orderNumber: order.order_number || `#${order.id}`,
@@ -79,7 +77,7 @@ const Orders = () => {
             ),
             trackingNumber: order.tracking_number || null,
             previewItemName: firstItem ? displayProductLineName(firstItem) : 'ไม่มีรายการสินค้า',
-            previewImage: resolveMediaUrl(imageCandidate, PLACEHOLDER_IMAGES.sm),
+            previewImage,
           };
           });
           setOrders(transformedOrders);

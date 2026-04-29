@@ -4,28 +4,20 @@ import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
-import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
+import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
+import AddressPicker from '../components/AddressPicker';
 import './Checkout.css';
 
 const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
 
 function pickItemImage(item) {
-  const candidates = [
-    item?.product?.image,
-    item?.product?.image_url,
-    item?.product_image,
-    item?.image_url,
-    item?.image,
-  ];
-  const hit = candidates.find((value) => {
-    if (!value) return false;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'object' && typeof value.url === 'string') return value.url.trim().length > 0;
-    return false;
-  });
-  if (!hit) return FALLBACK_IMAGE;
-  if (typeof hit === 'object' && typeof hit.url === 'string') return resolveMediaUrl(hit.url, FALLBACK_IMAGE);
-  return resolveMediaUrl(hit, FALLBACK_IMAGE);
+  return pickLineItemImage(item, FALLBACK_IMAGE);
+}
+
+function parseCoord(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = typeof value === 'number' ? value : parseFloat(String(value), 10);
+  return Number.isFinite(n) ? n : null;
 }
 
 /** ตรวจข้อมูลจัดส่ง + ชำระเงินก่อนยืนยันคำสั่งซื้อ */
@@ -83,6 +75,8 @@ const Checkout = () => {
     province: '',
     postal_code: '',
     is_default: false,
+    latitude: null,
+    longitude: null,
   });
   const [shippingInfo, setShippingInfo] = useState({
     name: '',
@@ -432,25 +426,48 @@ const Checkout = () => {
     }));
   };
 
+  const handleNewAddressLocationSelect = (lat, lon) => {
+    setNewAddress((prev) => ({
+      ...prev,
+      latitude: parseCoord(lat),
+      longitude: parseCoord(lon),
+    }));
+  };
+
+  const handleNewAddressFromMap = (addressData) => {
+    setNewAddress((prev) => ({
+      ...prev,
+      address_line: addressData.address ?? prev.address_line,
+      district: addressData.district ?? prev.district,
+      province: addressData.province ?? prev.province,
+      postal_code: addressData.postalCode ?? prev.postal_code,
+    }));
+  };
+
   const handleCreateAddress = async (e) => {
     e.preventDefault();
     setSavingAddress(true);
     try {
       const token = localStorage.getItem('auth_token');
-      // หาพิกัดให้ได้ก่อนเพื่อให้ค่าส่งคำนวณได้ทันที
-      const geo = await geocodeAddressForCheckout({
-        address: newAddress.address_line,
-        district: newAddress.district,
-        province: newAddress.province,
-        postalCode: newAddress.postal_code,
-      });
+      let lat = parseCoord(newAddress.latitude);
+      let lng = parseCoord(newAddress.longitude);
+      if (lat == null || lng == null) {
+        const geo = await geocodeAddressForCheckout({
+          address: newAddress.address_line,
+          district: newAddress.district,
+          province: newAddress.province,
+          postalCode: newAddress.postal_code,
+        });
+        lat = geo?.latitude != null ? Number(geo.latitude) : null;
+        lng = geo?.longitude != null ? Number(geo.longitude) : null;
+      }
 
       const payload = {
         ...newAddress,
         recipient_name: newAddress.recipient_name || shippingInfo.name,
         phone_number: newAddress.phone_number || shippingInfo.phone,
-        latitude: geo?.latitude,
-        longitude: geo?.longitude,
+        latitude: lat,
+        longitude: lng,
       };
       const response = await fetch(`${config.API_BASE_URL}accounts/addresses/`, {
         method: 'POST',
@@ -482,6 +499,8 @@ const Checkout = () => {
         province: '',
         postal_code: '',
         is_default: false,
+        latitude: null,
+        longitude: null,
       });
     } catch (error) {
       popup.error(error.message || 'เพิ่มที่อยู่ไม่สำเร็จ');
@@ -822,6 +841,34 @@ const Checkout = () => {
                     <div className="form-group">
                       <label className="form-label">ชื่อผู้รับ</label>
                       <input name="recipient_name" value={newAddress.recipient_name} onChange={handleNewAddressChange} className="form-input" />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">เลือกตำแหน่งบนแผนที่</label>
+                    <p className="form-hint" style={{ margin: '0 0 10px', fontSize: '0.9rem', color: '#666' }}>
+                      คลิกบนแผนที่ ใช้ปุ่ม 📍 ตำแหน่งปัจจุบัน หรือค้นหาที่อยู่ (เหมือนในโปรไฟล์)
+                    </p>
+                    <div style={{ marginBottom: '16px' }}>
+                      <AddressPicker
+                        onLocationSelect={handleNewAddressLocationSelect}
+                        onAddressSelect={handleNewAddressFromMap}
+                        initialLat={parseCoord(newAddress.latitude) ?? 13.7563}
+                        initialLon={parseCoord(newAddress.longitude) ?? 100.5018}
+                      />
+                      {parseCoord(newAddress.latitude) != null && parseCoord(newAddress.longitude) != null && (
+                        <div
+                          style={{
+                            marginTop: '10px',
+                            padding: '10px',
+                            backgroundColor: '#f0f0f0',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          พิกัดที่เลือก: {parseCoord(newAddress.latitude).toFixed(6)},{' '}
+                          {parseCoord(newAddress.longitude).toFixed(6)}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="form-group">

@@ -2,27 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
-import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
+import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import './Cart.css';
-
-function pickItemImage(item) {
-  const candidates = [
-    item?.product?.image,
-    item?.product?.image_url,
-    item?.product_image,
-    item?.image_url,
-    item?.image,
-  ];
-  const hit = candidates.find((value) => {
-    if (!value) return false;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'object' && typeof value.url === 'string') return value.url.trim().length > 0;
-    return false;
-  });
-  if (!hit) return PLACEHOLDER_IMAGES.md;
-  if (typeof hit === 'object' && typeof hit.url === 'string') return resolveMediaUrl(hit.url, PLACEHOLDER_IMAGES.md);
-  return resolveMediaUrl(hit, PLACEHOLDER_IMAGES.md);
-}
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -130,11 +111,6 @@ const Cart = () => {
         <div className="page-header">
           <h1 className="page-title">ตะกร้าสินค้า</h1>
           <p className="page-subtitle">ตรวจสอบสินค้าในตะกร้าของคุณ</p>
-          <div className="cart-header-actions">
-            <Link to="/customer/checkout" className="btn btn-primary">
-              ไปหน้าชำระเงิน
-            </Link>
-          </div>
         </div>
 
         <div className="cart-content">
@@ -143,7 +119,7 @@ const Cart = () => {
               <div key={item.id} className="cart-item">
                 <div className="item-image">
                   <img 
-                    src={pickItemImage(item)}
+                    src={pickLineItemImage(item, PLACEHOLDER_IMAGES.md)}
                     alt={displayProductLineName(item)}
                     onError={(e) => {
                       e.target.src = PLACEHOLDER_IMAGES.md;

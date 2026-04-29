@@ -38,6 +38,14 @@ body {
   line-height: 1.45;
   font-size: 15px;
   padding: 0;
+  touch-action: manipulation;
+}
+
+/* iOS: ป้องกันซูมอัตโนมัติตอนโฟกัสช่อง <16px */
+input.form-input,
+textarea.form-textarea,
+select.form-input {
+  font-size: 16px;
 }
 
 #root {
