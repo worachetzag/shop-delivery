@@ -225,6 +225,20 @@ const DriverAssignmentDetail = () => {
     return `ระยะทางประมาณ ${km} กม. · ใช้เวลาประมาณ ${min} นาที`;
   };
 
+  const openGoogleMapsNavigation = () => {
+    if (!assignment?.delivery_latitude || !assignment?.delivery_longitude) {
+      popup.info('ยังไม่มีพิกัดปลายทางสำหรับนำทาง');
+      return;
+    }
+    const destination = `${Number(assignment.delivery_latitude)},${Number(assignment.delivery_longitude)}`;
+    const hasOrigin = assignment.current_latitude != null && assignment.current_longitude != null;
+    const origin = hasOrigin
+      ? `&origin=${Number(assignment.current_latitude)},${Number(assignment.current_longitude)}`
+      : '';
+    const url = `https://www.google.com/maps/dir/?api=1${origin}&destination=${destination}&travelmode=driving`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   if (loading) {
     return <div className="loading">กำลังโหลดงานจัดส่ง...</div>;
   }
@@ -373,6 +387,11 @@ const DriverAssignmentDetail = () => {
           {assignment.status === 'on_the_way' && (
             <button onClick={updateCurrentGps} disabled={saving}>
               อัปเดตพิกัด
+            </button>
+          )}
+          {hasDeliveryPosition && (
+            <button type="button" onClick={openGoogleMapsNavigation} disabled={saving}>
+              เปิด Google Maps
             </button>
           )}
           {canTransition(assignment.status, 'cancelled') && (
