@@ -286,3 +286,44 @@
   }
 }
 
+/* Minimal + branded refresh */
+.products-page {
+  padding: 0.7rem 0 1rem;
+}
+
+.filters-section,
+.results-section {
+  border-radius: 12px;
+  padding: 0.8rem;
+}
+
+.results-header {
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.45rem;
+}
+
+.results-count {
+  font-size: 0.85rem;
+}
+
+.search-box .form-input,
+.filter-group .form-input {
+  font-size: 0.86rem;
+}
+
+.filter-group .form-label {
+  font-size: 0.78rem;
+  margin-bottom: 0.3rem;
+}
+
+.floating-cart-button {
+  background: linear-gradient(135deg, #00b14f 0%, #009246 100%);
+  box-shadow: 0 8px 18px rgba(0, 177, 79, 0.26);
+  padding: 8px 12px;
+}
+
+.floating-cart-summary {
+  border-radius: 12px;
+  padding: 8px;
+}
+

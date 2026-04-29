@@ -1,8 +1,9 @@
 /* Product Card Styles */
 .product-card {
-  background: white;
+  background: var(--surface-card);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
   transition: all 0.3s ease;
   position: relative;
@@ -19,8 +20,8 @@
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 }
 
 .product-link {
@@ -50,12 +51,12 @@
 }
 
 .product-info {
-  padding: 1.5rem;
+  padding: 0.78rem;
   flex: 1;
 }
 
 .product-name {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #333;
   margin-bottom: 0.5rem;
@@ -80,9 +81,9 @@
 }
 
 .product-description {
-  color: #6c757d;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.62rem;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -92,7 +93,7 @@
 }
 
 .product-price {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #00B900;
   margin-bottom: 0.35rem;
@@ -111,7 +112,7 @@
 }
 
 .product-actions {
-  padding: 0 1.5rem 1.5rem;
+  padding: 0 0.78rem 0.78rem;
   margin-top: auto;
   display: flex;
   flex-direction: column;
@@ -168,8 +169,8 @@
 }
 
 .btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
   width: 100%;
   min-height: 40px;
 }

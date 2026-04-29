@@ -1,0 +1,31 @@
+.login-page {
+  min-height: calc(100vh - 56px);
+  padding: 1rem 0 1.4rem;
+}
+
+.login-card {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  padding: 1.1rem;
+}
+
+.login-card h2 {
+  font-size: 1.15rem;
+  margin-bottom: 0.4rem;
+  color: var(--text-primary);
+}
+
+.login-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+
+.login-action {
+  display: grid;
+  gap: 0.6rem;
+}

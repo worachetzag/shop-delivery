@@ -319,3 +319,47 @@
   }
 }
 
+/* Minimal + branded refresh */
+.orders-page {
+  padding: 0.8rem 0 1rem;
+}
+
+.filter-tabs {
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.filter-tab {
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  border-width: 1px;
+}
+
+.order-card {
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.order-info h3 {
+  font-size: 0.9rem;
+}
+
+.order-date,
+.order-list-summary {
+  font-size: 0.74rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.52rem;
+  font-size: 0.7rem;
+}
+
+.order-total {
+  font-size: 0.86rem;
+}
+
+.total-amount {
+  font-size: 0.88rem;
+}
+

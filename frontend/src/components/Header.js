@@ -102,7 +102,7 @@ const Header = () => {
     <header className="header">
       <div className="header-content">
         <Link to={isDriverMode ? '/driver/dashboard' : '/customer'} className="logo">
-          <span className="logo-icon">🛵</span>
+          <span className="logo-icon" aria-hidden="true">SP</span>
           <span className="logo-text">Samsung Panich</span>
         </Link>
 
@@ -125,10 +125,10 @@ const Header = () => {
           {isLoggedIn ? (
             <>
               {!isMobileView && !isDriverMode && (
-                <Link to="/customer/cart" className="cart-link">🛒 ตะกร้า</Link>
+                <Link to="/customer/cart" className="cart-link">ตะกร้า</Link>
               )}
               {isDriverMode ? (
-                !isMobileView && <span className="cart-link">🚚 โหมดคนขับ</span>
+                !isMobileView && <span className="cart-link">โหมดคนขับ</span>
               ) : (
                 <Link to="/customer/profile" className="user-avatar">
                   {userProfile?.pictureUrl ? (
@@ -170,23 +170,23 @@ const Header = () => {
           ) : (
             <>
               <Link to="/customer" className={isActive('/customer') ? 'active' : ''}>
-                <span>🏠</span>
+                <span>หน้าแรก</span>
                 <small>หน้าแรก</small>
               </Link>
               <Link to="/customer/products" className={isActive('/customer/products') ? 'active' : ''}>
-                <span>🛍️</span>
+                <span>สินค้า</span>
                 <small>สินค้า</small>
               </Link>
               <Link to="/customer/cart" className={isActive('/customer/cart') ? 'active' : ''}>
-                <span>🛒</span>
+                <span>ตะกร้า</span>
                 <small>ตะกร้า</small>
               </Link>
               <Link to="/customer/orders" className={isActiveGroup(['/customer/orders', '/customer/tracking']) ? 'active' : ''}>
-                <span>📦</span>
+                <span>ออเดอร์</span>
                 <small>ออเดอร์</small>
               </Link>
               <Link to={isLoggedIn ? '/customer/profile' : '/customer/login'} className={isActiveGroup(['/customer/profile', '/customer/login']) ? 'active' : ''}>
-                <span>{isLoggedIn ? '👤' : '🔐'}</span>
+                <span>{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</span>
                 <small>{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</small>
               </Link>
             </>

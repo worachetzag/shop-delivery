@@ -1,7 +1,7 @@
 /* Tracking Page Styles */
 .tracking-page {
   min-height: 100vh;
-  padding: 1rem 0;
+  padding: 0.75rem 0 1rem;
 }
 
 .page-header {
@@ -31,10 +31,11 @@
 
 /* Order Summary */
 .order-summary {
-  background: white;
-  border-radius: 10px;
+  background: var(--surface-card);
+  border-radius: 12px;
   padding: 0.9rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
 }
 
 
@@ -73,10 +74,11 @@
 
 /* Driver Information */
 .driver-info {
-  background: white;
-  border-radius: 10px;
+  background: var(--surface-card);
+  border-radius: 12px;
   padding: 0.9rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
   height: fit-content;
 }
 

@@ -119,3 +119,31 @@
     display: none !important;
   }
 }
+
+/* Minimal + branded refresh */
+.detail-meta {
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.slip-upload-box,
+.receipt-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  padding: 10px;
+}
+
+.upload-hint,
+.receipt-row,
+.receipt-item {
+  font-size: 0.82rem;
+}
+
+.receipt-title {
+  font-size: 0.95rem;
+}
+
+.receipt-status {
+  font-size: 0.72rem;
+}

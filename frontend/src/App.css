@@ -9,8 +9,8 @@
 
 .App.app-role-mobile {
   max-width: 480px;
-  background: #f8fafc;
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 10px 30px rgba(15, 23, 42, 0.12);
+  background: var(--surface-bg);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.03), 0 8px 22px rgba(15, 23, 42, 0.1);
 }
 
 .App.app-role-admin {
@@ -22,7 +22,7 @@
 
 .main-content {
   flex: 1;
-  padding-top: 10px;
+  padding-top: 8px;
   padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
@@ -57,10 +57,10 @@
 
 /* Button Styles */
 .btn {
-  padding: 0.72rem 1.05rem;
+  padding: 0.58rem 0.92rem;
   border: 1px solid transparent;
-  border-radius: 10px;
-  font-size: 0.96rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -71,9 +71,9 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #16a34a 0%, #0ea55b 100%);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-strong) 100%);
   color: white;
-  box-shadow: 0 6px 14px rgba(22, 163, 74, 0.24);
+  box-shadow: 0 4px 12px rgba(0, 177, 79, 0.25);
 }
 
 .btn-primary:hover {
@@ -82,9 +82,9 @@
 }
 
 .btn-secondary {
-  background: #eef2f7;
-  color: #1f2937;
-  border-color: #d7dee8;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  border-color: var(--border-soft);
 }
 
 .btn-secondary:hover {
@@ -93,8 +93,8 @@
 
 .btn-outline {
   background: transparent;
-  color: #0f766e;
-  border: 1px solid #a7f3d0;
+  color: var(--brand-primary-strong);
+  border: 1px solid #c9e8d9;
 }
 
 .btn-outline:hover {
@@ -148,12 +148,12 @@ button.btn:disabled {
 
 /* Card Styles */
 .card {
-  background: white;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
-  padding: 1.1rem;
-  margin-bottom: 1rem;
+  background: var(--surface-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  padding: 0.95rem;
+  margin-bottom: 0.8rem;
 }
 
 .card-header {
@@ -240,62 +240,63 @@ button.btn:disabled {
 
 /* Form Styles */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.9rem;
 }
 
 .form-label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
+  font-size: 0.86rem;
 }
 
 .form-input {
   width: 100%;
-  padding: 0.72rem 0.78rem;
-  border: 1px solid #d7dee8;
-  border-radius: 10px;
-  font-size: 0.96rem;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
   background: #fff;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.14);
 }
 
 .form-textarea {
   width: 100%;
-  padding: 0.72rem 0.78rem;
-  border: 1px solid #d7dee8;
-  border-radius: 10px;
-  font-size: 0.96rem;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
   resize: vertical;
   min-height: 100px;
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.14);
 }
 
 /* Mobile app surface polish (customer + driver only) */
 .App.app-role-mobile .page-header {
-  margin-bottom: 1.2rem;
+  margin-bottom: 0.85rem;
 }
 
 .App.app-role-mobile .page-title {
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .App.app-role-mobile .page-subtitle {
-  font-size: 0.9rem;
-  color: #64748b;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
 }
 
 .App.app-role-mobile .order-summary,
@@ -307,9 +308,9 @@ button.btn:disabled {
 .App.app-role-mobile .product-detail-card,
 .App.app-role-mobile .related-products-section,
 .App.app-role-mobile .driver-assignment-card {
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
 }
 
 /* Responsive Design */

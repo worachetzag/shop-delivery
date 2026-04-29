@@ -4,16 +4,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 20px;
-  padding: 12px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: #f8fbf9;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
 }
 
 .api-pagination-info {
-  font-size: 14px;
-  color: #64748b;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .api-pagination-actions {
@@ -23,11 +23,11 @@
 }
 
 .api-pagination-btn {
-  padding: 6px 14px;
+  padding: 5px 10px;
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-soft);
   background: #fff;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -37,9 +37,9 @@
 }
 
 .api-pagination-page {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  color: #334155;
-  min-width: 88px;
+  color: var(--text-primary);
+  min-width: 72px;
   text-align: center;
 }

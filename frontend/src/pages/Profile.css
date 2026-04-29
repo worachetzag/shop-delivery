@@ -322,3 +322,58 @@
   }
 }
 
+/* Minimal + branded refresh */
+.profile-page {
+  padding: 0.8rem 0 1rem;
+}
+
+.profile-content {
+  gap: 0.8rem;
+}
+
+.profile-section,
+.addresses-section,
+.account-actions-section {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  padding: 1rem;
+}
+
+.section-header {
+  margin-bottom: 0.9rem;
+}
+
+.section-title {
+  font-size: 1rem;
+}
+
+.profile-avatar {
+  width: 84px;
+  height: 84px;
+  font-size: 1.7rem;
+  background: #e3f7eb;
+  color: var(--brand-primary-strong);
+}
+
+.avatar-text {
+  font-size: 1.8rem;
+}
+
+.add-address-form {
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.address-card,
+.action-card {
+  border-width: 1px;
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+
+.action-icon {
+  font-size: 1.3rem;
+  width: 40px;
+}
+
