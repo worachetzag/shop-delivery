@@ -171,23 +171,18 @@ const Header = () => {
             <>
               <Link to="/customer" className={isActive('/customer') ? 'active' : ''}>
                 <span>หน้าแรก</span>
-                <small>หน้าแรก</small>
               </Link>
               <Link to="/customer/products" className={isActive('/customer/products') ? 'active' : ''}>
                 <span>สินค้า</span>
-                <small>สินค้า</small>
               </Link>
               <Link to="/customer/cart" className={isActive('/customer/cart') ? 'active' : ''}>
                 <span>ตะกร้า</span>
-                <small>ตะกร้า</small>
               </Link>
               <Link to="/customer/orders" className={isActiveGroup(['/customer/orders', '/customer/tracking']) ? 'active' : ''}>
                 <span>ออเดอร์</span>
-                <small>ออเดอร์</small>
               </Link>
               <Link to={isLoggedIn ? '/customer/profile' : '/customer/login'} className={isActiveGroup(['/customer/profile', '/customer/login']) ? 'active' : ''}>
                 <span>{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</span>
-                <small>{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</small>
               </Link>
             </>
           )}
