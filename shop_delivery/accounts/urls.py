@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/staff/<int:user_id>/', views.AdminStaffDetailView.as_view(), name='admin-staff-detail'),
     path('admin/drivers/', views.AdminDriverListCreateView.as_view(), name='admin-driver-list-create'),
     path('admin/drivers/<int:driver_id>/', views.AdminDriverDetailView.as_view(), name='admin-driver-detail'),
+    path('geocode-address/', views.AddressGeocodeView.as_view(), name='geocode-address'),
 ]

@@ -38,6 +38,10 @@ function checkoutShippingIssues(shippingInfo, paymentMethod) {
   if (!(shippingInfo.district || '').trim()) issues.push('อำเภอ/เขต');
   if (!(shippingInfo.province || '').trim()) issues.push('จังหวัด');
   if (!/^\d{5}$/.test((shippingInfo.postalCode || '').trim())) issues.push('รหัสไปรษณีย์ 5 หลัก');
+  // ระบบคำนวณค่าส่งตามระยะทาง ต้องมีพิกัดปลายทาง
+  if (shippingInfo.latitude == null || shippingInfo.longitude == null) {
+    issues.push('ไม่พบพิกัดที่อยู่ (รอให้ระบบคำนวณค่าส่งก่อน)');
+  }
   if (!paymentMethod) issues.push('วิธีชำระเงิน');
   return issues;
 }
@@ -54,6 +58,7 @@ function savedAddressIssues(addr) {
     if (!(addr.district || '').trim()) issues.push('อำเภอ/เขตในที่อยู่ที่บันทึก');
     if (!(addr.province || '').trim()) issues.push('จังหวัดในที่อยู่ที่บันทึก');
     if (!/^\d{5}$/.test((addr.postal_code || '').trim())) issues.push('รหัสไปรษณีย์ 5 หลักในที่อยู่ที่บันทึก');
+    if (addr.latitude == null || addr.longitude == null) issues.push('ที่อยู่ที่บันทึกนี้ยังไม่มีพิกัดสำหรับค่าส่ง');
   }
   return issues;
 }
@@ -85,13 +90,20 @@ const Checkout = () => {
     address: '',
     district: '',
     province: '',
-    postalCode: ''
+    postalCode: '',
+    latitude: null,
+    longitude: null,
   });
   const [paymentMethod, setPaymentMethod] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState(null);
   const [createdOrderNumber, setCreatedOrderNumber] = useState('');
+  const [deliveryFeeEstimate, setDeliveryFeeEstimate] = useState(null);
+  const [deliveryDistanceEstimateKm, setDeliveryDistanceEstimateKm] = useState(null);
+  const [loadingDeliveryFeeEstimate, setLoadingDeliveryFeeEstimate] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodingError, setGeocodingError] = useState(null);
   const [promptPayInfo, setPromptPayInfo] = useState(null);
   const [selectedSlipFile, setSelectedSlipFile] = useState(null);
   const [uploadingSlip, setUploadingSlip] = useState(false);
@@ -108,8 +120,129 @@ const Checkout = () => {
       district: address.district || prev.district,
       province: address.province || prev.province,
       postalCode: address.postal_code || prev.postalCode,
+      latitude: address.latitude ?? prev.latitude,
+      longitude: address.longitude ?? prev.longitude,
     }));
   };
+
+  const haversineDistanceKm = (lat1, lon1, lat2, lon2) => {
+    const toRad = (v) => (Number(v) * Math.PI) / 180;
+    const R = 6371.0;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+    return R * c;
+  };
+
+  const [storeOrigin, setStoreOrigin] = useState({ latitude: null, longitude: null });
+
+  const geocodeAddressForCheckout = async (addr) => {
+    const token = localStorage.getItem('auth_token');
+    const payload = {
+      address_line: addr?.address,
+      district: addr?.district,
+      province: addr?.province,
+      postal_code: addr?.postalCode,
+    };
+
+    const response = await fetch(`${config.API_BASE_URL}accounts/geocode-address/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.error || data?.detail || 'ไม่สามารถหาพิกัดได้');
+    }
+    return data;
+  };
+
+  useEffect(() => {
+    const loadStoreLocation = async () => {
+      try {
+        const response = await fetch(`${config.API_BASE_URL}orders/store-location/`, {
+          method: 'GET',
+          headers: { 'ngrok-skip-browser-warning': 'true' },
+          credentials: 'include',
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setStoreOrigin({
+          latitude: data?.latitude ?? null,
+          longitude: data?.longitude ?? null,
+        });
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadStoreLocation();
+  }, []);
+
+  // กรณี "กรอกที่อยู่เอง" ให้หาพิกัด (lat/lng) อัตโนมัติเพื่อคำนวณค่าส่งตามระยะทาง
+  useEffect(() => {
+    if (!manualShippingEntry) return;
+    if (showAddressForm) return; // โหมดบันทึกที่อยู่ใหม่จะ geocode ก่อน submit
+
+    if (shippingInfo?.latitude != null && shippingInfo?.longitude != null) return;
+
+    const pc = (shippingInfo?.postalCode || '').trim();
+    const canQuery =
+      (shippingInfo?.address || '').trim().length > 0 &&
+      (shippingInfo?.district || '').trim().length > 0 &&
+      (shippingInfo?.province || '').trim().length > 0 &&
+      /^\d{5}$/.test(pc);
+
+    if (!canQuery) return;
+
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      setGeocoding(true);
+      setGeocodingError(null);
+      try {
+        const data = await geocodeAddressForCheckout({
+          address: shippingInfo.address,
+          district: shippingInfo.district,
+          province: shippingInfo.province,
+          postalCode: shippingInfo.postalCode,
+        });
+        if (cancelled) return;
+        setShippingInfo((prev) => ({
+          ...prev,
+          latitude: data?.latitude != null ? Number(data.latitude) : prev.latitude,
+          longitude: data?.longitude != null ? Number(data.longitude) : prev.longitude,
+        }));
+      } catch (e) {
+        if (cancelled) return;
+        setGeocodingError(e?.message || 'ไม่สามารถหาพิกัดได้');
+      } finally {
+        if (cancelled) return;
+        setGeocoding(false);
+      }
+    }, 700);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [
+    manualShippingEntry,
+    showAddressForm,
+    shippingInfo?.address,
+    shippingInfo?.district,
+    shippingInfo?.province,
+    shippingInfo?.postalCode,
+    shippingInfo?.latitude,
+    shippingInfo?.longitude,
+  ]);
 
   useEffect(() => {
     // Load cart items from API
@@ -199,13 +332,70 @@ const Checkout = () => {
   };
 
   const calculateShipping = () => {
-    const subtotal = calculateSubtotal();
-    return subtotal >= 5000 ? 0 : 100;
+    if (deliveryFeeEstimate == null) return null;
+    return deliveryFeeEstimate;
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateShipping();
+    const shipping = calculateShipping();
+    return calculateSubtotal() + (shipping == null ? 0 : shipping);
   };
+
+  useEffect(() => {
+    const canCalc =
+      storeOrigin?.latitude != null &&
+      storeOrigin?.longitude != null &&
+      shippingInfo?.latitude != null &&
+      shippingInfo?.longitude != null;
+
+    if (!canCalc) return;
+    const distanceKm = haversineDistanceKm(
+      Number(storeOrigin.latitude),
+      Number(storeOrigin.longitude),
+      Number(shippingInfo.latitude),
+      Number(shippingInfo.longitude)
+    );
+
+    if (!Number.isFinite(distanceKm) || distanceKm <= 0) {
+      setDeliveryFeeEstimate(0);
+      setDeliveryDistanceEstimateKm(0);
+      return;
+    }
+
+    // เรียก backend เพื่อคำนวณค่าจัดส่งตาม tier (DB-configurable)
+    let cancelled = false;
+    setLoadingDeliveryFeeEstimate(true);
+    setDeliveryFeeEstimate(null);
+
+    (async () => {
+      try {
+        const response = await fetch(`${config.API_BASE_URL}logistics/calculate-fee/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ distance: Number(distanceKm.toFixed(2)) }),
+        });
+        if (!response.ok) throw new Error('calculate-fee failed');
+        const data = await response.json();
+        if (cancelled) return;
+        setDeliveryFeeEstimate(Number(data?.delivery_fee ?? 0));
+        setDeliveryDistanceEstimateKm(Number(data?.distance ?? distanceKm));
+      } catch (e) {
+        if (cancelled) return;
+        setDeliveryFeeEstimate(null);
+        setDeliveryDistanceEstimateKm(null);
+      } finally {
+        if (!cancelled) setLoadingDeliveryFeeEstimate(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storeOrigin?.latitude, storeOrigin?.longitude, shippingInfo?.latitude, shippingInfo?.longitude]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
@@ -247,10 +437,20 @@ const Checkout = () => {
     setSavingAddress(true);
     try {
       const token = localStorage.getItem('auth_token');
+      // หาพิกัดให้ได้ก่อนเพื่อให้ค่าส่งคำนวณได้ทันที
+      const geo = await geocodeAddressForCheckout({
+        address: newAddress.address_line,
+        district: newAddress.district,
+        province: newAddress.province,
+        postalCode: newAddress.postal_code,
+      });
+
       const payload = {
         ...newAddress,
         recipient_name: newAddress.recipient_name || shippingInfo.name,
         phone_number: newAddress.phone_number || shippingInfo.phone,
+        latitude: geo?.latitude,
+        longitude: geo?.longitude,
       };
       const response = await fetch(`${config.API_BASE_URL}accounts/addresses/`, {
         method: 'POST',
@@ -370,6 +570,8 @@ const Checkout = () => {
           delivery_address: fullAddress,
           delivery_phone: shippingInfo.phone,
           delivery_notes: `ผู้รับ: ${shippingInfo.name}`,
+          delivery_latitude: shippingInfo.latitude,
+          delivery_longitude: shippingInfo.longitude,
           items: cartItems.map((item) => ({
             product_id: item.productId,
             quantity: item.quantity,
@@ -544,7 +746,15 @@ const Checkout = () => {
                 <div className="total-row">
                   <span>ค่าจัดส่ง:</span>
                   <span>
-                    {calculateShipping() === 0 ? (
+                    {deliveryFeeEstimate == null ? (
+                      <span className="free-shipping">
+                        {geocodingError
+                          ? geocodingError
+                          : geocoding
+                            ? 'กำลังหาพิกัด...'
+                            : 'กำลังคำนวณ...'}
+                      </span>
+                    ) : calculateShipping() === 0 ? (
                       <span className="free-shipping">ฟรี</span>
                     ) : (
                       formatPrice(calculateShipping())

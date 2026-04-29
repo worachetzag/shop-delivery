@@ -1,5 +1,6 @@
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from shop_delivery.pagination import StandardPagination
 from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404, render
@@ -17,6 +18,58 @@ from urllib.parse import urlencode
 from urllib.parse import quote_plus
 
 logger = logging.getLogger(__name__)
+
+
+class AddressGeocodeView(APIView):
+    """
+    Geocode ที่อยู่เพื่อให้ได้ latitude/longitude (ใช้ในหน้า Checkout ตอนกรอกที่อยู่ใหม่)
+    หมายเหตุ: ใช้ Nominatim (OpenStreetMap) แบบ public เพื่อความสะดวกในการพัฒนา/ทดสอบ
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        address_line = (request.data.get('address_line') or request.data.get('address') or '').strip()
+        district = (request.data.get('district') or '').strip()
+        province = (request.data.get('province') or '').strip()
+        postal_code = (request.data.get('postal_code') or request.data.get('postalCode') or '').strip()
+
+        query = ' '.join([p for p in [address_line, district, province, postal_code] if p]).strip()
+        if not query:
+            return Response({'error': 'address query ไม่ครบ'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Nominatim endpoint
+        url = 'https://nominatim.openstreetmap.org/search'
+        params = {
+            'format': 'json',
+            'limit': 1,
+            'q': query,
+        }
+
+        headers = {
+            # user-agent สำคัญตามนโยบายของ Nominatim
+            'User-Agent': 'shop-delivery/1.0 (contact: unknown)',
+            'Accept-Language': 'th',
+        }
+
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=8)
+            if resp.status_code != 200:
+                return Response({'error': 'geocode service error'}, status=status.HTTP_502_BAD_GATEWAY)
+
+            results = resp.json() if resp.text else []
+            if not results:
+                return Response({'error': 'ไม่พบพิกัดจากที่อยู่'}, status=status.HTTP_404_NOT_FOUND)
+
+            top = results[0]
+            lat = top.get('lat')
+            lon = top.get('lon')
+            if lat is None or lon is None:
+                return Response({'error': 'geocode ไม่ได้พิกัด'}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({'latitude': lat, 'longitude': lon}, status=status.HTTP_200_OK)
+        except requests.RequestException:
+            logger.exception('Geocode failed')
+            return Response({'error': 'geocode failed'}, status=status.HTTP_502_BAD_GATEWAY)
 
 def _line_callback_url(request):
     """Resolve LINE callback URL with predictable priority."""
