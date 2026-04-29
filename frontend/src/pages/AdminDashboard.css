@@ -251,6 +251,141 @@
   overflow-x: auto;
 }
 
+.admin-overview-chart {
+  background: #fff;
+  border: 1px solid #e8ebf3;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.admin-mini-chart {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-mini-chart-row {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-mini-chart-label {
+  font-size: 14px;
+  color: #24324b;
+  font-weight: 600;
+}
+
+.admin-mini-chart-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #edf1f8;
+  overflow: hidden;
+}
+
+.admin-mini-chart-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.admin-mini-chart-value {
+  font-size: 13px;
+  min-width: 64px;
+  text-align: right;
+  color: #41526f;
+  font-weight: 700;
+}
+
+.admin-trend-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 190px;
+}
+
+.admin-trend-chart.is-month {
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.admin-trend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-trend-filters {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-trend-filter-btn {
+  border: 1px solid #d7deee;
+  background: #f7f9ff;
+  color: #334155;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-trend-filter-btn.active {
+  background: #3b5bdb;
+  border-color: #3b5bdb;
+  color: #fff;
+}
+
+.admin-trend-column {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.admin-trend-value {
+  font-size: 12px;
+  color: #344054;
+  font-weight: 700;
+}
+
+.admin-trend-bar-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 42px;
+  height: 120px;
+  border-radius: 10px;
+  background: #eef2ff;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.admin-trend-bar {
+  width: 100%;
+  background: linear-gradient(180deg, #5b7cfa 0%, #3b5bdb 100%);
+  border-radius: 10px;
+}
+
+.admin-trend-revenue-dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f97316;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.admin-trend-label {
+  font-size: 12px;
+  color: #667085;
+}
+
 .products-manage-table table {
   width: 100%;
   border-collapse: collapse;
@@ -455,6 +590,33 @@ button.danger {
 
   .personnel-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-mini-chart-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .admin-mini-chart-value {
+    text-align: left;
+  }
+
+  .admin-trend-chart {
+    gap: 6px;
+  }
+
+  .admin-trend-chart.is-month {
+    gap: 3px;
+  }
+
+  .admin-trend-bar-wrap {
+    max-width: 30px;
+    height: 92px;
+  }
+
+  .admin-trend-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

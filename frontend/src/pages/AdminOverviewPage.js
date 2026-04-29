@@ -1,21 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
 import config from '../config';
+import './AdminDashboard.css';
 
 const AdminOverviewPage = () => {
   const [loading, setLoading] = useState(true);
+  const [trendLoading, setTrendLoading] = useState(true);
+  const [trendDays, setTrendDays] = useState(7);
   const [stats, setStats] = useState({
     total_orders: 0,
     pending_orders: 0,
     total_revenue: 0,
     active_drivers: 0,
   });
+  const [dailyTrend, setDailyTrend] = useState([]);
 
   useEffect(() => {
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
     const loadStats = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
         const response = await fetch(`${config.API_BASE_URL}orders/admin/stats/`, {
           headers: {
             Authorization: `Token ${token}`,
@@ -39,13 +42,92 @@ const AdminOverviewPage = () => {
         setLoading(false);
       }
     };
+    const loadTrend = async () => {
+      setTrendLoading(true);
+      try {
+        const response = await fetch(`${config.API_BASE_URL}orders/list/?page_size=200`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          throw new Error('Failed to load orders trend');
+        }
+        const data = await response.json();
+        const list = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
+        setDailyTrend(list);
+      } catch (error) {
+        setDailyTrend([]);
+      } finally {
+        setTrendLoading(false);
+      }
+    };
     loadStats();
+    loadTrend();
   }, []);
+
+  const chartItems = useMemo(() => {
+    const revenueInThousands = Math.round((stats.total_revenue || 0) / 1000);
+    const rows = [
+      { key: 'total_orders', label: 'ออเดอร์ทั้งหมด', value: Number(stats.total_orders || 0), color: '#667eea' },
+      { key: 'pending_orders', label: 'รอจัดเตรียม', value: Number(stats.pending_orders || 0), color: '#f5576c' },
+      { key: 'active_drivers', label: 'คนขับพร้อมงาน', value: Number(stats.active_drivers || 0), color: '#34d399' },
+      { key: 'revenue_k', label: 'รายได้รวม (พันบาท)', value: Number(revenueInThousands || 0), color: '#00c2ff' },
+    ];
+    const max = Math.max(...rows.map((item) => item.value), 1);
+    return rows.map((item) => ({
+      ...item,
+      percent: Math.max(8, Math.round((item.value / max) * 100)),
+    }));
+  }, [stats]);
+
+  const trendChartData = useMemo(() => {
+    if (!Array.isArray(dailyTrend)) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Array.from({ length: trendDays }, (_, idx) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (trendDays - 1 - idx));
+      return {
+        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+        dateText: date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }),
+        label: trendDays === 7
+          ? date.toLocaleDateString('th-TH', { weekday: 'short' })
+          : date.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }),
+        count: 0,
+        revenue: 0,
+      };
+    });
+    const dayMap = new Map(days.map((day) => [day.key, day]));
+    dailyTrend.forEach((order) => {
+      if (!order?.created_at) return;
+      const created = new Date(order.created_at);
+      if (Number.isNaN(created.getTime())) return;
+      const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(created.getDate()).padStart(2, '0')}`;
+      if (dayMap.has(key)) {
+        dayMap.get(key).count += 1;
+        dayMap.get(key).revenue += Number(order.total_amount || 0);
+      }
+    });
+    return days;
+  }, [dailyTrend, trendDays]);
+
+  const maxTrendValue = useMemo(
+    () => Math.max(...trendChartData.map((item) => item.count), 1),
+    [trendChartData]
+  );
+  const maxTrendRevenue = useMemo(
+    () => Math.max(...trendChartData.map((item) => item.revenue), 1),
+    [trendChartData]
+  );
 
   return (
     <div className="admin-dashboard" style={{ padding: 16 }}>
       <h1 style={{ marginBottom: 8 }}>แอดมินร้านค้า</h1>
-      <p style={{ marginTop: 0, color: '#666', marginBottom: 16 }}>ภาพรวมระบบและทางลัดการจัดการ</p>
+      <p style={{ marginTop: 0, color: '#666', marginBottom: 16 }}>ภาพรวมระบบและข้อมูลเชิงสรุป</p>
 
       <div className="admin-stats" style={{ marginBottom: 16 }}>
         <div className="stat-card">
@@ -66,15 +148,83 @@ const AdminOverviewPage = () => {
         </div>
       </div>
 
-      <div className="products-manage-table">
-        <h3>ทางลัด</h3>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Link className="btn btn-primary" to="/admin/orders">จัดการคำสั่งซื้อ</Link>
-          <Link className="btn btn-secondary" to="/admin/products">จัดการสินค้า</Link>
-          <Link className="btn btn-secondary" to="/admin/personnel/staff">บุคลากร</Link>
-          <Link className="btn btn-secondary" to="/admin/store-settings/store">ตั้งค่าร้าน</Link>
-          <Link className="btn btn-secondary" to="/admin/inventory/overview">จัดการสต็อก</Link>
+      <div className="products-manage-table admin-overview-chart">
+        <h3>กราฟภาพรวม</h3>
+        <p className="muted" style={{ marginTop: 0, marginBottom: 12 }}>
+          เปรียบเทียบปริมาณข้อมูลหลักแบบรวดเร็ว
+        </p>
+        <div className="admin-mini-chart" role="img" aria-label="กราฟสรุปข้อมูลหน้าแอดมิน">
+          {chartItems.map((item) => (
+            <div className="admin-mini-chart-row" key={item.key}>
+              <div className="admin-mini-chart-label">{item.label}</div>
+              <div className="admin-mini-chart-track">
+                <div
+                  className="admin-mini-chart-fill"
+                  style={{
+                    width: `${item.percent}%`,
+                    background: item.color,
+                  }}
+                />
+              </div>
+              <div className="admin-mini-chart-value">
+                {item.key === 'revenue_k' ? `${item.value.toLocaleString()}k` : item.value.toLocaleString()}
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
+
+      <div className="products-manage-table admin-overview-chart" style={{ marginTop: 16 }}>
+        <div className="admin-trend-head">
+          <h3>แนวโน้มออเดอร์</h3>
+          <div className="admin-trend-filters">
+            <button
+              type="button"
+              className={`admin-trend-filter-btn ${trendDays === 7 ? 'active' : ''}`}
+              onClick={() => setTrendDays(7)}
+            >
+              7 วัน
+            </button>
+            <button
+              type="button"
+              className={`admin-trend-filter-btn ${trendDays === 30 ? 'active' : ''}`}
+              onClick={() => setTrendDays(30)}
+            >
+              30 วัน
+            </button>
+          </div>
+        </div>
+        <p className="muted" style={{ marginTop: 0, marginBottom: 12 }}>
+          จำนวนคำสั่งซื้อรายวันย้อนหลัง {trendDays} วัน
+        </p>
+        {trendLoading ? (
+          <div className="empty-state">กำลังโหลดกราฟ...</div>
+        ) : trendChartData.length === 0 ? (
+          <div className="empty-state">ยังไม่มีข้อมูลสำหรับแสดงกราฟ</div>
+        ) : (
+          <div className={`admin-trend-chart ${trendDays === 30 ? 'is-month' : ''}`} role="img" aria-label={`กราฟจำนวนออเดอร์ ${trendDays} วันล่าสุด`}>
+            {trendChartData.map((item) => (
+              <div
+                className="admin-trend-column"
+                key={item.key}
+                title={`${item.dateText}\nออเดอร์: ${item.count.toLocaleString()} รายการ\nรายได้: ฿${Math.round(item.revenue).toLocaleString()}`}
+              >
+                <div className="admin-trend-value">{item.count}</div>
+                <div className="admin-trend-bar-wrap">
+                  <div
+                    className="admin-trend-bar"
+                    style={{ height: `${Math.max(10, Math.round((item.count / maxTrendValue) * 100))}%` }}
+                  />
+                  <div
+                    className="admin-trend-revenue-dot"
+                    style={{ bottom: `${Math.max(6, Math.round((item.revenue / maxTrendRevenue) * 100))}%` }}
+                  />
+                </div>
+                <div className="admin-trend-label">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
