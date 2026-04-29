@@ -951,15 +951,17 @@ class DriverAssignmentStatusUpdateView(APIView):
                 },
             )
 
-        send_order_status_notification(
-            order=order,
-            source='driver',
-            old_status=old_os,
-            new_status=order.status,
-            actor=request.user,
-            driver_status=assignment.get_status_display(),
-            old_driver_status=old_driver_status_text,
-        )
+        # อัปเดตพิกัดอัตโนมัติ (status เดิม) ไม่ต้องส่ง LINE แจ้งเตือน
+        if next_status != current_status:
+            send_order_status_notification(
+                order=order,
+                source='driver',
+                old_status=old_os,
+                new_status=order.status,
+                actor=request.user,
+                driver_status=assignment.get_status_display(),
+                old_driver_status=old_driver_status_text,
+            )
 
         assignment = DriverAssignment.objects.select_related(
             'order', 'order__customer', 'order__customer__user', 'driver'

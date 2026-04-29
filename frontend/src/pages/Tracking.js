@@ -217,42 +217,24 @@ const Tracking = () => {
         </div>
 
         <div className="tracking-content">
-          {/* Order Summary */}
           <div className="order-summary">
-            <h3 className="section-title">สรุปคำสั่งซื้อ</h3>
+            <h3 className="section-title">สถานะคำสั่งซื้อ</h3>
             <div className="order-info">
-              <p><strong>หมายเลขคำสั่งซื้อ:</strong> {trackingInfo.trackingNumber}</p>
-              <p><strong>สถานะปัจจุบัน:</strong> 
-                <span 
+              <p><strong>หมายเลข:</strong> {trackingInfo.trackingNumber}</p>
+              <p>
+                <strong>สถานะ:</strong>
+                <span
                   className="status-badge"
                   style={{ backgroundColor: getStatusColor(trackingInfo.status) }}
                 >
                   {getStatusText(trackingInfo.status)}
                 </span>
               </p>
-            </div>
-
-            <div className="order-items">
-              {trackingInfo.items.map(item => (
-                <div key={item.id} className="order-item">
-                  <img 
-                    src={item.image} 
-                    alt={item.name}
-                    className="item-image"
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMAGES.sm;
-                    }}
-                  />
-                  <div className="item-details">
-                    <h4 className="item-name">{item.name}</h4>
-                    <p className="item-quantity">จำนวน: {item.quantity}</p>
-                  </div>
-                </div>
-              ))}
+              <p><strong>คนขับ:</strong> {trackingInfo.driver?.name || '-'}</p>
+              {!!trackingInfo.driver?.phone && <p><strong>โทร:</strong> {trackingInfo.driver.phone}</p>}
             </div>
           </div>
 
-          {/* Driver Information */}
           <div className="driver-info">
             <h3 className="section-title">ข้อมูลคนขับ</h3>
             <div className="driver-card">
@@ -266,7 +248,7 @@ const Tracking = () => {
               </div>
               <div className="driver-actions">
                 <button 
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-compact"
                   onClick={callDriver}
                 >
                   📞 โทรหา
@@ -324,13 +306,6 @@ const Tracking = () => {
                     อัปเดตล่าสุด: {formatDate(trackingInfo.lastLocationAt)}
                   </small>
                 )}
-                {(hasDeliveryDestination || shouldShowRoute) && (
-                  <div className="route-legend">
-                    <span>จุดสีเขียว: คนขับ</span>
-                    <span>จุดสีแดง: ลูกค้า</span>
-                    {shouldShowRoute && <span>เส้นสีน้ำเงิน: เส้นทางไปส่ง</span>}
-                  </div>
-                )}
                 {shouldShowRoute && routeMeta && (
                   <small className="driver-location-time">{formatRouteSummary(routeMeta)}</small>
                 )}
@@ -341,31 +316,6 @@ const Tracking = () => {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Tracking Timeline */}
-          <div className="tracking-timeline">
-            <h3 className="section-title">เส้นทางการจัดส่ง</h3>
-            <div className="timeline">
-              {trackingInfo.timeline.map((step, index) => (
-                <div key={index} className={`timeline-step ${step.completed ? 'completed' : ''} ${step.current ? 'current' : ''}`}>
-                  <div className="timeline-marker">
-                    {step.completed ? (
-                      <span className="marker-icon">✓</span>
-                    ) : (
-                      <span className="marker-icon">○</span>
-                    )}
-                  </div>
-                  <div className="timeline-content">
-                    <h4 className="timeline-title">{step.title}</h4>
-                    <p className="timeline-description">{step.description}</p>
-                    {step.timestamp && (
-                      <p className="timeline-time">{formatDate(step.timestamp)}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
