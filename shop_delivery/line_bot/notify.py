@@ -161,7 +161,8 @@ def send_order_status_notification(
                 }
             }
         )
-        line_bot_api.push_message(line_user_id, [flex_message, TextSendMessage(text=message_text)])
+        # ส่งเฉพาะ Flex เพื่อให้มีบับเบิลเดียวตามที่ต้องการ
+        line_bot_api.push_message(line_user_id, flex_message)
 
         bot_user, _ = LineBotUser.objects.get_or_create(
             line_user_id=line_user_id,
