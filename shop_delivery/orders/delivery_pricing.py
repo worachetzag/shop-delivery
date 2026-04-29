@@ -13,6 +13,8 @@ import math
 from decimal import Decimal
 from typing import Union
 
+from .models import DeliveryFeeTier
+
 
 Number = Union[Decimal, float, int, str, None]
 
@@ -30,7 +32,9 @@ def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) ->
 
 def fee_for_distance_km(distance: Number) -> Decimal:
     """
-    ตารางค่าจัดส่ง (บาท):
+    ตารางค่าจัดส่ง (บาท) ตามข้อมูลในตาราง `DeliveryFeeTier`
+
+    ถ้ายังไม่มีข้อมูลใน DB จะใช้ค่า fallback เดิม:
     - ไม่เกิน 3 กม. → 0
     - ไม่เกิน 5 กม. → 20
     - ไม่เกิน 10 กม. → 35
@@ -41,13 +45,33 @@ def fee_for_distance_km(distance: Number) -> Decimal:
     d = float(distance)
     if d <= 0:
         return Decimal('0')
-    if d <= 3:
-        return Decimal('0')
-    if d <= 5:
-        return Decimal('20')
-    if d <= 10:
-        return Decimal('35')
-    return Decimal('50')
+
+    try:
+        tiers = list(
+            DeliveryFeeTier.objects.filter(is_active=True).order_by('sort_order', 'id')
+        )
+    except Exception:
+        # กันกรณี deploy ยังไม่รัน migration
+        tiers = []
+
+    if not tiers:
+        if d <= 3:
+            return Decimal('0')
+        if d <= 5:
+            return Decimal('20')
+        if d <= 10:
+            return Decimal('35')
+        return Decimal('50')
+
+    for tier in tiers:
+        if tier.threshold_km is None:
+            return tier.fee_amount
+        if d <= float(tier.threshold_km):
+            return tier.fee_amount
+
+    # กรณีข้อมูลผิดลำดับแต่ยังไม่ชนท้าย
+    last = tiers[-1]
+    return last.fee_amount
 
 
 def quantize_distance_km(distance_km: float) -> Decimal:

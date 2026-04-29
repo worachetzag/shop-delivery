@@ -58,6 +58,8 @@ const Orders = () => {
             paymentMethod: order.payment_method,
             paymentSlipStatus: order.payment_slip_status,
             paymentSlipStatusDisplay: order.payment_slip_status_display,
+            subtotal: Number(order.subtotal || 0),
+            deliveryFee: Number(order.delivery_fee || 0),
             receiptReady:
               (order.payment_method === 'promptpay' && order.payment_slip_status === 'verified')
               || (order.payment_method !== 'promptpay' && order.status === 'delivered'),
@@ -229,7 +231,9 @@ const Orders = () => {
                   <span>
                     {order.itemCount} รายการ ({order.totalQuantity} ชิ้น)
                   </span>
-                  <span className="total-amount">{formatPrice(order.total)}</span>
+                  <span>ค่าสินค้า: {formatPrice(order.subtotal)}</span>
+                  <span>ค่าส่ง: {formatPrice(order.deliveryFee)}</span>
+                  <span className="total-amount">รวม: {formatPrice(order.total)}</span>
                 </div>
                 <div className="order-status">
                   <span

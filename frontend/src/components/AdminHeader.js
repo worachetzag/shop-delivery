@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
 
@@ -8,7 +8,6 @@ const AdminHeader = () => {
   const [username] = useState(localStorage.getItem('username') || 'Admin');
   const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
   const [openGroup, setOpenGroup] = useState(null);
-  const hoverTimerRef = useRef(null);
   const showAuditLog = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const role = localStorage.getItem('user_role') || '';
@@ -20,14 +19,6 @@ const AdminHeader = () => {
     const onResize = () => setIsCompact(window.innerWidth <= 1024);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimerRef.current) {
-        clearTimeout(hoverTimerRef.current);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -97,20 +88,14 @@ const AdminHeader = () => {
     background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.10)',
   });
   const submenuWrapStyle = {
-    display: 'grid',
+    display: 'flex',
+    flexDirection: 'column',
     gap: 6,
     marginTop: 6,
-    paddingLeft: 8,
-    borderLeft: '2px solid rgba(255,255,255,0.24)',
+    paddingLeft: 12,
+    borderLeft: '2px solid rgba(255,255,255,0.18)',
   };
   const toggleGroup = (name) => setOpenGroup((prev) => (prev === name ? null : name));
-  const handleGroupHoverOpen = (name) => {
-    if (isCompact) return;
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = setTimeout(() => {
-      setOpenGroup(name);
-    }, 250);
-  };
 
   return (
     <header style={{
@@ -179,8 +164,12 @@ const AdminHeader = () => {
           </Link>
 
           <div style={groupTitleStyle}>บุคลากร</div>
-          <div onMouseEnter={() => handleGroupHoverOpen('personnel')}>
-            <button type="button" style={groupButtonStyle(openGroup === 'personnel')} onClick={() => toggleGroup('personnel')}>
+          <div>
+            <button
+              type="button"
+              style={groupButtonStyle(openGroup === 'personnel')}
+              onClick={() => toggleGroup('personnel')}
+            >
               บุคลากร {openGroup === 'personnel' ? '▾' : '▸'}
             </button>
             {openGroup === 'personnel' && (
@@ -192,8 +181,12 @@ const AdminHeader = () => {
           </div>
 
           <div style={groupTitleStyle}>ตั้งค่าร้าน</div>
-          <div onMouseEnter={() => handleGroupHoverOpen('store')}>
-            <button type="button" style={groupButtonStyle(openGroup === 'store')} onClick={() => toggleGroup('store')}>
+          <div>
+            <button
+              type="button"
+              style={groupButtonStyle(openGroup === 'store')}
+              onClick={() => toggleGroup('store')}
+            >
               ตั้งค่าร้าน {openGroup === 'store' ? '▾' : '▸'}
             </button>
             {openGroup === 'store' && (
@@ -201,14 +194,19 @@ const AdminHeader = () => {
                 <Link to="/admin/store-settings/store" style={subLinkStyle(isActivePath('/admin/store-settings/store'))}>ข้อมูลร้าน</Link>
                 <Link to="/admin/store-settings/location" style={subLinkStyle(isActivePath('/admin/store-settings/location'))}>พิกัดร้าน</Link>
                 <Link to="/admin/store-settings/payment" style={subLinkStyle(isActivePath('/admin/store-settings/payment'))}>PromptPay</Link>
+                <Link to="/admin/store-settings/delivery-fees" style={subLinkStyle(isActivePath('/admin/store-settings/delivery-fees'))}>ค่าส่งตามระยะทาง</Link>
                 <Link to="/admin/store-settings/hours" style={subLinkStyle(isActivePath('/admin/store-settings/hours'))}>เวลาทำการ</Link>
               </div>
             )}
           </div>
 
           <div style={groupTitleStyle}>จัดการสต็อก</div>
-          <div onMouseEnter={() => handleGroupHoverOpen('inventory')}>
-            <button type="button" style={groupButtonStyle(openGroup === 'inventory')} onClick={() => toggleGroup('inventory')}>
+          <div>
+            <button
+              type="button"
+              style={groupButtonStyle(openGroup === 'inventory')}
+              onClick={() => toggleGroup('inventory')}
+            >
               จัดการสต็อก {openGroup === 'inventory' ? '▾' : '▸'}
             </button>
             {openGroup === 'inventory' && (

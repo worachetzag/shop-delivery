@@ -300,6 +300,14 @@ function AppContent() {
             )}
           />
           <Route
+            path="/admin/store-settings/delivery-fees"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminStoreSettingsPage section="delivery-fees" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
             path="/admin/store-settings/hours"
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">

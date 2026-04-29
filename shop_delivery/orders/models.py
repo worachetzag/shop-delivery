@@ -227,3 +227,41 @@ class StoreLocation(models.Model):
         if self.latitude is not None and self.longitude is not None:
             return f"{self.name or 'ร้าน'} ({self.latitude}, {self.longitude})"
         return self.name or "พิกัดร้าน (ยังไม่ระบุ)"
+
+
+class DeliveryFeeTier(models.Model):
+    """
+    ตารางค่าจัดส่งตามระยะทาง (กม.)
+
+    เก็บเป็น “ช่วงบนสุด”:
+    - threshold_km = 3, fee_amount = 0  => ระยะทาง <= 3 กม. จะได้ 0 บาท
+    - threshold_km = 5, fee_amount = 20 => ระยะทาง <= 5 กม. จะได้ 20 บาท
+    - row สุดท้ายให้ threshold_km = NULL => ใช้สำหรับระยะทางที่มากกว่า threshold ล่าสุด
+    """
+
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="ลำดับ")
+    threshold_km = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="ระยะทางสูงสุด (กม.)",
+        help_text="ใส่ค่าว่างสำหรับช่วงสุดท้าย (มากกว่า)",
+    )
+    fee_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="ค่าจัดส่ง (บาท)",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="เปิดใช้งาน")
+
+    class Meta:
+        verbose_name = "ค่าจัดส่งตามระยะทาง"
+        verbose_name_plural = "ค่าจัดส่งตามระยะทาง"
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        if self.threshold_km is None:
+            return f"> ล่าสุด => {self.fee_amount} บาท"
+        return f"<= {self.threshold_km} กม. => {self.fee_amount} บาท"

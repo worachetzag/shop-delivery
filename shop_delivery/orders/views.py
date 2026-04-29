@@ -18,7 +18,7 @@ from accounts.permissions import is_admin_user as _is_admin_user
 from accounts.staff_audit import log_staff_audit
 from products.models import Product
 from line_bot.notify import send_order_status_notification
-from .models import Order, OrderItem, DriverAssignment, StoreLocation
+from .models import Order, OrderItem, DriverAssignment, StoreLocation, DeliveryFeeTier
 from .store_location import get_store_location_payload
 from .stock_helpers import (
     format_order_stock_audit_label,
@@ -71,6 +71,26 @@ class AdminStoreSettingsView(APIView):
             return denied
 
         loc = StoreLocation.objects.order_by('id').first()
+        tiers = list(
+            DeliveryFeeTier.objects.filter(is_active=True).order_by('sort_order', 'id')
+        )
+        if not tiers:
+            # fallback สำหรับ UI ก่อนมีข้อมูลใน DB (ไม่ create)
+            tiers_payload = [
+                {'threshold_km': 3, 'fee_amount': 0},
+                {'threshold_km': 5, 'fee_amount': 20},
+                {'threshold_km': 10, 'fee_amount': 35},
+                {'threshold_km': None, 'fee_amount': 50},
+            ]
+        else:
+            tiers_payload = [
+                {
+                    'threshold_km': (t.threshold_km if t.threshold_km is not None else None),
+                    'fee_amount': t.fee_amount,
+                    'sort_order': i,
+                }
+                for i, t in enumerate(tiers)
+            ]
         payload = {
             'store_location': {
                 'name': (loc.name if loc else '') or '',
@@ -81,6 +101,7 @@ class AdminStoreSettingsView(APIView):
                 'updated_at': loc.updated_at if loc else None,
             },
             'service_hours': self._serialize_hours(),
+            'delivery_fee_tiers': tiers_payload,
         }
         return Response(payload)
 
@@ -111,6 +132,20 @@ class AdminStoreSettingsView(APIView):
                 return Response({'error': 'longitude ไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             lng = None
+
+        delivery_fee_tiers = request.data.get('delivery_fee_tiers')
+        try:
+            if delivery_fee_tiers is not None and not isinstance(delivery_fee_tiers, list):
+                return Response({'error': 'delivery_fee_tiers ต้องเป็น array'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'error': 'delivery_fee_tiers ไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
+
+        def _parse_decimal_or_none(raw):
+            if raw is None:
+                return None
+            if isinstance(raw, str) and raw.strip() == '':
+                return None
+            return Decimal(str(raw))
 
         with transaction.atomic():
             loc = StoreLocation.objects.order_by('id').first()
@@ -146,6 +181,54 @@ class AdminStoreSettingsView(APIView):
                         'is_active': bool(row.get('is_active', True)),
                     },
                 )
+
+            # Update delivery fee tiers (optional)
+            if delivery_fee_tiers:
+                normalized = []
+                for idx, row in enumerate(delivery_fee_tiers):
+                    if not isinstance(row, dict):
+                        continue
+                    threshold = _parse_decimal_or_none(row.get('threshold_km'))
+                    fee = Decimal(str(row.get('fee_amount', 0)))
+                    if fee < 0:
+                        raise ValueError('ค่าค่าส่งต้องไม่ติดลบ')
+                    if threshold is not None and threshold < 0:
+                        raise ValueError('ระยะทางต้องไม่ติดลบ')
+                    normalized.append({'threshold_km': threshold, 'fee_amount': fee})
+
+                if not normalized:
+                    pass
+                else:
+                    # ต้องมีช่วงสุดท้ายแบบ open-ended (threshold_km = null)
+                    if normalized[-1]['threshold_km'] is not None:
+                        normalized.append({'threshold_km': None, 'fee_amount': normalized[-1]['fee_amount']})
+
+                    if len(normalized) < 2:
+                        raise ValueError('ต้องมีอย่างน้อย 2 บรรทัด (อย่างน้อย 1 ช่วง + ช่วงสุดท้าย)')
+
+                    none_indices = [i for i, x in enumerate(normalized) if x['threshold_km'] is None]
+                    # อนุญาตให้มี threshold_km ว่างได้เฉพาะแถวสุดท้าย
+                    if none_indices and none_indices[-1] != len(normalized) - 1:
+                        raise ValueError('ให้เว้นระยะทาง (threshold_km ว่าง) ได้เฉพาะแถวสุดท้ายเท่านั้น')
+                    if none_indices and len(none_indices) > 1:
+                        raise ValueError('ให้มีแถวสุดท้ายแบบช่วงสุดท้ายเพียง 1 แถว')
+
+                    # เช็คลำดับ ascending ของ threshold ที่เป็นตัวเลข
+                    finite_thresholds = [t['threshold_km'] for t in normalized if t['threshold_km'] is not None]
+                    if any(
+                        finite_thresholds[i] >= finite_thresholds[i + 1]
+                        for i in range(len(finite_thresholds) - 1)
+                    ):
+                        raise ValueError('ระยะทางแต่ละบรรทัดต้องเพิ่มขึ้นเรื่อยๆ และไม่ซ้ำ')
+
+                    DeliveryFeeTier.objects.all().delete()
+                    for sort_order, t in enumerate(normalized):
+                        DeliveryFeeTier.objects.create(
+                            sort_order=sort_order,
+                            threshold_km=t['threshold_km'],
+                            fee_amount=t['fee_amount'],
+                            is_active=True,
+                        )
 
         return self.get(request)
 

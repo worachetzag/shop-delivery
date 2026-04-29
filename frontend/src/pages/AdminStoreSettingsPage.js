@@ -7,6 +7,13 @@ const emptyHours = {
   delivery: { start_time: '08:00', end_time: '20:00', is_active: true },
 };
 
+const defaultDeliveryFeeTiers = [
+  { threshold_km: 3, fee_amount: 0 },
+  { threshold_km: 5, fee_amount: 20 },
+  { threshold_km: 10, fee_amount: 35 },
+  { threshold_km: '', fee_amount: 50 }, // แถวสุดท้าย (ช่วงสุดท้าย) เว้น threshold
+];
+
 const toInputTime = (value) => (value ? String(value).slice(0, 5) : '');
 
 const AdminStoreSettingsPage = ({ section = 'all' }) => {
@@ -22,6 +29,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
       longitude: '',
     },
     service_hours: emptyHours,
+    delivery_fee_tiers: defaultDeliveryFeeTiers,
   });
 
   const getToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
@@ -62,6 +70,25 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
             is_active: sh.delivery?.is_active ?? true,
           },
         },
+        delivery_fee_tiers: (() => {
+          const tiers = Array.isArray(data.delivery_fee_tiers) ? data.delivery_fee_tiers : [];
+          if (!tiers.length) return defaultDeliveryFeeTiers;
+
+          // backend ส่ง threshold_km เป็น number หรือ null; frontend เก็บเป็น string สำหรับ input
+          const mapped = tiers
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+            .map((t) => ({
+              threshold_km: t.threshold_km === null || t.threshold_km === undefined ? '' : t.threshold_km,
+              fee_amount: t.fee_amount ?? 0,
+            }));
+
+          // ให้มีแถวสุดท้ายแบบ open-ended เสมอ
+          const hasOpenEnded = mapped.length && mapped[mapped.length - 1].threshold_km === '';
+          if (!hasOpenEnded) {
+            mapped.push({ threshold_km: '', fee_amount: mapped[mapped.length - 1]?.fee_amount ?? 0 });
+          }
+          return mapped;
+        })(),
       });
     } catch (error) {
       popup.error(error.message || 'โหลดข้อมูลร้านไม่สำเร็จ');
@@ -103,6 +130,10 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
           longitude: form.store_location.longitude === '' ? null : form.store_location.longitude,
         },
         service_hours: form.service_hours,
+        delivery_fee_tiers: form.delivery_fee_tiers.map((t) => ({
+          threshold_km: t.threshold_km === '' ? null : t.threshold_km,
+          fee_amount: t.fee_amount,
+        })),
       };
       const response = await fetch(`${config.API_BASE_URL}orders/admin/store-settings/`, {
         method: 'PUT',
@@ -139,6 +170,14 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
 
   const sectionTitleStyle = { margin: '0 0 4px 0' };
   const sectionHintStyle = { marginTop: 0, marginBottom: 12, color: '#6b7280', fontSize: 14 };
+
+  const setTierField = (idx, key, value) => {
+    setForm((prev) => {
+      const next = [...prev.delivery_fee_tiers];
+      next[idx] = { ...next[idx], [key]: value };
+      return { ...prev, delivery_fee_tiers: next };
+    });
+  };
 
   return (
     <div style={{ maxWidth: 920, margin: '0 auto', padding: '16px' }}>
@@ -239,6 +278,97 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
               </div>
             ))}
           </section>
+          )}
+
+          {(section === 'all' || section === 'delivery-fees') && (
+            <section style={sectionStyle}>
+              <h3 style={sectionTitleStyle}>5) ค่าส่งตามระยะทาง</h3>
+              <p style={sectionHintStyle}>
+                ตั้งเป็นหลายบรรทัดแบบ “ไม่เกิน X กม.” และแถวสุดท้ายเป็น “มากกว่า” (เว้นช่องระยะทางเป็นค่าว่าง)
+              </p>
+
+              <div style={{ display: 'grid', gap: 12 }}>
+                {form.delivery_fee_tiers.map((tier, idx) => {
+                  const isLast = idx === form.delivery_fee_tiers.length - 1;
+                  return (
+                    <div
+                      key={`tier-${idx}`}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: isLast ? '1fr 140px' : '1fr 140px 60px',
+                        gap: 12,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        <label style={{ fontWeight: 700, fontSize: 14 }}>
+                          {isLast
+                            ? 'ช่วงสุดท้าย (มากกว่า)'
+                            : `ไม่เกิน ${tier.threshold_km === '' ? '—' : tier.threshold_km} กม.`}
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={tier.threshold_km}
+                          disabled={isLast}
+                          placeholder={isLast ? 'เว้นว่าง' : 'เช่น 5'}
+                          onChange={(e) => setTierField(idx, 'threshold_km', e.target.value === '' ? '' : e.target.value)}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        <label style={{ fontWeight: 700, fontSize: 14 }}>ค่าส่ง (บาท)</label>
+                        <input
+                          type="number"
+                          step="1"
+                          value={tier.fee_amount}
+                          placeholder="เช่น 20"
+                          onChange={(e) => setTierField(idx, 'fee_amount', e.target.value === '' ? 0 : e.target.value)}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+
+                      {!isLast && (
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => {
+                            setForm((prev) => {
+                              const next = [...prev.delivery_fee_tiers];
+                              if (next.length <= 2) return prev; // อย่างน้อย 1 finite + 1 open-ended
+                              next.splice(idx, 1);
+                              return { ...prev, delivery_fee_tiers: next };
+                            });
+                          }}
+                          title="ลบช่วง"
+                        >
+                          ลบ
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setForm((prev) => {
+                        const next = [...prev.delivery_fee_tiers];
+                        const openEnded = next[next.length - 1];
+                        const newTier = { threshold_km: '', fee_amount: 0 };
+                        next.splice(next.length - 1, 0, newTier);
+                        return { ...prev, delivery_fee_tiers: next };
+                      });
+                    }}
+                  >
+                    เพิ่มช่วง
+                  </button>
+                </div>
+              </div>
+            </section>
           )}
 
           <div>
