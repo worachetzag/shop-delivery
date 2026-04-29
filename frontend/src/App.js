@@ -58,13 +58,19 @@ function AppContent() {
       localStorage.setItem('username', username);
     }
 
+    // Clean auth query params from URL after handling callback data.
+    params.delete('token');
+    params.delete('username');
+    params.delete('login');
+    const cleanedSearch = params.toString();
+    const nextPath = `${location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
+
     if (loginStatus === 'success') {
-      navigate('/customer', { replace: true });
+      navigate(nextPath === '/' ? '/customer' : nextPath, { replace: true });
       return;
     }
 
-    // Clean auth query params from URL after handling callback data.
-    navigate(location.pathname, { replace: true });
+    navigate(nextPath, { replace: true });
   }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {

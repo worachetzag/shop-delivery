@@ -506,11 +506,16 @@ const Checkout = () => {
       !showAddressForm;
 
     let issues;
+    if (!selectedSavedAddress) {
+      issues = ['กรุณาเลือกที่อยู่จัดส่งก่อนยืนยันคำสั่งซื้อ'];
+    } else {
+      issues = [];
+    }
     if (useSavedAddressFlow) {
-      issues = savedAddressIssues(selectedSavedAddress);
+      issues = [...issues, ...savedAddressIssues(selectedSavedAddress)];
       if (!paymentMethod) issues = [...issues, 'วิธีชำระเงิน'];
     } else {
-      issues = checkoutShippingIssues(shippingInfo, paymentMethod);
+      issues = [...issues, ...checkoutShippingIssues(shippingInfo, paymentMethod)];
     }
 
     if (issues.length) {
@@ -700,6 +705,7 @@ const Checkout = () => {
     selectedSavedAddress &&
     !manualShippingEntry &&
     !showAddressForm;
+  const canSubmitOrder = Boolean(paymentMethod) && Boolean(selectedSavedAddress) && !submitting && !createdOrderId;
 
   return (
     <div className="checkout-page">
@@ -790,7 +796,7 @@ const Checkout = () => {
                       value={selectedAddressId}
                       onChange={handleSelectAddress}
                     >
-                      <option value="">— กรอกที่อยู่เอง (ไม่ใช้ที่บันทึก) —</option>
+                      <option value="">— กรุณาเลือกที่อยู่จัดส่ง —</option>
                       {addresses.map((addr) => (
                         <option key={addr.id} value={addr.id}>
                           {(addr.label || 'ที่อยู่')} - {addr.address_line}
@@ -877,80 +883,10 @@ const Checkout = () => {
                   </button>
                 </div>
               ) : (
-                <>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">ชื่อ-นามสกุล *</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={shippingInfo.name}
-                        onChange={handleInputChange}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">เบอร์โทรศัพท์ *</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={shippingInfo.phone}
-                        onChange={handleInputChange}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">ที่อยู่ *</label>
-                    <textarea
-                      name="address"
-                      value={shippingInfo.address}
-                      onChange={handleInputChange}
-                      className="form-textarea"
-                      rows="3"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">อำเภอ/เขต *</label>
-                      <input
-                        type="text"
-                        name="district"
-                        value={shippingInfo.district}
-                        onChange={handleInputChange}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">จังหวัด *</label>
-                      <input
-                        type="text"
-                        name="province"
-                        value={shippingInfo.province}
-                        onChange={handleInputChange}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">รหัสไปรษณีย์ *</label>
-                      <input
-                        type="text"
-                        name="postalCode"
-                        value={shippingInfo.postalCode}
-                        onChange={handleInputChange}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
+                <div className="saved-address-summary">
+                  <p className="saved-address-summary-title">ยังไม่ได้เลือกที่อยู่จัดส่ง</p>
+                  <p>กรุณาเพิ่มที่อยู่ใหม่ หรือเลือกที่อยู่ที่บันทึกไว้ก่อนสั่งซื้อ</p>
+                </div>
               )}
             </div>
 
@@ -1043,7 +979,7 @@ const Checkout = () => {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={submitting || !paymentMethod}
+                  disabled={!canSubmitOrder}
                 >
                   {submitting ? 'กำลังดำเนินการ...' : 'ยืนยันคำสั่งซื้อ'}
                 </button>

@@ -685,8 +685,8 @@ class LineLoginView(generics.GenericAPIView):
             # สร้าง Customer
             customer = Customer.objects.create(
                 user=user,
-                phone_number=f"LINE_{line_user_id}",
-                address="LINE User",
+                phone_number='',
+                address='',
             )
             
             # สร้าง LineUser
@@ -1017,8 +1017,8 @@ def line_login_callback(request):
                 user=user,
                 id_card_number=id_card_candidate,
                 date_of_birth='2000-01-01',
-                phone_number=f"LINE_{line_user_id}"[:15],
-                address="LINE User",
+                phone_number='',
+                address='',
             )
             
             # สร้าง LineUser
@@ -1051,7 +1051,13 @@ def line_login_callback(request):
         
         # Redirect กลับไปที่ frontend พร้อม token
         logger.info(f"Redirecting to frontend with token for user: {user.username}")
-        return HttpResponseRedirect(f"{frontend_url}?token={token.key}&login=success&username={user.username}")
+        phone_digits = ''.join(ch for ch in str(getattr(customer, 'phone_number', '') or '') if ch.isdigit())
+        needs_phone_completion = len(phone_digits) < 9
+        next_path = '/customer/profile?section=personal&complete=phone' if needs_phone_completion else '/customer'
+        query_sep = '&' if '?' in next_path else '?'
+        return HttpResponseRedirect(
+            f"{frontend_url}{next_path}{query_sep}token={token.key}&login=success&username={user.username}"
+        )
         
     except Exception as e:
         logger.exception("LINE Login Error")
