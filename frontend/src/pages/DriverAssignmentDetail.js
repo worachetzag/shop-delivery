@@ -236,7 +236,7 @@ const DriverAssignmentDetail = () => {
       ? `&origin=${Number(assignment.current_latitude)},${Number(assignment.current_longitude)}`
       : '';
     const url = `https://www.google.com/maps/dir/?api=1${origin}&destination=${destination}&travelmode=driving`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.location.assign(url);
   };
 
   if (loading) {

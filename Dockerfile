@@ -37,8 +37,8 @@ RUN chmod +x /app/shop_delivery/manage.py
 # Render / Docker จะส่ง PORT เข้ามา — default 8000 ตอนรันในเครื่อง
 EXPOSE 8000
 
-# migrate → optional seed images → collectstatic → gunicorn (production)
-CMD ["sh", "-c", "cd /app/shop_delivery && python manage.py migrate --noinput && if [ \"${SEED_DEMO_ON_START:-0}\" = \"1\" ]; then python manage.py seed_grocery_demo --no-input --refresh-images; fi && python manage.py collectstatic --noinput && exec gunicorn shop_delivery.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"]
+# migrate → optional reset/seed → collectstatic → gunicorn (production)
+CMD ["sh", "-c", "cd /app/shop_delivery && if [ \"${RESET_DB_ON_START:-0}\" = \"1\" ]; then echo '[startup] RESET_DB_ON_START=1: flushing database for fresh testing...'; python manage.py flush --noinput; fi && python manage.py migrate --noinput && if [ \"${SEED_DEMO_ON_START:-0}\" = \"1\" ]; then echo '[startup] SEED_DEMO_ON_START=1: seeding demo data...'; python manage.py seed_grocery_demo --no-input --refresh-images; fi && python manage.py collectstatic --noinput && exec gunicorn shop_delivery.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"]
 
 
 

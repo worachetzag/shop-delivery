@@ -189,7 +189,7 @@ const Tracking = () => {
       ? `&origin=${trackingInfo.currentLatitude},${trackingInfo.currentLongitude}`
       : '';
     const url = `https://www.google.com/maps/dir/?api=1${origin}&destination=${destination}&travelmode=driving`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.location.assign(url);
   };
 
   if (loading) {
