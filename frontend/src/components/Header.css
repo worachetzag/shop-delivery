@@ -140,6 +140,10 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.liff-bottom-nav.force-show {
+  display: flex;
+}
+
 .liff-bottom-nav a {
   flex: 1;
   color: #64748b;

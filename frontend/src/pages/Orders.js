@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
+import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
+import { displayProductLineName } from '../utils/helpers';
 import './Orders.css';
 
 const PAGE_SIZE = 10;
@@ -49,7 +51,13 @@ const Orders = () => {
             : Array.isArray(data?.results)
               ? data.results
               : [];
-          const transformedOrders = sourceOrders.map((order) => ({
+          const transformedOrders = sourceOrders.map((order) => {
+            const items = order.items || order.order_items || [];
+            const firstItem = items[0] || null;
+            const imageCandidate = firstItem
+              ? (firstItem.product?.image || firstItem.product_image || firstItem.image || firstItem.image_url)
+              : null;
+            return {
             id: order.id,
             orderNumber: order.order_number || `#${order.id}`,
             date: order.created_at,
@@ -64,13 +72,16 @@ const Orders = () => {
               (order.payment_method === 'promptpay' && order.payment_slip_status === 'verified')
               || (order.payment_method !== 'promptpay' && order.status === 'delivered'),
             total: Number(order.total_amount || order.total_price || 0),
-            itemCount: (order.items || order.order_items || []).length,
-            totalQuantity: (order.items || order.order_items || []).reduce(
+            itemCount: items.length,
+            totalQuantity: items.reduce(
               (sum, item) => sum + Number(item.quantity || 0),
               0
             ),
             trackingNumber: order.tracking_number || null,
-          }));
+            previewItemName: firstItem ? displayProductLineName(firstItem) : 'ไม่มีรายการสินค้า',
+            previewImage: resolveMediaUrl(imageCandidate, PLACEHOLDER_IMAGES.sm),
+          };
+          });
           setOrders(transformedOrders);
           setTotalCount(typeof data.count === 'number' ? data.count : transformedOrders.length);
         } else {
@@ -222,15 +233,31 @@ const Orders = () => {
                 }
               }}
             >
-              <div className="order-header order-list-row">
+              <div className="order-header order-list-row order-card-top">
                 <div className="order-info">
                   <h3 className="order-id">{order.orderNumber}</h3>
-                  <p className="order-date">{formatDate(order.date)}</p>
+                </div>
+                <p className="order-date">{formatDate(order.date)}</p>
+              </div>
+              <div className="order-preview-row">
+                <img
+                  src={order.previewImage}
+                  alt={order.previewItemName}
+                  className="order-preview-image"
+                  onError={(e) => {
+                    e.currentTarget.src = PLACEHOLDER_IMAGES.sm;
+                  }}
+                />
+                <div className="order-preview-center">
+                  <p className="order-preview-name">{order.previewItemName}</p>
                 </div>
                 <div className="order-list-summary">
-                  <span>
-                    {order.itemCount} รายการ ({order.totalQuantity} ชิ้น)
-                  </span>
+                  <span className="total-amount">{formatPrice(order.total)}</span>
+                  <span>{order.itemCount} รายการ</span>
+                </div>
+              </div>
+              <div className="order-header order-list-row order-card-bottom">
+                <div className="order-list-summary">
                   <span>ค่าสินค้า: {formatPrice(order.subtotal)}</span>
                   <span>ค่าส่ง: {formatPrice(order.deliveryFee)}</span>
                   <span className="total-amount">รวม: {formatPrice(order.total)}</span>

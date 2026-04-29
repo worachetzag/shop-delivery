@@ -97,6 +97,7 @@ const Header = () => {
   const isActiveGroup = (paths) => paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const userRole = localStorage.getItem('user_role') || '';
   const isDriverMode = location.pathname.startsWith('/driver') || userRole === 'driver';
+  const showTopMenu = !isMobileView && isDriverMode;
 
   return (
     <header className="header">
@@ -106,7 +107,7 @@ const Header = () => {
           <span className="logo-text">Samsung Panich</span>
         </Link>
 
-        {!isMobileView && (
+        {showTopMenu && (
           <nav className="nav-menu">
             {isDriverMode ? (
               <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>งานของคนขับ</Link>
@@ -148,8 +149,8 @@ const Header = () => {
         </div>
       </div>
 
-      {isMobileView && (
-        <nav className="liff-bottom-nav">
+      {(isMobileView || !isDriverMode) && (
+        <nav className={`liff-bottom-nav ${!isDriverMode ? 'force-show' : ''}`}>
           {isDriverMode ? (
             <>
               <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>
