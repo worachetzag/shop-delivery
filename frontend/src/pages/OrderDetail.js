@@ -89,6 +89,13 @@ const OrderDetail = () => {
     && !hasSlip
     && !['delivered', 'cancelled'].includes(order?.status)
     && !['verified', 'not_required'].includes(order?.payment_slip_status);
+  const receiptReady = Boolean(order) && (
+    (order.payment_method === 'promptpay' && order.payment_slip_status === 'verified')
+    || (order.payment_method !== 'promptpay' && order.status === 'delivered')
+  );
+  const receiptIssuedAt = order?.payment_verified_at || (order?.status === 'delivered' ? order?.updated_at : null);
+  const receiptNo = order?.order_number ? `${order.order_number}-R` : `RCPT-${order?.id || ''}`;
+  const customerName = (order?.customer_name || '').trim() || 'ลูกค้า';
 
   const loadPromptPayQr = async () => {
     if (!order?.id || !canShowPromptPayQr) {
@@ -232,6 +239,11 @@ const OrderDetail = () => {
     }
   };
 
+  const handlePrintReceipt = () => {
+    if (!receiptReady) return;
+    window.print();
+  };
+
   if (loading) return <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>;
 
   if (!order) {
@@ -371,6 +383,52 @@ const OrderDetail = () => {
               <Link to="/customer/orders" className="btn btn-secondary btn-sm">กลับหน้าคำสั่งซื้อ</Link>
             </div>
           </div>
+        </div>
+
+        <div className="order-card receipt-card">
+          <div className="receipt-header">
+            <h2 className="receipt-title">ใบเสร็จรับเงิน</h2>
+            <span className={`receipt-status ${receiptReady ? 'ready' : 'pending'}`}>
+              {receiptReady ? 'ออกใบเสร็จแล้ว' : 'ยังไม่พร้อมออกใบเสร็จ'}
+            </span>
+          </div>
+
+          {!receiptReady ? (
+            <p className="upload-hint">
+              {order.payment_method === 'promptpay'
+                ? 'ใบเสร็จจะพร้อมหลังแอดมินยืนยันสลิปโอนเงิน'
+                : 'ใบเสร็จจะพร้อมหลังจัดส่งสำเร็จ'}
+            </p>
+          ) : (
+            <div className="receipt-content">
+              <div className="receipt-row"><span>เลขที่ใบเสร็จ:</span><strong>{receiptNo}</strong></div>
+              <div className="receipt-row"><span>อ้างอิงออเดอร์:</span><strong>{order.order_number || `#${order.id}`}</strong></div>
+              <div className="receipt-row"><span>วันที่ออก:</span><strong>{receiptIssuedAt ? formatDate(receiptIssuedAt) : '-'}</strong></div>
+              <div className="receipt-row"><span>ชื่อลูกค้า:</span><strong>{customerName}</strong></div>
+              <div className="receipt-row"><span>ช่องทางชำระ:</span><strong>{order.payment_method_display || order.payment_method}</strong></div>
+
+              <div className="receipt-items">
+                {(order.items || []).map((item) => (
+                  <div className="receipt-item" key={`receipt-${item.id}`}>
+                    <span>{displayProductLineName(item)} x {item.quantity}</span>
+                    <strong>{formatPrice(Number(item.price) * Number(item.quantity))}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div className="receipt-total">
+                <div><span>ค่าสินค้า:</span><strong>{formatPrice(order.subtotal)}</strong></div>
+                <div><span>ค่าจัดส่ง:</span><strong>{formatPrice(order.delivery_fee)}</strong></div>
+                <div><span>รวมสุทธิ:</span><strong>{formatPrice(order.total_amount)}</strong></div>
+              </div>
+
+              <div className="receipt-actions">
+                <button type="button" className="btn btn-primary btn-sm" onClick={handlePrintReceipt}>
+                  พิมพ์ / บันทึกใบเสร็จ
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

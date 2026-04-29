@@ -58,6 +58,9 @@ const Orders = () => {
             paymentMethod: order.payment_method,
             paymentSlipStatus: order.payment_slip_status,
             paymentSlipStatusDisplay: order.payment_slip_status_display,
+            receiptReady:
+              (order.payment_method === 'promptpay' && order.payment_slip_status === 'verified')
+              || (order.payment_method !== 'promptpay' && order.status === 'delivered'),
             total: Number(order.total_amount || order.total_price || 0),
             itemCount: (order.items || order.order_items || []).length,
             totalQuantity: (order.items || order.order_items || []).reduce(
@@ -234,6 +237,9 @@ const Orders = () => {
                     style={{ backgroundColor: getStatusColor(order.status) }}
                   >
                     {order.statusDisplay || getStatusText(order.status)}
+                  </span>
+                  <span className={`receipt-badge ${order.receiptReady ? 'ready' : 'pending'}`}>
+                    {order.receiptReady ? 'ใบเสร็จพร้อม' : 'รอออกใบเสร็จ'}
                   </span>
                 </div>
               </div>

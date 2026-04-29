@@ -122,6 +122,30 @@
   font-weight: 500;
 }
 
+.order-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.receipt-badge {
+  font-size: 0.72rem;
+  padding: 0.24rem 0.52rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.receipt-badge.ready {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.receipt-badge.pending {
+  color: #9a3412;
+  background: #ffedd5;
+}
+
 .order-items {
   margin-bottom: 1.5rem;
 }
@@ -257,6 +281,10 @@
   }
 
   .order-list-summary {
+    align-items: flex-start;
+  }
+
+  .order-status {
     align-items: flex-start;
   }
   
