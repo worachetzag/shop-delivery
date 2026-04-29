@@ -55,6 +55,12 @@ const Orders = () => {
             const items = order.items || order.order_items || [];
             const firstItem = items[0] || null;
             const previewImage = firstItem ? pickLineItemImage(firstItem, PLACEHOLDER_IMAGES.sm) : PLACEHOLDER_IMAGES.sm;
+            const previewLines = items.map((line) => {
+              const name = displayProductLineName(line);
+              const q = Number(line.quantity || 0);
+              return q > 1 ? `${name} ×${q}` : name;
+            });
+            const previewThumbs = items.map((line) => pickLineItemImage(line, PLACEHOLDER_IMAGES.sm));
             return {
             id: order.id,
             orderNumber: order.order_number || `#${order.id}`,
@@ -78,6 +84,8 @@ const Orders = () => {
             trackingNumber: order.tracking_number || null,
             previewItemName: firstItem ? displayProductLineName(firstItem) : 'ไม่มีรายการสินค้า',
             previewImage,
+            previewLines,
+            previewThumbs,
           };
           });
           setOrders(transformedOrders);
@@ -238,20 +246,67 @@ const Orders = () => {
                 <p className="order-date">{formatDate(order.date)}</p>
               </div>
               <div className="order-preview-row">
-                <img
-                  src={order.previewImage}
-                  alt={order.previewItemName}
-                  className="order-preview-image"
-                  onError={(e) => {
-                    e.currentTarget.src = PLACEHOLDER_IMAGES.sm;
-                  }}
-                />
+                <div
+                  className={`order-preview-visual ${order.itemCount > 1 ? 'order-preview-visual--multi' : ''}`}
+                >
+                  {order.itemCount <= 1 ? (
+                    <img
+                      src={order.previewImage}
+                      alt={order.previewItemName}
+                      className="order-preview-image"
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER_IMAGES.sm;
+                      }}
+                    />
+                  ) : (
+                    <div className={`order-preview-grid order-preview-grid--${Math.min(order.itemCount, 4)}`}>
+                      {order.previewThumbs.slice(0, 4).map((src, idx) => (
+                        <div
+                          key={`${order.id}-thumb-${idx}`}
+                          className="order-preview-cell"
+                        >
+                          <img
+                            src={src}
+                            alt=""
+                            className="order-preview-cell-img"
+                            onError={(e) => {
+                              e.currentTarget.src = PLACEHOLDER_IMAGES.sm;
+                            }}
+                          />
+                          {idx === 3 && order.itemCount > 4 && (
+                            <div className="order-preview-more-on-grid" title={`อีก ${order.itemCount - 4} รายการ`}>
+                              +{order.itemCount - 4}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="order-preview-center">
-                  <p className="order-preview-name">{order.previewItemName}</p>
+                  {order.itemCount <= 1 ? (
+                    <p className="order-preview-name">{order.previewItemName}</p>
+                  ) : (
+                    <>
+                      {order.previewLines.slice(0, 2).map((line, idx) => (
+                        <p key={`${order.id}-line-${idx}`} className="order-preview-name order-preview-line">
+                          {line}
+                        </p>
+                      ))}
+                      {order.itemCount > 2 && (
+                        <p className="order-preview-extra">+ อีก {order.itemCount - 2} รายการ</p>
+                      )}
+                    </>
+                  )}
                 </div>
                 <div className="order-list-summary">
                   <span className="total-amount">{formatPrice(order.total)}</span>
-                  <span>{order.itemCount} รายการ</span>
+                  <span>
+                    {order.itemCount} รายการ
+                    {order.totalQuantity > order.itemCount && (
+                      <span className="order-qty-hint"> · {order.totalQuantity} ชิ้น</span>
+                    )}
+                  </span>
                 </div>
               </div>
               <div className="order-header order-list-row order-card-bottom">

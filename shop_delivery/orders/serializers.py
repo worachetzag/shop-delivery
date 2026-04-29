@@ -372,6 +372,10 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     customer_username = serializers.CharField(source='order.customer.user.username', read_only=True, allow_blank=True)
     customer_phone = serializers.CharField(source='order.customer.phone_number', read_only=True, allow_blank=True)
     order_type_display = serializers.CharField(source='order.get_order_type_display', read_only=True)
+    payment_method = serializers.CharField(source='order.payment_method', read_only=True)
+    payment_method_display = serializers.CharField(source='order.get_payment_method_display', read_only=True)
+    payment_slip_status = serializers.CharField(source='order.payment_slip_status', read_only=True)
+    order_items = serializers.SerializerMethodField()
 
     class Meta:
         model = DriverAssignment
@@ -383,9 +387,33 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
             'assigned_at', 'updated_at', 'order_total_amount', 'delivery_address',
             'delivery_phone', 'delivery_notes', 'delivery_latitude', 'delivery_longitude',
             'customer_name', 'customer_username', 'customer_phone', 'order_type_display',
+            'payment_method', 'payment_method_display', 'payment_slip_status',
+            'order_items',
         ]
         read_only_fields = ['assigned_at', 'updated_at']
 
     def get_driver_phone(self, obj):
         driver_profile = getattr(obj.driver, 'driver_profile', None)
         return getattr(driver_profile, 'phone_number', '')
+
+    def get_order_items(self, obj):
+        items_qs = obj.order.items.select_related('product').all()
+        rows = []
+        request = self.context.get('request')
+        for item in items_qs:
+            product = item.product
+            image_url = None
+            if getattr(product, 'image', None):
+                image_url = product.image.url
+                if request:
+                    image_url = request.build_absolute_uri(image_url)
+            rows.append({
+                'id': item.id,
+                'product_id': product.id,
+                'product_name': product.name,
+                'quantity': item.quantity,
+                'price': item.price,
+                'total_price': item.total_price,
+                'product_image': image_url,
+            })
+        return rows

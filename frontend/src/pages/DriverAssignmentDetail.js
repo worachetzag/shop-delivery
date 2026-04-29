@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-le
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { assignmentContactPhone, assignmentCustomerLabel } from '../utils/driverAssignmentCustomer';
+import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import './DriverDashboard.css';
 
@@ -18,6 +19,7 @@ const DriverAssignmentDetail = () => {
   const [routeMeta, setRouteMeta] = useState(null);
   const gpsIntervalRef = useRef(null);
   const gpsUpdatingRef = useRef(false);
+  const formatPrice = (value) => `฿${Number(value || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const loadAssignment = async () => {
     try {
@@ -262,6 +264,7 @@ const DriverAssignmentDetail = () => {
   const hasDriverPosition = assignment.current_latitude != null && assignment.current_longitude != null;
   const hasDeliveryPosition = assignment.delivery_latitude != null && assignment.delivery_longitude != null;
   const showMap = hasDriverPosition || hasDeliveryPosition;
+  const isCodPayment = assignment.payment_method === 'cod';
 
   return (
     <div className="driver-dashboard-page">
@@ -301,6 +304,14 @@ const DriverAssignmentDetail = () => {
               <strong>หมายเหตุ:</strong> {assignment.delivery_notes}
             </div>
           ) : null}
+          <div className="driver-customer-line">
+            <strong>การชำระเงิน:</strong>{' '}
+            {isCodPayment ? (
+              <span className="driver-payment-cod">เก็บเงินปลายทาง {formatPrice(assignment.order_total_amount)}</span>
+            ) : (
+              <span className="driver-payment-paid">ชำระแล้ว ({assignment.payment_method_display || 'โอนเงิน'})</span>
+            )}
+          </div>
         </div>
         {showMap && (
           <div className="driver-map-wrap">
@@ -358,8 +369,34 @@ const DriverAssignmentDetail = () => {
             )}
           </div>
         )}
+        <div className="driver-order-items">
+          <h3 className="driver-customer-heading">รายการสินค้าในออเดอร์</h3>
+          {Array.isArray(assignment.order_items) && assignment.order_items.length > 0 ? (
+            <div className="driver-order-item-list">
+              {assignment.order_items.map((item) => (
+                <div key={item.id} className="driver-order-item-row">
+                  <img
+                    src={pickLineItemImage(item, PLACEHOLDER_IMAGES.sm)}
+                    alt={item.product_name || 'item-image'}
+                    className="driver-order-item-image"
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER_IMAGES.sm;
+                    }}
+                  />
+                  <div className="driver-order-item-meta">
+                    <div className="driver-order-item-name">{item.product_name || `สินค้า #${item.product_id}`}</div>
+                    <div className="muted-small">จำนวน {item.quantity}</div>
+                  </div>
+                  <div className="driver-order-item-price">{formatPrice(item.total_price)}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="muted-small">ยังไม่มีรายละเอียดรายการสินค้า</div>
+          )}
+        </div>
         <div className="driver-assignment-row">
-          <span>ยอดรวมออเดอร์: ฿{Number(assignment.order_total_amount || 0).toLocaleString()}</span>
+          <span>ยอดรวมออเดอร์: {formatPrice(assignment.order_total_amount)}</span>
         </div>
         <div className="driver-next-step">
           ขั้นตอนถัดไป: {nextAction?.label || 'ไม่มี (งานเสร็จแล้ว)'}
@@ -392,6 +429,11 @@ const DriverAssignmentDetail = () => {
           {hasDeliveryPosition && (
             <button type="button" onClick={openGoogleMapsNavigation} disabled={saving}>
               เปิด Google Maps
+            </button>
+          )}
+          {contactTel && (
+            <button type="button" onClick={() => window.location.assign(`tel:${telHref}`)} disabled={saving}>
+              โทรหาลูกค้า
             </button>
           )}
           {canTransition(assignment.status, 'cancelled') && (

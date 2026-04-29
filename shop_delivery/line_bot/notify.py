@@ -74,7 +74,6 @@ def send_order_status_notification(
         logger.info('Skip LINE notification: LINE_CHANNEL_ACCESS_TOKEN is not configured.')
         return False
 
-    actor_name = _display_name(actor) or ('คนขับ' if source == 'driver' else 'ร้านค้า')
     order_no = order.order_number or f'#{order.id}'
     order_status_text = order.get_status_display()
     old_status_text = old_status
@@ -87,7 +86,6 @@ def send_order_status_notification(
     lines = [
         f'อัปเดตคำสั่งซื้อ {order_no}',
         f'สถานะล่าสุด: {headline_status}',
-        f'อัปเดตโดย: {actor_name}',
     ]
     if source == 'driver':
         if old_driver_status and driver_status and old_driver_status != driver_status:
@@ -128,13 +126,6 @@ def send_order_status_notification(
                             "type": "text",
                             "text": f"สถานะล่าสุด: {headline_status}",
                             "size": "sm",
-                            "wrap": True
-                        },
-                        {
-                            "type": "text",
-                            "text": f"อัปเดตโดย: {actor_name}",
-                            "size": "sm",
-                            "color": "#666666",
                             "wrap": True
                         },
                         {

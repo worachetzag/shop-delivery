@@ -173,25 +173,6 @@ const Tracking = () => {
     });
   };
 
-  const callDriver = () => {
-    if (trackingInfo?.driver?.phone) {
-      window.open(`tel:${trackingInfo.driver.phone}`);
-    }
-  };
-
-  const openGoogleMapsNavigation = () => {
-    if (trackingInfo?.deliveryLatitude == null || trackingInfo?.deliveryLongitude == null) {
-      return;
-    }
-    const destination = `${trackingInfo.deliveryLatitude},${trackingInfo.deliveryLongitude}`;
-    const hasOrigin = trackingInfo.currentLatitude != null && trackingInfo.currentLongitude != null;
-    const origin = hasOrigin
-      ? `&origin=${trackingInfo.currentLatitude},${trackingInfo.currentLongitude}`
-      : '';
-    const url = `https://www.google.com/maps/dir/?api=1${origin}&destination=${destination}&travelmode=driving`;
-    window.location.assign(url);
-  };
-
   if (loading) {
     return (
       <div className="loading">
@@ -258,23 +239,6 @@ const Tracking = () => {
                 <h4 className="driver-name">{trackingInfo.driver.name}</h4>
                 <p className="driver-vehicle">{trackingInfo.driver.vehicle}</p>
                 <p className="driver-location">{trackingInfo.currentLocation}</p>
-              </div>
-              <div className="driver-actions">
-                <button 
-                  className="btn btn-primary btn-compact"
-                  onClick={callDriver}
-                >
-                  📞 โทรหา
-                </button>
-                {hasDeliveryDestination && (
-                  <button
-                    className="btn btn-secondary btn-compact"
-                    onClick={openGoogleMapsNavigation}
-                    type="button"
-                  >
-                    นำทาง Google Maps
-                  </button>
-                )}
               </div>
             </div>
             {shouldShowMap && (

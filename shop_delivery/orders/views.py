@@ -815,6 +815,7 @@ class DriverAssignmentListView(generics.ListAPIView):
         return (
             DriverAssignment.objects.filter(driver=self.request.user)
             .select_related('order', 'order__customer', 'order__customer__user', 'driver')
+            .prefetch_related('order__items__product')
             .order_by('-assigned_at')
         )
 
@@ -828,7 +829,7 @@ class DriverAssignmentDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return DriverAssignment.objects.filter(driver=self.request.user).select_related(
             'order', 'order__customer', 'order__customer__user', 'driver'
-        )
+        ).prefetch_related('order__items__product')
 
 
 class DriverAssignmentStatusUpdateView(APIView):
