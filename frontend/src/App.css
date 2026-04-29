@@ -303,6 +303,25 @@ button.btn:disabled {
   box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.14);
 }
 
+/* ฟอร์มลูกค้า: คอลัมน์กลาง ไม่ชิดซ้ายเกินไปบนจอแคบ */
+.customer-form-stack {
+  width: 100%;
+  max-width: min(100%, 440px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.customer-form-stack .form-actions {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .customer-form-stack .form-actions {
+    justify-content: flex-start;
+  }
+}
+
 /* Mobile app surface polish (customer + driver only) */
 .App.app-role-mobile .page-header {
   margin-bottom: 0.85rem;

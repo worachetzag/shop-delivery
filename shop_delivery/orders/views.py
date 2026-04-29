@@ -1027,6 +1027,15 @@ class OrderDriverTrackingView(APIView):
                     'product_name': item.product.name,
                     'quantity': item.quantity,
                     'price': item.price,
+                    'product': {
+                        'id': item.product_id,
+                        'name': item.product.name,
+                        'image': (
+                            request.build_absolute_uri(item.product.image.url)
+                            if getattr(item.product, 'image', None)
+                            else None
+                        ),
+                    },
                 } for item in order.items.select_related('product').all()
             ],
         }, status=status.HTTP_200_OK)

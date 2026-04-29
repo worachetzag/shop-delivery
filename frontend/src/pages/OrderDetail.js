@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
+import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { usePopup } from '../components/PopupProvider';
 import './OrderDetail.css';
 
@@ -359,9 +360,17 @@ const OrderDetail = () => {
             </div>
           )}
 
-          <div className="order-items">
+          <div className="order-items order-detail-items">
             {(order.items || []).map((item) => (
-              <div key={item.id} className="order-item">
+              <div key={item.id} className="order-item order-detail-item-row">
+                <img
+                  src={pickLineItemImage(item, PLACEHOLDER_IMAGES.sm)}
+                  alt=""
+                  className="order-detail-thumb"
+                  onError={(e) => {
+                    e.currentTarget.src = PLACEHOLDER_IMAGES.sm;
+                  }}
+                />
                 <div className="item-details">
                   <h4 className="item-name">{displayProductLineName(item)}</h4>
                   <p className="item-quantity">จำนวน: {item.quantity}</p>

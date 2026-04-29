@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
 
 const UNIT_OPTIONS = ['ชิ้น', 'แพ็ค', 'ขวด', 'กิโลกรัม', 'กรัม', 'มิลลิลิตร', 'ลิตร', 'อื่นๆ'];
@@ -209,9 +210,12 @@ const AdminProductFormPage = () => {
           {isEditMode && form.image && (
             <div style={{ marginBottom: '10px' }}>
               <img
-                src={form.image}
+                src={resolveMediaUrl(form.image, PLACEHOLDER_IMAGES.md)}
                 alt={form.name || 'product-image'}
                 style={{ width: '120px', borderRadius: '8px', border: '1px solid #d9deea' }}
+                onError={(e) => {
+                  e.currentTarget.src = PLACEHOLDER_IMAGES.md;
+                }}
               />
               <div style={{ marginTop: '8px' }}>
                 <button type="button" className="btn-secondary" onClick={clearProductImage}>

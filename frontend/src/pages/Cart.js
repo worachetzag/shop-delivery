@@ -60,15 +60,6 @@ const Cart = () => {
     return cartItems.reduce((total, item) => total + Number(item.quantity || 0), 0);
   };
 
-  const calculateShipping = () => {
-    const subtotal = calculateSubtotal();
-    return subtotal >= 5000 ? 0 : 100; // Free shipping over 5000 THB
-  };
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateShipping();
-  };
-
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
       style: 'currency',
@@ -189,35 +180,15 @@ const Cart = () => {
                 ))}
               </div>
               
-              <div className="summary-row">
-                <span>ยอดรวมสินค้า:</span>
-                <span>{formatPrice(calculateSubtotal())}</span>
+              <div className="summary-row total-row cart-subtotal-final">
+                <span>ยอดรวมสินค้า</span>
+                <span className="total-amount">{formatPrice(calculateSubtotal())}</span>
               </div>
-              
-              <div className="summary-row">
-                <span>ค่าจัดส่ง:</span>
-                <span>
-                  {calculateShipping() === 0 ? (
-                    <span className="free-shipping">ฟรี</span>
-                  ) : (
-                    formatPrice(calculateShipping())
-                  )}
-                </span>
-              </div>
-              
-              {calculateSubtotal() < 5000 && (
-                <div className="shipping-notice">
-                  <small>
-                    ซื้อเพิ่ม {formatPrice(5000 - calculateSubtotal())} 
-                    เพื่อรับการจัดส่งฟรี
-                  </small>
-                </div>
-              )}
-              
-              <div className="summary-row total-row">
-                <span>ยอดรวมทั้งสิ้น:</span>
-                <span className="total-amount">{formatPrice(calculateTotal())}</span>
-              </div>
+
+              <p className="cart-shipping-hint">
+                ค่าจัดส่งคิดตาม<strong>ระยะทาง</strong>จากร้านไปที่อยู่จัดส่ง (ตารางค่าส่งของร้าน)
+                — จะแสดงยอดชัดเจนหลัง<strong>เลือกหรือเพิ่มที่อยู่</strong>ที่หน้าชำระเงิน
+              </p>
               
               <div className="checkout-actions">
                 <Link to="/customer/checkout" className="btn btn-primary btn-full">

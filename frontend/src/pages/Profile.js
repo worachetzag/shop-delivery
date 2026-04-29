@@ -121,6 +121,25 @@ const Profile = () => {
     }
   }, [location.search]);
 
+  /** จากหน้าชำระเงิน: เปิดหมวดที่อยู่ + ฟอร์มเพิ่มที่อยู่ทันที */
+  useEffect(() => {
+    const qp = new URLSearchParams(location.search);
+    if (qp.get('section') === 'addresses' && qp.get('add') === '1') {
+      setEditingAddressId(null);
+      setShowAddAddress(true);
+      setNewAddress({
+        name: '',
+        address: '',
+        district: '',
+        province: '',
+        postalCode: '',
+        latitude: null,
+        longitude: null,
+        isDefault: false,
+      });
+    }
+  }, [location.search]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUserProfile(prev => ({
@@ -262,6 +281,9 @@ const Profile = () => {
       });
       setShowAddAddress(false);
       setEditingAddressId(null);
+      if (fromCheckout) {
+        navigate('/customer/checkout');
+      }
     } catch (error) {
       console.error('Error saving address:', error);
       popup.error('เกิดข้อผิดพลาดในการบันทึกที่อยู่: ' + error.message);
@@ -411,7 +433,7 @@ const Profile = () => {
           )}
 
           {section === 'personal' && (
-            <div className="profile-section">
+            <div className="profile-section profile-section-personal">
               <div className="profile-subpage-head">
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
                   ← กลับ
@@ -443,13 +465,13 @@ const Profile = () => {
               </div>
 
               {!editing ? (
-                <div className="profile-display" style={{ flex: 1, textAlign: 'left' }}>
-                  <p style={{ margin: '0 0 10px' }}><strong>ชื่อ-นามสกุล</strong><br />{userProfile.displayName || '—'}</p>
-                  <p style={{ margin: '0 0 10px' }}><strong>อีเมล</strong><br />{userProfile.email || '—'}</p>
-                  <p style={{ margin: 0 }}><strong>เบอร์โทรศัพท์</strong><br />{userProfile.phone || '—'}</p>
+                <div className="profile-display">
+                  <p><strong>ชื่อ-นามสกุล</strong><br />{userProfile.displayName || '—'}</p>
+                  <p><strong>อีเมล</strong><br />{userProfile.email || '—'}</p>
+                  <p><strong>เบอร์โทรศัพท์</strong><br />{userProfile.phone || '—'}</p>
                 </div>
               ) : (
-                <div className="profile-form">
+                <div className="profile-form customer-form-stack">
                   <div className="form-group">
                     <label className="form-label">ชื่อ-นามสกุล</label>
                     <input
@@ -520,7 +542,7 @@ const Profile = () => {
             </div>
 
             {showAddAddress && (
-              <div className="add-address-form">
+              <div className="add-address-form customer-form-stack">
                 <h4>{editingAddressId ? 'แก้ไขที่อยู่' : 'เพิ่มที่อยู่ใหม่'}</h4>
                 <p className="form-hint" style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#666' }}>
                   กด «ยกเลิก» เพื่อกลับไปดูรายการที่อยู่

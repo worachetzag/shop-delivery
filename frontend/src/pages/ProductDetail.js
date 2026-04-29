@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { productsService, cartService } from '../services/api';
 import { usePopup } from '../components/PopupProvider';
-import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
+import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -132,11 +132,11 @@ const ProductDetail = () => {
         <div className="product-detail-card">
           <div className="product-detail-image-wrap">
             <img
-              src={resolveMediaUrl(product.image, PLACEHOLDER_IMAGES.xl)}
+              src={pickProductImage(product, PLACEHOLDER_IMAGES.xl)}
               alt={product.name}
               className="product-detail-image"
               onError={(e) => {
-                e.target.src = PLACEHOLDER_IMAGES.xl;
+                e.currentTarget.src = PLACEHOLDER_IMAGES.xl;
               }}
             />
           </div>
@@ -180,10 +180,10 @@ const ProductDetail = () => {
               {relatedProducts.map((item) => (
                 <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
                   <img
-                    src={resolveMediaUrl(item.image, PLACEHOLDER_IMAGES.lg)}
+                    src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
                     alt={item.name}
                     onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMAGES.lg;
+                      e.currentTarget.src = PLACEHOLDER_IMAGES.lg;
                     }}
                   />
                   <div className="related-product-info">

@@ -90,10 +90,27 @@
   color: #333;
 }
 
+.profile-section-personal .section-header {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .profile-card {
   display: flex;
-  gap: 2rem;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .profile-card {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+    text-align: left;
+  }
 }
 
 .profile-avatar {
@@ -123,6 +140,32 @@
 
 .profile-form {
   flex: 1;
+  width: 100%;
+}
+
+.profile-display {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.profile-display p {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.profile-display p:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 640px) {
+  .profile-display {
+    text-align: left;
+    margin: 0;
+    max-width: none;
+  }
 }
 
 .form-group {

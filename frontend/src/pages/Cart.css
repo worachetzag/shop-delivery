@@ -278,6 +278,21 @@
   font-size: 1.1rem;
 }
 
+.cart-subtotal-final {
+  margin-top: 0.5rem;
+}
+
+.cart-shipping-hint {
+  margin: 0 0 0.25rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+}
+
 .total-amount {
   font-size: 1.3rem;
   font-weight: bold;

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { usePopup } from './PopupProvider';
+import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
 import './ProductCard.css';
 
 const ProductCard = ({
@@ -132,11 +133,11 @@ const ProductCard = ({
       <Link to={`/customer/products/${product.id}`} className="product-link">
         <div className="product-image-container">
           <img 
-            src={product.image} 
+            src={pickProductImage(product, PLACEHOLDER_IMAGES.md)} 
             alt={product.name}
             className="product-image"
             onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/300x200/f8f9fa/6c757d?text=No+Image';
+              e.currentTarget.src = PLACEHOLDER_IMAGES.md;
             }}
           />
         </div>

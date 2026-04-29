@@ -28,13 +28,33 @@ export function resolveMediaUrl(rawUrl, fallback = PLACEHOLDER_IMAGES.md) {
   }
 }
 
+/** รูปจากข้อมูลสินค้า (หน้ารายการสินค้า / รายละเอียด) */
+export function pickProductImage(product, fallback = PLACEHOLDER_IMAGES.md) {
+  if (!product) return fallback;
+  const candidates = [
+    product.image,
+    product.image_url,
+    product.thumbnail,
+    product.cover_image,
+  ];
+  const hit = candidates.find((value) => {
+    if (!value) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'object' && typeof value.url === 'string') return value.url.trim().length > 0;
+    return false;
+  });
+  if (!hit) return fallback;
+  return resolveMediaUrl(hit, fallback);
+}
+
 /** รูปจากบรรทัดออเดอร์ / ตะกร้า — ครอบคลุมหลายรูปแบบจาก API */
 export function pickLineItemImage(lineItem, fallback = PLACEHOLDER_IMAGES.md) {
   if (!lineItem) return fallback;
   const candidates = [
+    lineItem.product_image,
     lineItem.product?.image,
     lineItem.product?.image_url,
-    lineItem.product_image,
+    lineItem.product?.thumbnail,
     lineItem.image_url,
     lineItem.image,
   ];

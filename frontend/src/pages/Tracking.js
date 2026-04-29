@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
-import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
+import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import './Tracking.css';
 
@@ -69,7 +69,7 @@ const Tracking = () => {
               name: displayProductLineName(item),
               price: item.price || 0,
               quantity: item.quantity,
-              image: resolveMediaUrl(item.product?.image || item.image, PLACEHOLDER_IMAGES.sm)
+              image: pickLineItemImage(item, PLACEHOLDER_IMAGES.sm)
             })) || []
           };
           

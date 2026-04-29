@@ -5,19 +5,12 @@ import { usePopup } from '../components/PopupProvider';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
-import AddressPicker from '../components/AddressPicker';
 import './Checkout.css';
 
 const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
 
 function pickItemImage(item) {
   return pickLineItemImage(item, FALLBACK_IMAGE);
-}
-
-function parseCoord(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const n = typeof value === 'number' ? value : parseFloat(String(value), 10);
-  return Number.isFinite(n) ? n : null;
 }
 
 /** ตรวจข้อมูลจัดส่ง + ชำระเงินก่อนยืนยันคำสั่งซื้อ */
@@ -64,20 +57,6 @@ const Checkout = () => {
   const [selectedAddressId, setSelectedAddressId] = useState('');
   /** true = แสดงฟอร์มกรอกเต็ม; false = เลือกจาก dropdown แล้วแสดงแค่สรุป */
   const [manualShippingEntry, setManualShippingEntry] = useState(true);
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [savingAddress, setSavingAddress] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    label: '',
-    recipient_name: '',
-    phone_number: '',
-    address_line: '',
-    district: '',
-    province: '',
-    postal_code: '',
-    is_default: false,
-    latitude: null,
-    longitude: null,
-  });
   const [shippingInfo, setShippingInfo] = useState({
     name: '',
     phone: '',
@@ -184,7 +163,6 @@ const Checkout = () => {
   // กรณี "กรอกที่อยู่เอง" ให้หาพิกัด (lat/lng) อัตโนมัติเพื่อคำนวณค่าส่งตามระยะทาง
   useEffect(() => {
     if (!manualShippingEntry) return;
-    if (showAddressForm) return; // โหมดบันทึกที่อยู่ใหม่จะ geocode ก่อน submit
 
     if (shippingInfo?.latitude != null && shippingInfo?.longitude != null) return;
 
@@ -229,7 +207,6 @@ const Checkout = () => {
     };
   }, [
     manualShippingEntry,
-    showAddressForm,
     shippingInfo?.address,
     shippingInfo?.district,
     shippingInfo?.province,
@@ -418,97 +395,6 @@ const Checkout = () => {
     applyAddressToShipping(selected);
   };
 
-  const handleNewAddressChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setNewAddress((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleNewAddressLocationSelect = (lat, lon) => {
-    setNewAddress((prev) => ({
-      ...prev,
-      latitude: parseCoord(lat),
-      longitude: parseCoord(lon),
-    }));
-  };
-
-  const handleNewAddressFromMap = (addressData) => {
-    setNewAddress((prev) => ({
-      ...prev,
-      address_line: addressData.address ?? prev.address_line,
-      district: addressData.district ?? prev.district,
-      province: addressData.province ?? prev.province,
-      postal_code: addressData.postalCode ?? prev.postal_code,
-    }));
-  };
-
-  const handleCreateAddress = async (e) => {
-    e.preventDefault();
-    setSavingAddress(true);
-    try {
-      const token = localStorage.getItem('auth_token');
-      let lat = parseCoord(newAddress.latitude);
-      let lng = parseCoord(newAddress.longitude);
-      if (lat == null || lng == null) {
-        const geo = await geocodeAddressForCheckout({
-          address: newAddress.address_line,
-          district: newAddress.district,
-          province: newAddress.province,
-          postalCode: newAddress.postal_code,
-        });
-        lat = geo?.latitude != null ? Number(geo.latitude) : null;
-        lng = geo?.longitude != null ? Number(geo.longitude) : null;
-      }
-
-      const payload = {
-        ...newAddress,
-        recipient_name: newAddress.recipient_name || shippingInfo.name,
-        phone_number: newAddress.phone_number || shippingInfo.phone,
-        latitude: lat,
-        longitude: lng,
-      };
-      const response = await fetch(`${config.API_BASE_URL}accounts/addresses/`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.detail || data?.error || 'ไม่สามารถเพิ่มที่อยู่ได้');
-      }
-
-      const updatedList = [data, ...addresses.filter((addr) => !data.is_default || !addr.is_default)];
-      setAddresses(updatedList);
-      setSelectedAddressId(String(data.id));
-      applyAddressToShipping(data);
-      setManualShippingEntry(false);
-      setShowAddressForm(false);
-      setNewAddress({
-        label: '',
-        recipient_name: '',
-        phone_number: '',
-        address_line: '',
-        district: '',
-        province: '',
-        postal_code: '',
-        is_default: false,
-        latitude: null,
-        longitude: null,
-      });
-    } catch (error) {
-      popup.error(error.message || 'เพิ่มที่อยู่ไม่สำเร็จ');
-    } finally {
-      setSavingAddress(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (createdOrderId) {
@@ -521,8 +407,7 @@ const Checkout = () => {
     const useSavedAddressFlow =
       addresses.length > 0 &&
       selectedSavedAddress &&
-      !manualShippingEntry &&
-      !showAddressForm;
+      !manualShippingEntry;
 
     let issues;
     if (!selectedSavedAddress) {
@@ -540,11 +425,11 @@ const Checkout = () => {
     if (issues.length) {
       popup.error(`ข้อมูลยังไม่ครบ: ${issues.join(' · ')}`);
       const goProfile = await popup.confirm(
-        'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อ เบอร์โทร และที่อยู่จัดส่งหรือไม่? (กดยกเลิกเพื่อกรอกต่อในหน้านี้)',
+        'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อ เบอร์โทร และที่อยู่จัดส่งหรือไม่?',
         {
           title: 'ยืนยันคำสั่งซื้อ',
           confirmText: 'ไปหน้าโปรไฟล์',
-          cancelText: 'กรอกที่นี่',
+          cancelText: 'ปิด',
           tone: 'primary',
         },
       );
@@ -567,8 +452,7 @@ const Checkout = () => {
       const useSaved =
         addresses.length > 0 &&
         selectedSaved &&
-        !manualShippingEntry &&
-        !showAddressForm;
+        !manualShippingEntry;
 
       let orderData;
       if (useSaved) {
@@ -722,8 +606,7 @@ const Checkout = () => {
   const useSavedAddressFlow =
     addresses.length > 0 &&
     selectedSavedAddress &&
-    !manualShippingEntry &&
-    !showAddressForm;
+    !manualShippingEntry;
   const canSubmitOrder = Boolean(paymentMethod) && Boolean(selectedSavedAddress) && !submitting && !createdOrderId;
 
   return (
@@ -797,118 +680,36 @@ const Checkout = () => {
             <div className="shipping-info" ref={shippingSectionRef}>
               <h3 className="section-title">ข้อมูลการจัดส่ง</h3>
 
-              {!showAddressForm && (
-                <div className="address-book">
-                  <div className="address-book-header">
-                    <label className="form-label">เลือกที่อยู่ที่บันทึกไว้</label>
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      onClick={() => setShowAddressForm(true)}
-                    >
-                      เพิ่มที่อยู่ใหม่
-                    </button>
-                  </div>
-                  {addresses.length > 0 ? (
-                    <select
-                      className="form-input"
-                      value={selectedAddressId}
-                      onChange={handleSelectAddress}
-                    >
-                      <option value="">— กรุณาเลือกที่อยู่จัดส่ง —</option>
-                      {addresses.map((addr) => (
-                        <option key={addr.id} value={addr.id}>
-                          {(addr.label || 'ที่อยู่')} - {addr.address_line}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="address-empty">ยังไม่มีที่อยู่ที่บันทึกไว้</p>
-                  )}
+              <div className="address-book customer-form-stack">
+                <div className="address-book-header">
+                  <label className="form-label">เลือกที่อยู่ที่บันทึกไว้</label>
+                  <Link
+                    to="/customer/profile?section=addresses&from=checkout&add=1"
+                    className="btn btn-outline btn-sm"
+                  >
+                    เพิ่มที่อยู่ในโปรไฟล์
+                  </Link>
                 </div>
-              )}
-
-              {showAddressForm && (
-                <form className="new-address-form" onSubmit={handleCreateAddress}>
-                  <p className="form-hint" style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#666' }}>
-                    บันทึกที่อยู่หรือปิดฟอร์มเพื่อกลับไปเลือกที่อยู่เดิม
-                  </p>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">ชื่อที่อยู่</label>
-                      <input name="label" value={newAddress.label} onChange={handleNewAddressChange} className="form-input" placeholder="เช่น บ้าน" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">ชื่อผู้รับ</label>
-                      <input name="recipient_name" value={newAddress.recipient_name} onChange={handleNewAddressChange} className="form-input" />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">เลือกตำแหน่งบนแผนที่</label>
-                    <p className="form-hint" style={{ margin: '0 0 10px', fontSize: '0.9rem', color: '#666' }}>
-                      คลิกบนแผนที่ ใช้ปุ่ม 📍 ตำแหน่งปัจจุบัน หรือค้นหาที่อยู่ (เหมือนในโปรไฟล์)
-                    </p>
-                    <div style={{ marginBottom: '16px' }}>
-                      <AddressPicker
-                        onLocationSelect={handleNewAddressLocationSelect}
-                        onAddressSelect={handleNewAddressFromMap}
-                        initialLat={parseCoord(newAddress.latitude) ?? 13.7563}
-                        initialLon={parseCoord(newAddress.longitude) ?? 100.5018}
-                      />
-                      {parseCoord(newAddress.latitude) != null && parseCoord(newAddress.longitude) != null && (
-                        <div
-                          style={{
-                            marginTop: '10px',
-                            padding: '10px',
-                            backgroundColor: '#f0f0f0',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                          }}
-                        >
-                          พิกัดที่เลือก: {parseCoord(newAddress.latitude).toFixed(6)},{' '}
-                          {parseCoord(newAddress.longitude).toFixed(6)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">ที่อยู่</label>
-                    <textarea name="address_line" value={newAddress.address_line} onChange={handleNewAddressChange} className="form-textarea" rows="2" required />
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">อำเภอ/เขต</label>
-                      <input name="district" value={newAddress.district} onChange={handleNewAddressChange} className="form-input" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">จังหวัด</label>
-                      <input name="province" value={newAddress.province} onChange={handleNewAddressChange} className="form-input" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">รหัสไปรษณีย์</label>
-                      <input name="postal_code" value={newAddress.postal_code} onChange={handleNewAddressChange} className="form-input" />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="checkbox-row">
-                      <input type="checkbox" name="is_default" checked={newAddress.is_default} onChange={handleNewAddressChange} />
-                      ตั้งเป็นที่อยู่เริ่มต้น
-                    </label>
-                  </div>
-                  <div className="form-actions">
-                    <button type="submit" className="btn btn-primary btn-sm" disabled={savingAddress}>
-                      {savingAddress ? 'กำลังบันทึก...' : 'บันทึกที่อยู่'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setShowAddressForm(false)}
-                    >
-                      ปิด · กลับไปเลือกที่อยู่
-                    </button>
-                  </div>
-                </form>
-              )}
+                <p className="address-checkout-hint">
+                  เพิ่มที่อยู่พร้อมแผนที่ได้ที่โปรไฟล์ — หลังบันทึกจะกลับมาหน้านี้อัตโนมัติ
+                </p>
+                {addresses.length > 0 ? (
+                  <select
+                    className="form-input"
+                    value={selectedAddressId}
+                    onChange={handleSelectAddress}
+                  >
+                    <option value="">— กรุณาเลือกที่อยู่จัดส่ง —</option>
+                    {addresses.map((addr) => (
+                      <option key={addr.id} value={addr.id}>
+                        {(addr.label || 'ที่อยู่')} - {addr.address_line}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="address-empty">ยังไม่มีที่อยู่ — กด «เพิ่มที่อยู่ในโปรไฟล์» ด้านบน</p>
+                )}
+              </div>
 
               {useSavedAddressFlow ? (
                 <div className="saved-address-summary">

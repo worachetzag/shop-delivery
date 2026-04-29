@@ -29,11 +29,26 @@ def _format_delivery_address_from_saved(addr: CustomerAddress) -> str:
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
-    
+    product_image = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'price', 'total_price']
+        fields = ['id', 'product', 'product_name', 'product_image', 'quantity', 'price', 'total_price']
         read_only_fields = ['total_price']
+
+    def get_product_image(self, obj):
+        try:
+            prod = obj.product
+        except Exception:
+            return None
+        img = getattr(prod, 'image', None)
+        if not img:
+            return None
+        request = self.context.get('request')
+        url = img.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 class OrderSerializer(serializers.ModelSerializer):
