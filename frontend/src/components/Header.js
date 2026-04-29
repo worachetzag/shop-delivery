@@ -95,8 +95,7 @@ const Header = () => {
   const isMobileView = isMobile || isTablet;
   const isActive = (path) => location.pathname === path;
   const isActiveGroup = (paths) => paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
-  const userRole = localStorage.getItem('user_role') || '';
-  const isDriverMode = location.pathname.startsWith('/driver') || userRole === 'driver';
+  const isDriverMode = location.pathname.startsWith('/driver');
   const showTopMenu = !isMobileView && isDriverMode;
 
   return (

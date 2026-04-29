@@ -29,6 +29,46 @@
   gap: 2rem;
 }
 
+.profile-subpage-head {
+  margin-bottom: 10px;
+}
+
+.profile-menu-list {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-menu-item {
+  width: 100%;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-menu-item:hover {
+  border-color: #cbe7d6;
+  background: #f7fcf9;
+}
+
+.profile-menu-title {
+  margin: 0 0 2px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.profile-menu-subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
 /* Profile Section */
 .profile-section {
   background: white;

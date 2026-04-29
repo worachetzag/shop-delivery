@@ -40,6 +40,17 @@ const Profile = () => {
     longitude: null,
     isDefault: false
   });
+  const section = queryParams.get('section') || 'menu';
+
+  const goSection = (nextSection) => {
+    const params = new URLSearchParams(location.search);
+    if (nextSection === 'menu') {
+      params.delete('section');
+    } else {
+      params.set('section', nextSection);
+    }
+    navigate({ pathname: '/customer/profile', search: params.toString() ? `?${params.toString()}` : '' });
+  };
 
   useEffect(() => {
     // Load user profile from Django
@@ -373,8 +384,39 @@ const Profile = () => {
         </div>
 
         <div className="profile-content">
-          {/* Profile Information */}
-          <div className="profile-section">
+          {section === 'menu' && (
+            <div className="profile-section profile-menu-list">
+              <button className="profile-menu-item" type="button" onClick={() => goSection('personal')}>
+                <div>
+                  <p className="profile-menu-title">ข้อมูลส่วนตัว</p>
+                  <p className="profile-menu-subtitle">ชื่อ อีเมล เบอร์โทร</p>
+                </div>
+                <span>›</span>
+              </button>
+              <button className="profile-menu-item" type="button" onClick={() => goSection('addresses')}>
+                <div>
+                  <p className="profile-menu-title">ที่อยู่จัดส่ง</p>
+                  <p className="profile-menu-subtitle">ดู/เพิ่ม/แก้ไข/ตั้งค่าที่อยู่หลัก</p>
+                </div>
+                <span>›</span>
+              </button>
+              <button className="profile-menu-item" type="button" onClick={() => goSection('account')}>
+                <div>
+                  <p className="profile-menu-title">การจัดการบัญชี</p>
+                  <p className="profile-menu-subtitle">ส่งออกข้อมูล และลบบัญชี</p>
+                </div>
+                <span>›</span>
+              </button>
+            </div>
+          )}
+
+          {section === 'personal' && (
+            <div className="profile-section">
+              <div className="profile-subpage-head">
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
+                  ← กลับ
+                </button>
+              </div>
             <div className="section-header">
               <h3 className="section-title">ข้อมูลส่วนตัว</h3>
               <button 
@@ -453,9 +495,15 @@ const Profile = () => {
               )}
             </div>
           </div>
+          )}
 
-          {/* Addresses */}
-          <div className="addresses-section">
+          {section === 'addresses' && (
+            <div className="addresses-section">
+              <div className="profile-subpage-head">
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
+                  ← กลับ
+                </button>
+              </div>
             <div className="section-header">
               <h3 className="section-title">ที่อยู่จัดส่ง</h3>
               {!showAddAddress && (
@@ -619,9 +667,15 @@ const Profile = () => {
               </div>
             )}
           </div>
+          )}
 
-          {/* Account Actions */}
-          <div className="account-actions-section">
+          {section === 'account' && (
+            <div className="account-actions-section">
+              <div className="profile-subpage-head">
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
+                  ← กลับ
+                </button>
+              </div>
             <h3 className="section-title">การจัดการบัญชี</h3>
             
             <div className="action-cards">
@@ -654,6 +708,7 @@ const Profile = () => {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
