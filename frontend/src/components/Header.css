@@ -7,6 +7,7 @@
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-soft);
   box-shadow: 0 1px 8px rgba(16, 24, 40, 0.05);
+  backdrop-filter: saturate(120%) blur(2px);
   padding-top: env(safe-area-inset-top);
 }
 
@@ -64,6 +65,10 @@
 .nav-menu a:hover {
   background: #eef4f1;
   color: var(--brand-primary-strong);
+}
+
+.nav-menu a.active {
+  box-shadow: inset 0 0 0 1px #d9eadd;
 }
 
 .user-info {
@@ -158,6 +163,15 @@
 .liff-bottom-nav a.active {
   color: var(--brand-primary-strong);
   font-weight: 700;
+}
+
+.liff-bottom-nav a.active::after {
+  content: '';
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--brand-primary);
+  margin-top: 2px;
 }
 
 @media (max-width: 1024px) {

@@ -256,7 +256,7 @@
 
 .payment-option:hover {
   border-color: #00B900;
-  background: #f8fff8;
+  background: #f2fbf5;
 }
 
 .payment-option input[type="radio"] {
@@ -419,6 +419,10 @@
   margin: 0.35rem 0;
 }
 
+.saved-address-summary p strong {
+  color: #2a3744;
+}
+
 .saved-address-edit-btn {
   margin-top: 1rem;
   width: auto;
@@ -488,5 +492,13 @@
 
 .total-amount {
   font-size: 1rem;
+}
+
+.free-shipping {
+  padding: 2px 8px;
+  background: #e9f8ef;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  color: #0f7f3f;
 }
 
