@@ -6,10 +6,16 @@ export function redirectToShopLineOAuth() {
   window.location.href = `${config.LIFF_ENDPOINT_URL}/accounts/line/login/`;
 }
 
+function getGlobalLiff() {
+  if (typeof window === 'undefined') return null;
+  return window.liff || null;
+}
+
 const LineLoginButton = () => {
   const handleLineLogin = async () => {
     try {
-      const liff = (await import('liff')).default;
+      const liff = getGlobalLiff();
+      if (!liff) throw new Error('LIFF SDK not loaded');
       await liff.init({ liffId: config.LIFF_ID });
       // ใน LINE WebView: ให้ LIFF login ก่อน — มักไม่โผล่หน้าอีเมล/รหัสผ่านเหมือนเปิดใน Safari
       if (liff.isInClient() && !liff.isLoggedIn()) {

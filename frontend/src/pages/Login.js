@@ -3,6 +3,11 @@ import LineLoginButton, { redirectToShopLineOAuth } from '../components/LineLogi
 import config from '../config';
 import './Login.css';
 
+function getGlobalLiff() {
+  if (typeof window === 'undefined') return null;
+  return window.liff || null;
+}
+
 const Login = () => {
   useEffect(() => {
     if (localStorage.getItem('auth_token')) {
@@ -11,7 +16,8 @@ const Login = () => {
     let cancelled = false;
     (async () => {
       try {
-        const liff = (await import('liff')).default;
+        const liff = getGlobalLiff();
+        if (!liff) throw new Error('LIFF SDK not loaded');
         await liff.init({ liffId: config.LIFF_ID });
         if (cancelled) return;
         if (liff.isInClient() && liff.isLoggedIn()) {
