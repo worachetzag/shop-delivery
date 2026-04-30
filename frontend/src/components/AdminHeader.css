@@ -2,24 +2,42 @@
 
 .admin-header {
   z-index: 1000;
-  background: var(--surface-card);
-  color: var(--text-primary);
+  /* สีตัวอักษรแบบคงที่ + ฟอนต์รองรับไทย — กันกรณีตัวแปร CSS ไม่สืบทอดหรือคอนทราสต์ต่ำใน WebView */
+  --admin-nav-text: #0f172a;
+  --admin-nav-text-soft: #334155;
+  --admin-nav-text-muted: #475569;
+
+  /* กันโหมดสีของระบบ / ธีมเบราว์เซอร์ที่ทำให้ข้อความกลายเป็นขาวบนพื้นขาว */
+  color-scheme: light;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans Thai',
+    'Leelawadee UI',
+    'Tahoma',
+    sans-serif;
+  background: var(--surface-card, #ffffff);
+  color: var(--admin-nav-text);
   border-right: 1px solid var(--border-soft);
   box-shadow: var(--shadow-soft);
 }
 
 /* Shared nav controls (desktop sidebar + drawer) */
 .admin-nav-link {
-  color: var(--text-primary);
+  color: var(--admin-nav-text);
   text-decoration: none;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.92rem;
+  font-weight: 600;
   min-height: 44px;
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  background: var(--surface-muted);
+  background: var(--surface-muted, #eef3f1);
   border: 1px solid var(--border-soft);
   touch-action: manipulation;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -31,40 +49,41 @@
 }
 
 .admin-nav-link--active {
-  background: var(--brand-primary);
+  background: var(--brand-primary, #00b14f);
   color: #fff;
-  border-color: var(--brand-primary-strong);
-  font-weight: 600;
+  border-color: var(--brand-primary-strong, #008e42);
+  font-weight: 700;
 }
 
 .admin-nav-link--active:hover {
-  background: var(--brand-primary-strong);
+  background: var(--brand-primary-strong, #008e42);
   color: #fff;
-  border-color: var(--brand-primary-strong);
+  border-color: var(--brand-primary-strong, #008e42);
 }
 
 .admin-nav-section-label {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
+  font-size: 0.74rem;
+  color: var(--admin-nav-text-soft);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: 8px 0 2px;
   padding: 0 4px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .admin-nav-group-btn {
-  color: var(--text-primary);
+  color: var(--admin-nav-text);
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.92rem;
+  font-weight: 600;
   border: 1px solid var(--border-soft);
   width: 100%;
   text-align: left;
   cursor: pointer;
   min-height: 44px;
   touch-action: manipulation;
-  background: var(--surface-muted);
+  background: var(--surface-muted, #eef3f1);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
@@ -106,17 +125,21 @@
   flex-direction: column;
   gap: 14px;
   align-items: stretch;
-  min-height: 0;
+  min-height: min-content;
   height: 100%;
 }
 
+/* อย่าใส่ min-height: 0 ที่ nav — จะถูก flex บีบจนเหลือความสูง 0 เมื่อแบรนด์+ปุ่มออกจากระบบกินพื้นที่ */
 .admin-header--desktop .admin-header__nav {
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-items: stretch;
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: min-content;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-header--desktop .admin-header__logout-wrap {
@@ -211,6 +234,23 @@
 }
 
 .admin-header__drawer-panel {
+  /* Drawer อยู่นอก <header.admin-header> ใน DOM — ต้องประกาศตัวแปรซ้ำที่นี่ */
+  --admin-nav-text: #0f172a;
+  --admin-nav-text-soft: #334155;
+  --admin-nav-text-muted: #475569;
+
+  color-scheme: light;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans Thai',
+    'Leelawadee UI',
+    'Tahoma',
+    sans-serif;
+
   position: fixed;
   top: 0;
   left: 0;
@@ -222,8 +262,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--surface-card);
-  color: var(--text-primary);
+  background: var(--surface-card, #ffffff);
+  color: var(--admin-nav-text);
   box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
   overflow: hidden;
   border-right: 1px solid var(--border-soft);
@@ -275,8 +315,8 @@
   flex-shrink: 0;
   border: 1px solid var(--border-soft);
   border-radius: 10px;
-  background: var(--surface-card);
-  color: var(--text-primary);
+  background: var(--surface-card, #ffffff);
+  color: var(--admin-nav-text);
   cursor: pointer;
   font-size: 1.25rem;
   line-height: 1;
@@ -289,7 +329,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--admin-nav-text);
 }
 
 .admin-header__drawer-scroll {
@@ -312,12 +352,13 @@
   margin-top: 10px;
   border-top: 1px solid var(--border-soft);
   font-size: 0.88rem;
-  color: var(--text-secondary);
+  font-weight: 500;
+  color: var(--admin-nav-text-muted);
   word-break: break-word;
 }
 
 .admin-header__brand-desktop {
-  color: var(--text-primary);
+  color: var(--admin-nav-text);
   text-decoration: none;
   margin-bottom: 8px;
 }
@@ -326,15 +367,16 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
+  color: var(--admin-nav-text);
 }
 
 .admin-header__logout-full {
   width: 100%;
   padding: 10px 12px;
-  background: var(--surface-muted);
+  background: var(--surface-muted, #eef3f1);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
-  color: var(--text-secondary);
+  color: var(--admin-nav-text-soft);
   cursor: pointer;
   touch-action: manipulation;
   font-size: 0.92rem;
@@ -344,6 +386,98 @@
 
 .admin-header__logout-full:hover {
   background: #eaf7ef;
-  border-color: var(--brand-accent);
-  color: var(--brand-primary-strong);
+  border-color: var(--brand-accent, #1fbf67);
+  color: var(--brand-primary-strong, #008e42);
+}
+
+/*
+ * บังคับสีข้อความเมนู — กัน cascade จาก stylesheet อื่น / extension / Dark Reader
+ * (ไม่ใช้ -webkit-text-fill-color: unset — บางเวอร์ชัน WebKit ทำให้ตัวหนังสือโปร่ง)
+ */
+.admin-header.admin-header--desktop .admin-nav-link:not(.admin-nav-link--active) {
+  color: #0f172a !important;
+}
+
+.admin-header.admin-header--desktop .admin-nav-link--active {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
+
+.admin-header.admin-header--desktop .admin-nav-group-btn {
+  color: #0f172a !important;
+}
+
+.admin-header.admin-header--desktop .admin-nav-section-label {
+  color: #334155 !important;
+}
+
+.admin-header.admin-header--desktop .admin-header__brand-desktop,
+.admin-header.admin-header--desktop .admin-header__brand-desktop h1 {
+  color: #0f172a !important;
+}
+
+.admin-header.admin-header--desktop .admin-header__user-row {
+  color: #475569 !important;
+}
+
+.admin-header.admin-header--desktop .admin-header__logout-full {
+  color: #334155 !important;
+}
+
+.admin-header.admin-header--desktop .admin-header__logout-full:hover {
+  color: #008e42 !important;
+}
+
+.admin-header__drawer-panel .admin-nav-link:not(.admin-nav-link--active) {
+  color: #0f172a !important;
+}
+
+.admin-header__drawer-panel .admin-nav-link--active {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
+
+.admin-header__drawer-panel .admin-nav-group-btn {
+  color: #0f172a !important;
+}
+
+.admin-header__drawer-panel .admin-nav-section-label {
+  color: #334155 !important;
+}
+
+.admin-header__drawer-panel .admin-header__drawer-brand {
+  color: #0f172a !important;
+}
+
+.admin-header__drawer-panel .admin-header__drawer-close {
+  color: #0f172a !important;
+}
+
+.admin-header__drawer-panel .admin-header__user-row {
+  color: #475569 !important;
+}
+
+.admin-header__drawer-panel .admin-header__logout-full {
+  color: #334155 !important;
+}
+
+.admin-header__drawer-panel .admin-header__logout-full:hover {
+  color: #008e42 !important;
+}
+
+@media (forced-colors: active) {
+  .admin-header.admin-header--desktop .admin-nav-link:not(.admin-nav-link--active),
+  .admin-header__drawer-panel .admin-nav-link:not(.admin-nav-link--active) {
+    forced-color-adjust: none;
+    color: #0f172a !important;
+    background: #eef3f1 !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .admin-header.admin-header--desktop .admin-nav-link--active,
+  .admin-header__drawer-panel .admin-nav-link--active {
+    forced-color-adjust: none;
+    color: #fff !important;
+    background: #008e42 !important;
+  }
 }
