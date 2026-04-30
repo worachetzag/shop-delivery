@@ -130,8 +130,8 @@ const ProductCard = ({
 
   return (
     <div className={`product-card ${hasEntered ? 'is-entered' : ''}`}>
-      <Link to={`/customer/products/${product.id}`} className="product-link">
-        <div className="product-image-container">
+      <div className="product-image-container">
+        <Link to={`/customer/products/${product.id}`} className="product-image-link">
           <img 
             src={pickProductImage(product, PLACEHOLDER_IMAGES.md)} 
             alt={product.name}
@@ -140,8 +140,18 @@ const ProductCard = ({
               e.currentTarget.src = PLACEHOLDER_IMAGES.md;
             }}
           />
-        </div>
-        
+        </Link>
+        <button
+          className="product-image-add-btn"
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+          type="button"
+        >
+          {isOutOfStock ? 'หมด' : '+ ตะกร้า'}
+        </button>
+      </div>
+
+      <Link to={`/customer/products/${product.id}`} className="product-link">
         <div className="product-info">
           <h3 className="product-name" title={product.name}>{product.name}</h3>
           {categoryLabel && (
@@ -181,14 +191,6 @@ const ProductCard = ({
             </div>
           )}
         </div>
-
-        <button 
-          className="btn btn-primary btn-sm"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-        >
-          {isOutOfStock ? 'สินค้าหมด' : (showCartInfo && hasInCart) ? 'เพิ่มอีก 1 ชิ้น' : 'เพิ่มในตะกร้า'}
-        </button>
       </div>
     </div>
   );

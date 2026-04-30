@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AddressPicker from '../components/AddressPicker';
 import config from '../config';
@@ -29,6 +29,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddAddress, setShowAddAddress] = useState(false);
+  const phoneInputRef = useRef(null);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [newAddress, setNewAddress] = useState({
     name: '',
@@ -176,6 +177,17 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    const phone = String(userProfile.phone || '').trim();
+    if (!phone) {
+      popup.error('กรุณากรอกเบอร์โทรศัพท์ก่อนบันทึก');
+      setEditing(true);
+      goSection('personal');
+      window.requestAnimationFrame(() => {
+        phoneInputRef.current?.focus();
+        phoneInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      return;
+    }
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${config.API_BASE_URL}accounts/api-profile/`, {
@@ -186,7 +198,7 @@ const Profile = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          phone_number: userProfile.phone,
+          phone_number: phone,
         })
       });
       
@@ -502,6 +514,8 @@ const Profile = () => {
                       value={userProfile.phone}
                       onChange={handleInputChange}
                       className="form-input"
+                      ref={phoneInputRef}
+                      required
                     />
                   </div>
 
