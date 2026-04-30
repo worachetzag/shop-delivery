@@ -19,37 +19,6 @@
   padding-top: 0;
 }
 
-/* โหมดลูกค้าแบบไม่มีแถบบน — ปุ่มกลับมุมซ้ายบน */
-.customer-top-back {
-  position: fixed;
-  top: calc(10px + env(safe-area-inset-top));
-  left: 12px;
-  right: auto;
-  z-index: 1150;
-  border: 1px solid var(--border-soft);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 7px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: var(--shadow-soft);
-}
-
-.customer-top-back:active {
-  transform: scale(0.97);
-}
-
-@media (hover: hover) {
-  .customer-top-back:hover {
-    border-color: rgba(0, 177, 79, 0.35);
-    color: var(--brand-primary-strong);
-  }
-}
-
 .header-content {
   height: 56px;
   display: flex;

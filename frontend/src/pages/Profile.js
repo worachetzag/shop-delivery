@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import AddressPicker from '../components/AddressPicker';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import CustomerInlineBack from '../components/CustomerInlineBack';
 import './Profile.css';
 
 /** แปลงพิกัดจาก API (string/Decimal) เป็นตัวเลข — ใช้ก่อน .toFixed() / ส่ง backend */
@@ -386,6 +387,7 @@ const Profile = () => {
   return (
     <div className="profile-page">
       <div className="container">
+        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">โปรไฟล์ของฉัน</h1>
           <p className="page-subtitle">จัดการข้อมูลส่วนตัวและที่อยู่</p>

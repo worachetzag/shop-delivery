@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
+import CustomerInlineBack from '../components/CustomerInlineBack';
 import './Cart.css';
 
 const Cart = () => {
@@ -79,6 +80,7 @@ const Cart = () => {
     return (
       <div className="cart-page">
         <div className="container">
+          <CustomerInlineBack />
           <div className="page-header">
             <h1 className="page-title">ตะกร้าสินค้า</h1>
           </div>
@@ -99,6 +101,7 @@ const Cart = () => {
   return (
     <div className="cart-page">
       <div className="container">
+        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">ตะกร้าสินค้า</h1>
           <p className="page-subtitle">ตรวจสอบสินค้าในตะกร้าของคุณ</p>

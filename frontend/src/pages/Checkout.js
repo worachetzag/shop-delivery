@@ -5,6 +5,7 @@ import { usePopup } from '../components/PopupProvider';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
+import CustomerInlineBack from '../components/CustomerInlineBack';
 import './Checkout.css';
 
 const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
@@ -612,6 +613,7 @@ const Checkout = () => {
   return (
     <div className="checkout-page">
       <div className="container">
+        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">ยืนยันคำสั่งซื้อ</h1>
           <p className="page-subtitle">ตรวจสอบข้อมูลการสั่งซื้อ</p>

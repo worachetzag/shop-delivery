@@ -6,6 +6,7 @@ import { productsService, cartService } from '../services/api';
 import './Products.css';
 import { usePopup } from '../components/PopupProvider';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
+import CustomerInlineBack from '../components/CustomerInlineBack';
 
 const PAGE_SIZE = 12;
 const SKELETON_CARD_COUNT = 8;
@@ -188,6 +189,7 @@ const Products = () => {
     return (
       <div className="products-page">
         <div className="container">
+          <CustomerInlineBack />
           <div className="page-header">
             <h1 className="page-title">สินค้าทั้งหมด</h1>
             <p className="page-subtitle">เลือกสินค้าที่คุณต้องการ</p>
@@ -216,6 +218,7 @@ const Products = () => {
   return (
     <div className="products-page">
       <div className="container">
+        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">สินค้าทั้งหมด</h1>
           <p className="page-subtitle">เลือกสินค้าที่คุณต้องการ</p>

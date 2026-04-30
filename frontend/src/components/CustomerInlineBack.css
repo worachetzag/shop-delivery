@@ -1,0 +1,25 @@
+.customer-inline-back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brand-primary-strong);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.customer-inline-back:active {
+  opacity: 0.85;
+}
+
+@media (hover: hover) {
+  .customer-inline-back:hover {
+    color: var(--brand-primary);
+  }
+}

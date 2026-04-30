@@ -6,6 +6,7 @@ import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
 import { formatBahtAmount } from '../utils/formatPrice';
 import { peekCustomerListingScrollRestore } from '../utils/listingScrollRestore';
 import { displayProductLineName } from '../utils/helpers';
+import CustomerInlineBack from '../components/CustomerInlineBack';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -192,6 +193,7 @@ const ProductDetail = () => {
     return (
       <div className="product-detail-page">
         <div className="container">
+          <CustomerInlineBack />
           <div className="product-detail-empty">
             <h2>ไม่พบสินค้า</h2>
             <Link to="/customer/products" className="btn btn-primary">
@@ -208,6 +210,7 @@ const ProductDetail = () => {
   return (
     <div className="product-detail-page">
       <div className="container">
+        <CustomerInlineBack />
         <div className="product-detail-breadcrumb">
           <Link to="/customer/products">สินค้า</Link>
           <span>/</span>

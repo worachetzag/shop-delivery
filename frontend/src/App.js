@@ -32,7 +32,6 @@ import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
-import { customerShouldShowBackButton } from './utils/customerNavigation';
 import './App.css';
 
 function AppContent() {
@@ -124,9 +123,7 @@ function AppContent() {
   }, [location.pathname, location.search]);
   
   return (
-    <div
-      className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}${customerShellHasBack ? ' customer-shell-has-back' : ''}`}
-    >
+    <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}`}>
       {showAdminChrome ? (
         <AdminHeader />
       ) : showCustomerChrome ? (

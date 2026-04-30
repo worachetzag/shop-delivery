@@ -34,12 +34,6 @@
   padding-bottom: calc(var(--mobile-bottom-nav-clearance) + 10px);
 }
 
-/* เว้นที่เมื่อมีปุ่มกลับลอยมุมซ้ายบน */
-.App.customer-shell-has-back.app-role-mobile .main-content {
-  padding-top: calc(36px + env(safe-area-inset-top));
-  padding-left: 76px;
-}
-
 .App.app-role-admin .main-content {
   padding-top: 24px;
   padding-left: 264px;

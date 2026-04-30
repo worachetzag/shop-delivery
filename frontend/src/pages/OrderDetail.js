@@ -4,6 +4,7 @@ import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { usePopup } from '../components/PopupProvider';
+import CustomerInlineBack from '../components/CustomerInlineBack';
 import './OrderDetail.css';
 
 const OrderDetail = () => {
@@ -251,6 +252,7 @@ const OrderDetail = () => {
     return (
       <div className="orders-page">
         <div className="container">
+          <CustomerInlineBack />
           <div className="empty-orders">
             <h3>ไม่พบคำสั่งซื้อ</h3>
             <Link to="/customer/orders" className="btn btn-primary">กลับหน้าคำสั่งซื้อ</Link>
@@ -263,6 +265,7 @@ const OrderDetail = () => {
   return (
     <div className="orders-page">
       <div className="container">
+        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">คำสั่งซื้อ {order.order_number || `#${order.id}`}</h1>
           <p className="page-subtitle">สถานะ: {order.status_display || order.status}</p>
