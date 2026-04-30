@@ -243,6 +243,7 @@ const AdminOrderDetail = () => {
     order.payment_slip_url &&
     order.payment_slip_status === 'uploaded';
   const hasAssignedDriver = Boolean(order?.driver_assignment?.driver_id);
+  const customerId = order.customer || order.customer_id || null;
 
   return (
     <div className="admin-dashboard">
@@ -250,9 +251,9 @@ const AdminOrderDetail = () => {
         <h2>รายละเอียดคำสั่งซื้อ {order.order_number || `#${order.id}`}</h2>
         <p>
           <strong>ลูกค้า:</strong>{' '}
-          {order.customer ? (
-            <Link to={`/admin/customers/${order.customer}`} className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-block', padding: '2px 8px', marginLeft: 4 }}>
-              {order.customer_name || `ลูกค้า #${order.customer}`}
+          {customerId ? (
+            <Link to={`/admin/customers/${customerId}`} className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-block', padding: '2px 8px', marginLeft: 4 }}>
+              {order.customer_name || `ลูกค้า #${customerId}`}
             </Link>
           ) : (
             order.customer_name || '-'
@@ -406,9 +407,9 @@ const AdminOrderDetail = () => {
         </div>
 
         <div style={{ marginTop: '14px' }}>
-          {order.customer ? (
+          {customerId ? (
             <Link
-              to={`/admin/orders?customer_id=${order.customer}`}
+              to={`/admin/orders?customer_id=${customerId}`}
               className="btn btn-secondary"
               style={{ marginRight: '8px' }}
             >

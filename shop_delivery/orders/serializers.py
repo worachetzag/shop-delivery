@@ -53,6 +53,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    customer_id = serializers.IntegerField(source='customer_id', read_only=True)
     customer_name = serializers.CharField(source='customer.user.get_full_name', read_only=True)
     order_type_display = serializers.CharField(source='get_order_type_display', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
@@ -63,7 +64,7 @@ class OrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'customer', 'customer_name', 'order_type', 'order_type_display',
+        fields = ['id', 'order_number', 'customer', 'customer_id', 'customer_name', 'order_type', 'order_type_display',
                  'payment_method', 'payment_method_display', 'status', 'status_display',
                  'delivery_address', 'delivery_phone', 'delivery_notes',
                  'delivery_distance',

@@ -1072,7 +1072,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
               </thead>
               <tbody>
                 {orders.length > 0 ? (
-                  orders.map(order => (
+                  orders.map((order) => {
+                    const customerId = order.customer || order.customer_id || null;
+                    return (
                     <tr
                       key={order.id}
                       className="order-row-clickable"
@@ -1089,14 +1091,14 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                         </Link>
                       </td>
                       <td>
-                        {order.customer ? (
+                        {customerId ? (
                           <Link
-                            to={`/admin/customers/${order.customer}`}
+                            to={`/admin/customers/${customerId}`}
                             className="btn-secondary"
                             style={{ textDecoration: 'none', display: 'inline-block', padding: '4px 8px', fontSize: '0.8rem' }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {order.customer_name || `ลูกค้า #${order.customer}`}
+                            {order.customer_name || `ลูกค้า #${customerId}`}
                           </Link>
                         ) : (
                           order.customer_name || 'N/A'
@@ -1132,7 +1134,8 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                         )}
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>

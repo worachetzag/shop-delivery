@@ -187,6 +187,26 @@ const AdminInventoryPage = ({ section = 'all' }) => {
     }
   };
 
+  const goToMovementSource = (movement) => {
+    const sourceType = String(movement?.source_type || '').toLowerCase();
+    const sourceId = String(movement?.source_id || '').trim();
+    if (!sourceType || !sourceId) return;
+
+    if (sourceType === 'order') {
+      // source_id ใน movement เก็บเป็นเลขออเดอร์ เช่น SP20260430001
+      navigate(`/admin/orders?q=${encodeURIComponent(sourceId)}`);
+      return;
+    }
+    if (sourceType === 'purchase_order') {
+      navigate(`/admin/inventory/purchase-orders?q=${encodeURIComponent(sourceId)}`);
+    }
+  };
+
+  const visibleMovements = useMemo(
+    () => movements.filter((m) => String(m?.movement_type || '').toLowerCase() !== 'sale_reserve'),
+    [movements]
+  );
+
   if (loadingPage) {
     return (
       <div className="admin-dashboard" style={{ padding: 16 }}>
@@ -337,14 +357,26 @@ const AdminInventoryPage = ({ section = 'all' }) => {
             <tr><th>เวลา</th><th>สินค้า</th><th>ประเภท</th><th>จำนวน</th><th>ก่อน/หลัง</th><th>ที่มา</th></tr>
           </thead>
           <tbody>
-            {movements.map((m) => (
+            {visibleMovements.map((m) => (
               <tr key={m.id}>
                 <td>{new Date(m.created_at).toLocaleString('th-TH')}</td>
                 <td>{m.product_name}</td>
                 <td>{m.movement_label}</td>
                 <td>{m.quantity_change}</td>
                 <td>{m.quantity_before} / {m.quantity_after}</td>
-                <td>{m.source_type || '-'} {m.source_id || ''}</td>
+                <td>
+                  {m.source_type || '-'} {m.source_id || ''}
+                  {String(m.source_type || '').toLowerCase() === 'order' && String(m.source_id || '').trim() ? (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ marginLeft: 8, padding: '2px 8px', fontSize: '0.78rem' }}
+                      onClick={() => goToMovementSource(m)}
+                    >
+                      เปิดออเดอร์
+                    </button>
+                  ) : null}
+                </td>
               </tr>
             ))}
           </tbody>
