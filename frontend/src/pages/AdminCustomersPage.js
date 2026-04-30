@@ -167,7 +167,15 @@ const AdminCustomersPage = () => {
                         ) : null}
                       </td>
                       <td>{formatWhen(row.created_at)}</td>
-                      <td>{row.order_count ?? 0}</td>
+                      <td>
+                        <Link
+                          to={`/admin/orders?customer_id=${row.id}`}
+                          className="btn-secondary"
+                          style={{ textDecoration: 'none', display: 'inline-block', padding: '4px 8px', fontSize: '0.8rem' }}
+                        >
+                          {row.order_count ?? 0} ออเดอร์
+                        </Link>
+                      </td>
                       <td>{formatBaht(row.total_spent_delivered)}</td>
                       <td>{formatWhen(row.last_order_at)}</td>
                       <td>

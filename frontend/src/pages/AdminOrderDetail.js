@@ -248,7 +248,16 @@ const AdminOrderDetail = () => {
     <div className="admin-dashboard">
       <div className="admin-content">
         <h2>รายละเอียดคำสั่งซื้อ {order.order_number || `#${order.id}`}</h2>
-        <p><strong>ลูกค้า:</strong> {order.customer_name || '-'}</p>
+        <p>
+          <strong>ลูกค้า:</strong>{' '}
+          {order.customer ? (
+            <Link to={`/admin/customers/${order.customer}`} className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-block', padding: '2px 8px', marginLeft: 4 }}>
+              {order.customer_name || `ลูกค้า #${order.customer}`}
+            </Link>
+          ) : (
+            order.customer_name || '-'
+          )}
+        </p>
         <p><strong>สถานะ:</strong> {order.status_display || order.status}</p>
         <p><strong>วิธีชำระเงิน:</strong> {order.payment_method_display || order.payment_method}</p>
         <p><strong>ยอดรวม:</strong> ฿{Number(order.total_amount || 0).toLocaleString()}</p>
@@ -397,6 +406,15 @@ const AdminOrderDetail = () => {
         </div>
 
         <div style={{ marginTop: '14px' }}>
+          {order.customer ? (
+            <Link
+              to={`/admin/orders?customer_id=${order.customer}`}
+              className="btn btn-secondary"
+              style={{ marginRight: '8px' }}
+            >
+              ดูออเดอร์ลูกค้าคนนี้
+            </Link>
+          ) : null}
           {order.driver_assignment && !['delivered', 'cancelled'].includes(order.status) && (
             <Link to={`/admin/orders/${order.id}/tracking`} className="btn btn-primary" style={{ marginRight: '8px' }}>
               ติดตามคนขับ

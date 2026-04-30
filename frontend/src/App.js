@@ -41,6 +41,7 @@ function AppContent() {
   const isAdminLoginRoute = location.pathname === '/admin/login';
   const showAdminChrome = isAdminPage && !isAdminLoginRoute;
   const isDriverPage = location.pathname.startsWith('/driver');
+  const showCustomerHeader = !isAdminPage && !isDriverPage;
   const appRoleClass = isAdminPage ? 'app-role-admin' : (isDriverPage || location.pathname.startsWith('/customer') ? 'app-role-mobile' : 'app-role-mobile');
   const [routeLoading, setRouteLoading] = useState(false);
   const previousPathRef = useRef(location.pathname + location.search);
@@ -117,7 +118,7 @@ function AppContent() {
   
   return (
     <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}`}>
-      {showAdminChrome ? <AdminHeader /> : !isAdminPage ? <Header /> : null}
+      {showAdminChrome ? <AdminHeader /> : showCustomerHeader ? <Header /> : null}
       {routeLoading && (
         <div className="route-loading-overlay" aria-live="polite" aria-label="กำลังเปลี่ยนหน้า">
           <div className="route-loading-spinner" />

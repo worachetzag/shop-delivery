@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import ApiPaginationBar from '../components/ApiPaginationBar';
@@ -1078,8 +1078,30 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       className="order-row-clickable"
                       onClick={() => navigate(`/admin/orders/${order.id}`)}
                     >
-                      <td>{order.order_number || `#${order.id}`}</td>
-                      <td>{order.customer_name || 'N/A'}</td>
+                      <td>
+                        <Link
+                          to={`/admin/orders/${order.id}`}
+                          className="btn-secondary"
+                          style={{ textDecoration: 'none', display: 'inline-block', padding: '4px 8px', fontSize: '0.8rem' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {order.order_number || `#${order.id}`}
+                        </Link>
+                      </td>
+                      <td>
+                        {order.customer ? (
+                          <Link
+                            to={`/admin/customers/${order.customer}`}
+                            className="btn-secondary"
+                            style={{ textDecoration: 'none', display: 'inline-block', padding: '4px 8px', fontSize: '0.8rem' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {order.customer_name || `ลูกค้า #${order.customer}`}
+                          </Link>
+                        ) : (
+                          order.customer_name || 'N/A'
+                        )}
+                      </td>
                       <td>{Array.isArray(order.items) ? order.items.length : (order.items_count || 0)} รายการ</td>
                       <td>฿{order.total_amount || 0}</td>
                       <td>

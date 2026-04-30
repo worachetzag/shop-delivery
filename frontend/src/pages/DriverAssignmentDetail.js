@@ -287,7 +287,8 @@ const DriverAssignmentDetail = () => {
   const telHref = contactTel ? contactTel.replace(/\s/g, '') : '';
   const hasDriverPosition = assignment.current_latitude != null && assignment.current_longitude != null;
   const hasDeliveryPosition = assignment.delivery_latitude != null && assignment.delivery_longitude != null;
-  const showMap = hasDriverPosition || hasDeliveryPosition;
+  const isCompletedJob = ['delivered', 'cancelled'].includes(assignment.status);
+  const showMap = !isCompletedJob && (hasDriverPosition || hasDeliveryPosition);
   const isCodPayment = assignment.payment_method === 'cod';
 
   return (
