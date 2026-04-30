@@ -1,7 +1,7 @@
 .popup-toast-stack {
   position: fixed;
   right: 16px;
-  bottom: calc(84px + env(safe-area-inset-bottom));
+  bottom: calc(var(--mobile-bottom-nav-clearance, 72px) + 12px);
   display: flex;
   flex-direction: column;
   gap: 10px;

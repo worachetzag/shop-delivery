@@ -32,6 +32,7 @@ import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
+import { customerShouldShowBackButton } from './utils/customerNavigation';
 import './App.css';
 
 function AppContent() {
@@ -44,6 +45,8 @@ function AppContent() {
   const isDriverPage = location.pathname.startsWith('/driver');
   const showDriverChrome = isDriverPage && !isDriverLoginRoute;
   const showCustomerChrome = !isAdminPage && !isDriverPage;
+  const customerShellHasBack =
+    showCustomerChrome && customerShouldShowBackButton(location.pathname);
   const appRoleClass = isAdminPage
     ? 'app-role-admin'
     : (isDriverPage ? 'app-role-mobile app-role-driver' : 'app-role-mobile');
@@ -121,7 +124,9 @@ function AppContent() {
   }, [location.pathname, location.search]);
   
   return (
-    <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}`}>
+    <div
+      className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}${customerShellHasBack ? ' customer-shell-has-back' : ''}`}
+    >
       {showAdminChrome ? (
         <AdminHeader />
       ) : showCustomerChrome ? (

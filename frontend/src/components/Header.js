@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { customerShouldShowBackButton, getCustomerBackPath } from '../utils/customerNavigation';
 import { useResponsive } from '../hooks/useResponsive';
 import config from '../config';
 import './Header.css';
@@ -8,6 +9,7 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isMobile, isTablet } = useResponsive();
 
   useEffect(() => {
@@ -100,8 +102,25 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   const shouldHideTopBar =
     (hideCustomerTopBar && !isDriverMode) || (hideDriverTopBar && isDriverMode);
 
+  const showCustomerBack =
+    shouldHideTopBar && !isDriverMode && customerShouldShowBackButton(location.pathname);
+
+  const handleCustomerBack = () => {
+    navigate(getCustomerBackPath(location.pathname));
+  };
+
   return (
     <header className={`header${shouldHideTopBar ? ' header--topless' : ''}`}>
+      {showCustomerBack && (
+        <button
+          type="button"
+          className="customer-top-back"
+          aria-label="กลับ"
+          onClick={handleCustomerBack}
+        >
+          กลับ
+        </button>
+      )}
       {!shouldHideTopBar && (
         <div className="header-content">
           <Link to={isDriverMode ? '/driver/dashboard' : '/customer'} className="logo">
@@ -152,7 +171,9 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
         </div>
       )}
 
-      <nav className={`liff-bottom-nav ${!isDriverMode ? 'force-show' : ''}${isDriverMode ? ' liff-bottom-nav--driver' : ''}`}>
+      <nav
+        className={`liff-bottom-nav ${!isDriverMode ? 'force-show liff-bottom-nav--customer' : ''}${isDriverMode ? ' liff-bottom-nav--driver' : ''}`}
+      >
           {isDriverMode ? (
             <>
               <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>

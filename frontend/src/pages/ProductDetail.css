@@ -292,3 +292,126 @@
   min-width: 30px;
   font-size: 0.86rem;
 }
+
+.product-detail-cart-peek-btn {
+  flex: 1 1 140px;
+}
+
+/* Popup สรุปตะกร้า */
+.product-cart-peek-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1290;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  padding-bottom: calc(12px + var(--mobile-bottom-nav-clearance, 72px));
+}
+
+.product-cart-peek-panel {
+  width: min(100%, 400px);
+  max-height: min(72vh, 520px);
+  background: var(--surface-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: product-cart-peek-rise 200ms ease-out;
+}
+
+@keyframes product-cart-peek-rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.product-cart-peek-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.product-cart-peek-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.product-cart-peek-close {
+  border: none;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.product-cart-peek-body {
+  padding: 12px 14px;
+  overflow: auto;
+  flex: 1;
+}
+
+.product-cart-peek-muted {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.product-cart-peek-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-cart-peek-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.82rem;
+}
+
+.product-cart-peek-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.product-cart-peek-meta {
+  color: var(--text-secondary);
+}
+
+.product-cart-peek-total {
+  margin: 12px 0 0;
+  font-size: 0.92rem;
+  text-align: right;
+}
+
+.product-cart-peek-actions {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.product-cart-peek-full-link {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}

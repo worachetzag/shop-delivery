@@ -119,25 +119,31 @@
 
 .floating-cart-wrapper {
   position: fixed;
-  right: 16px;
-  bottom: 88px;
-  z-index: 50;
+  right: 12px;
+  bottom: calc(var(--mobile-bottom-nav-clearance, 72px) + 12px);
+  z-index: 1250;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .floating-cart-button {
   border: none;
   border-radius: 999px;
-  background: #00b900;
+  background: linear-gradient(145deg, var(--brand-primary) 0%, var(--brand-primary-strong) 100%);
   color: #fff;
-  box-shadow: 0 10px 24px rgba(0, 185, 0, 0.35);
-  padding: 10px 14px;
-  display: flex;
+  box-shadow: 0 6px 16px rgba(0, 142, 66, 0.28), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  padding: 8px 12px;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 700;
+  font-size: 0.78rem;
   cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.floating-cart-button:active {
+  transform: scale(0.98);
 }
 
 .floating-cart-icon {
@@ -149,14 +155,14 @@
 }
 
 .floating-cart-summary {
-  width: 280px;
-  max-height: 320px;
+  width: min(280px, calc(100vw - 48px));
+  max-height: min(320px, 45vh);
   overflow: auto;
-  background: #fff;
-  border: 1px solid #e6edf7;
-  border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
-  padding: 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft), 0 16px 40px rgba(15, 23, 42, 0.12);
+  padding: 10px 12px;
 }
 
 .floating-cart-summary-title {
@@ -200,12 +206,13 @@
 .floating-cart-link {
   display: block;
   text-align: center;
-  background: #00b900;
+  background: linear-gradient(145deg, var(--brand-primary) 0%, var(--brand-primary-strong) 100%);
   color: #fff;
   text-decoration: none;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
+  font-size: 0.82rem;
 }
 
 .floating-checkout-link {
@@ -278,11 +285,11 @@
 
   .floating-cart-wrapper {
     right: 10px;
-    bottom: 76px;
+    bottom: calc(var(--mobile-bottom-nav-clearance, 72px) + 10px);
   }
 
   .floating-cart-summary {
-    width: min(86vw, 280px);
+    width: min(calc(100vw - 36px), 280px);
   }
 }
 
@@ -314,16 +321,5 @@
 .filter-group .form-label {
   font-size: 0.78rem;
   margin-bottom: 0.3rem;
-}
-
-.floating-cart-button {
-  background: linear-gradient(135deg, #00b14f 0%, #009246 100%);
-  box-shadow: 0 8px 18px rgba(0, 177, 79, 0.26);
-  padding: 8px 12px;
-}
-
-.floating-cart-summary {
-  border-radius: 12px;
-  padding: 8px;
 }
 

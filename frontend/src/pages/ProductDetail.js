@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { productsService, cartService } from '../services/api';
 import { usePopup } from '../components/PopupProvider';
 import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
 import { formatBahtAmount } from '../utils/formatPrice';
 import { peekCustomerListingScrollRestore } from '../utils/listingScrollRestore';
+import { displayProductLineName } from '../utils/helpers';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -13,9 +14,15 @@ const ProductDetail = () => {
   const popup = usePopup();
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState(null);
-  const [cartQty, setCartQty] = useState(0);
+  /** จำนวนที่แสดงในตัวเลือก — ถ้ายังไม่มีในตะกร้าเริ่มที่ 1 (เมื่อมีสต็อก) */
+  const [qty, setQty] = useState(1);
+  /** มีบรรทัดสินค้านี้ในตะกร้าแล้วหรือยัง (ใช้เลือก add vs update) */
+  const [inCart, setInCart] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [cartPeekOpen, setCartPeekOpen] = useState(false);
+  const [peekLoading, setPeekLoading] = useState(false);
+  const [peekItems, setPeekItems] = useState([]);
 
   const resolveCategoryId = (p) => {
     if (!p) return undefined;
@@ -35,6 +42,46 @@ const ProductDetail = () => {
 
   const numericProductId = useMemo(() => Number(productId), [productId]);
 
+  const availStock = Number(
+    product?.available_quantity ??
+      Math.max(
+        0,
+        Number(product?.stock_quantity || 0) - Number(product?.reserved_quantity || 0),
+      ),
+  );
+
+  const outOfStock = availStock <= 0;
+
+  const persistQty = useCallback(
+    async (targetQty) => {
+      if (!product) return false;
+      if (targetQty < 0 || targetQty > availStock) return false;
+      setSubmitting(true);
+      try {
+        if (targetQty === 0) {
+          await cartService.updateCartItem(product.id, 0);
+          setInCart(false);
+          setQty(availStock > 0 ? 1 : 0);
+          return true;
+        }
+        if (!inCart) {
+          await cartService.addToCart(product.id, targetQty);
+          setInCart(true);
+        } else {
+          await cartService.updateCartItem(product.id, targetQty);
+        }
+        setQty(targetQty);
+        return true;
+      } catch (error) {
+        popup.error(error?.error || 'ไม่สามารถอัปเดตตะกร้าได้');
+        return false;
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [product, availStock, inCart, popup],
+  );
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -48,20 +95,40 @@ const ProductDetail = () => {
         if (cancelled) return;
 
         setProduct(productData || null);
-        const relatedResponse = await productsService.getProducts({
-          category_id: resolveCategoryId(productData),
-          page_size: 24,
-          ordering: 'name',
-        }).catch(() => ({ results: [] }));
-        const relatedList = Array.isArray(relatedResponse?.results)
-          ? relatedResponse.results
-          : (Array.isArray(relatedResponse) ? relatedResponse : []);
-        const filtered = relatedList.filter((item) => Number(item.id) !== numericProductId).slice(0, 18);
-        setRelatedProducts(filtered);
+
+        const availInit =
+          productData?.available_quantity != null && productData.available_quantity !== ''
+            ? Math.max(0, Number(productData.available_quantity))
+            : Math.max(
+                0,
+                Number(productData?.stock_quantity || 0) - Number(productData?.reserved_quantity || 0),
+              );
 
         const items = Array.isArray(cartData?.items) ? cartData.items : [];
         const line = items.find((item) => Number(item.product_id || item.id) === numericProductId);
-        setCartQty(Number(line?.quantity || 0));
+        const lineQty = Number(line?.quantity || 0);
+        const hadLine = lineQty > 0;
+
+        setInCart(hadLine);
+        let nextQty = hadLine ? lineQty : availInit > 0 ? 1 : 0;
+        if (nextQty > availInit) nextQty = availInit;
+        if (!hadLine && availInit > 0 && nextQty < 1) nextQty = 1;
+        setQty(nextQty);
+
+        const relatedResponse = await productsService
+          .getProducts({
+            category_id: resolveCategoryId(productData),
+            page_size: 24,
+            ordering: 'name',
+          })
+          .catch(() => ({ results: [] }));
+        const relatedList = Array.isArray(relatedResponse?.results)
+          ? relatedResponse.results
+          : Array.isArray(relatedResponse)
+            ? relatedResponse
+            : [];
+        const filtered = relatedList.filter((item) => Number(item.id) !== numericProductId).slice(0, 18);
+        setRelatedProducts(filtered);
       } catch (error) {
         if (!cancelled) {
           setProduct(null);
@@ -78,59 +145,43 @@ const ProductDetail = () => {
     };
   }, [numericProductId, popup]);
 
-  const availStock = Number(
-    product?.available_quantity ??
-      Math.max(
-        0,
-        Number(product?.stock_quantity || 0) - Number(product?.reserved_quantity || 0),
-      ),
-  );
-  const outOfStock = Math.max(0, availStock - Number(cartQty || 0)) <= 0;
-
-  const updateQty = async (nextQty) => {
-    if (!product) return;
-    if (nextQty < 0 || nextQty > availStock) return;
-    setSubmitting(true);
+  const openCartPeek = async () => {
+    setCartPeekOpen(true);
+    setPeekLoading(true);
     try {
-      if (nextQty === 0) {
-        await cartService.updateCartItem(product.id, 0);
-      } else if (cartQty === 0) {
-        await cartService.addToCart(product.id, nextQty);
-      } else {
-        await cartService.updateCartItem(product.id, nextQty);
-      }
-      setCartQty(nextQty);
-    } catch (error) {
-      popup.error(error?.error || 'ไม่สามารถอัปเดตตะกร้าได้');
+      const data = await cartService.getCart();
+      setPeekItems(Array.isArray(data?.items) ? data.items : []);
+    } catch {
+      setPeekItems([]);
     } finally {
-      setSubmitting(false);
+      setPeekLoading(false);
     }
   };
 
-  /** Primary CTA: add one piece then return to previous listing scroll position */
+  const closeCartPeek = () => setCartPeekOpen(false);
+
+  const peekSubtotal = peekItems.reduce(
+    (sum, line) => sum + Number(line.price || 0) * Number(line.quantity || 0),
+    0,
+  );
+
+  /** ปุ่มหลัก: ซิงก์จำนวนปัจจุบันเข้าตะกร้าแล้วย้อนกลับ — ไม่บวก +1 ซ้ำ */
   const handlePrimaryAddToCart = async () => {
-    if (!product || submitting || outOfStock) return;
-    const nextQty = cartQty + 1;
-    if (nextQty > availStock) return;
-    setSubmitting(true);
-    try {
-      if (cartQty === 0) {
-        await cartService.addToCart(product.id, nextQty);
-      } else {
-        await cartService.updateCartItem(product.id, nextQty);
-      }
-      setCartQty(nextQty);
-      const backToListing = peekCustomerListingScrollRestore();
-      if (backToListing?.path) {
-        navigate(backToListing.path);
-      } else {
-        navigate(-1);
-      }
-    } catch (error) {
-      popup.error(error?.error || 'ไม่สามารถอัปเดตตะกร้าได้');
-    } finally {
-      setSubmitting(false);
+    if (!product || submitting || outOfStock || qty <= 0) return;
+    const ok = await persistQty(qty);
+    if (!ok) return;
+    const backToListing = peekCustomerListingScrollRestore();
+    if (backToListing?.path) {
+      navigate(backToListing.path);
+    } else {
+      navigate(-1);
     }
+  };
+
+  const bumpQty = async (delta) => {
+    const next = qty + delta;
+    if (next < 0 || next > availStock) return;
+    await persistQty(next);
   };
 
   if (loading) {
@@ -143,15 +194,16 @@ const ProductDetail = () => {
         <div className="container">
           <div className="product-detail-empty">
             <h2>ไม่พบสินค้า</h2>
-            <Link to="/customer/products" className="btn btn-primary">กลับไปหน้าสินค้า</Link>
+            <Link to="/customer/products" className="btn btn-primary">
+              กลับไปหน้าสินค้า
+            </Link>
           </div>
         </div>
       </div>
     );
   }
 
-  const cartLineDisplayAmount =
-    Number(product.price || 0) * Math.max(Number(cartQty || 0), 1);
+  const cartLineDisplayAmount = Number(product.price || 0) * Number(qty || 0);
 
   return (
     <div className="product-detail-page">
@@ -203,19 +255,25 @@ const ProductDetail = () => {
 
             <div className="product-detail-actions">
               <div className="product-detail-qty">
-                <button type="button" disabled={submitting || cartQty <= 0} onClick={() => updateQty(cartQty - 1)}>-</button>
-                <span>{cartQty}</span>
-                <button type="button" disabled={submitting || outOfStock} onClick={() => updateQty(cartQty + 1)}>+</button>
+                <button type="button" disabled={submitting || qty <= 0} onClick={() => bumpQty(-1)}>
+                  −
+                </button>
+                <span>{qty}</span>
+                <button type="button" disabled={submitting || outOfStock || qty >= availStock} onClick={() => bumpQty(1)}>
+                  +
+                </button>
               </div>
               <button
                 type="button"
                 className="btn btn-primary product-detail-add-cart-btn"
-                disabled={submitting || outOfStock}
+                disabled={submitting || outOfStock || qty <= 0}
                 onClick={handlePrimaryAddToCart}
               >
                 ใส่ตะกร้า {formatBahtAmount(cartLineDisplayAmount)} บาท
               </button>
-              <Link to="/customer/cart" className="btn btn-outline">ไปตะกร้า</Link>
+              <button type="button" className="btn btn-outline product-detail-cart-peek-btn" onClick={openCartPeek}>
+                ดูตะกร้า
+              </button>
             </div>
           </div>
         </div>
@@ -231,9 +289,7 @@ const ProductDetail = () => {
               {relatedProducts.map((item) => (
                 <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
                   <div className="related-product-image-wrap">
-                    {item.is_special_offer && (
-                      <span className="related-product-badge">ราคาพิเศษ</span>
-                    )}
+                    {item.is_special_offer && <span className="related-product-badge">ราคาพิเศษ</span>}
                     <img
                       src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
                       alt={item.name}
@@ -255,6 +311,54 @@ const ProductDetail = () => {
           </section>
         )}
       </div>
+
+      {cartPeekOpen && (
+        <div className="product-cart-peek-backdrop" role="presentation" onClick={closeCartPeek}>
+          <div
+            className="product-cart-peek-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-cart-peek-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="product-cart-peek-header">
+              <h2 id="product-cart-peek-title">ตะกร้าของคุณ</h2>
+              <button type="button" className="product-cart-peek-close" aria-label="ปิด" onClick={closeCartPeek}>
+                ×
+              </button>
+            </div>
+            <div className="product-cart-peek-body">
+              {peekLoading ? (
+                <p className="product-cart-peek-muted">กำลังโหลด...</p>
+              ) : peekItems.length === 0 ? (
+                <p className="product-cart-peek-muted">ยังไม่มีสินค้าในตะกร้า</p>
+              ) : (
+                <ul className="product-cart-peek-list">
+                  {peekItems.map((line) => (
+                    <li key={line.id ?? `${line.product_id}-${displayProductLineName(line)}`}>
+                      <span className="product-cart-peek-name">{displayProductLineName(line)}</span>
+                      <span className="product-cart-peek-meta">
+                        ×{Number(line.quantity || 0)} · {formatBahtAmount(Number(line.price || 0) * Number(line.quantity || 0))}{' '}
+                        บาท
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!peekLoading && peekItems.length > 0 && (
+                <p className="product-cart-peek-total">
+                  รวม <strong>{formatBahtAmount(peekSubtotal)}</strong> บาท
+                </p>
+              )}
+            </div>
+            <div className="product-cart-peek-actions">
+              <Link to="/customer/cart" className="btn btn-primary product-cart-peek-full-link" onClick={closeCartPeek}>
+                ไปหน้าตะกร้าเต็ม
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
