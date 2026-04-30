@@ -53,7 +53,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    customer_id = serializers.IntegerField(source='customer_id', read_only=True)
+    customer_id = serializers.IntegerField(read_only=True)
     customer_name = serializers.CharField(source='customer.user.get_full_name', read_only=True)
     order_type_display = serializers.CharField(source='get_order_type_display', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)

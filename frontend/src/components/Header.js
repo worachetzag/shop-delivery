@@ -4,7 +4,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import config from '../config';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ hideCustomerTopBar = false }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const location = useLocation();
@@ -97,56 +97,59 @@ const Header = () => {
   const isActiveGroup = (paths) => paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const isDriverMode = location.pathname.startsWith('/driver');
   const showTopMenu = !isMobileView && isDriverMode;
+  const shouldHideTopBar = hideCustomerTopBar && !isDriverMode;
 
   return (
-    <header className="header">
-      <div className="header-content">
-        <Link to={isDriverMode ? '/driver/dashboard' : '/customer'} className="logo">
-          <span className="logo-icon" aria-hidden="true">SP</span>
-          <span className="logo-text">{config.BRANDING.storeName}</span>
-        </Link>
+    <header className={`header${shouldHideTopBar ? ' header--topless' : ''}`}>
+      {!shouldHideTopBar && (
+        <div className="header-content">
+          <Link to={isDriverMode ? '/driver/dashboard' : '/customer'} className="logo">
+            <span className="logo-icon" aria-hidden="true">SP</span>
+            <span className="logo-text">{config.BRANDING.storeName}</span>
+          </Link>
 
-        {showTopMenu && (
-          <nav className="nav-menu">
-            {isDriverMode ? (
-              <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>งานของคนขับ</Link>
-            ) : (
-              <>
-                <Link to="/customer" className={isActive('/customer') ? 'active' : ''}>หน้าแรก</Link>
-                <Link to="/customer/products" className={isActive('/customer/products') ? 'active' : ''}>สินค้า</Link>
-                <Link to="/customer/orders" className={isActive('/customer/orders') ? 'active' : ''}>คำสั่งซื้อ</Link>
-                <Link to="/customer/orders" className={isActiveGroup(['/customer/tracking', '/customer/orders']) ? 'active' : ''}>ติดตาม</Link>
-              </>
-            )}
-          </nav>
-        )}
-
-        <div className="user-info">
-          {isLoggedIn ? (
-            <>
-              {!isMobileView && !isDriverMode && (
-                <Link to="/customer/cart" className="cart-link">ตะกร้า</Link>
-              )}
+          {showTopMenu && (
+            <nav className="nav-menu">
               {isDriverMode ? (
-                !isMobileView && <span className="cart-link">โหมดคนขับ</span>
+                <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>งานของคนขับ</Link>
               ) : (
-                <Link to="/customer/profile" className="user-avatar">
-                  {userProfile?.pictureUrl ? (
-                    <img src={userProfile.pictureUrl} alt={userProfile.displayName} className="avatar-image" />
-                  ) : (
-                    <span>{userProfile?.displayName?.charAt(0) || 'U'}</span>
-                  )}
-                </Link>
+                <>
+                  <Link to="/customer" className={isActive('/customer') ? 'active' : ''}>หน้าแรก</Link>
+                  <Link to="/customer/products" className={isActive('/customer/products') ? 'active' : ''}>สินค้า</Link>
+                  <Link to="/customer/orders" className={isActive('/customer/orders') ? 'active' : ''}>คำสั่งซื้อ</Link>
+                  <Link to="/customer/orders" className={isActiveGroup(['/customer/tracking', '/customer/orders']) ? 'active' : ''}>ติดตาม</Link>
+                </>
               )}
-              {!isMobileView && (
-                <button onClick={handleLogout} className="logout-chip">ออก</button>
-              )}
-            </>
-          ) : (
-            <Link to="/customer/login" className="btn btn-outline">เข้าสู่ระบบ</Link>
+            </nav>
           )}
+
+          <div className="user-info">
+            {isLoggedIn ? (
+              <>
+                {!isMobileView && !isDriverMode && (
+                  <Link to="/customer/cart" className="cart-link">ตะกร้า</Link>
+                )}
+                {isDriverMode ? (
+                  !isMobileView && <span className="cart-link">โหมดคนขับ</span>
+                ) : (
+                  <Link to="/customer/profile" className="user-avatar">
+                    {userProfile?.pictureUrl ? (
+                      <img src={userProfile.pictureUrl} alt={userProfile.displayName} className="avatar-image" />
+                    ) : (
+                      <span>{userProfile?.displayName?.charAt(0) || 'U'}</span>
+                    )}
+                  </Link>
+                )}
+                {!isMobileView && (
+                  <button onClick={handleLogout} className="logout-chip">ออก</button>
+                )}
+              </>
+            ) : (
+              <Link to="/customer/login" className="btn btn-outline">เข้าสู่ระบบ</Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {(isMobileView || !isDriverMode) && (
         <nav className={`liff-bottom-nav ${!isDriverMode ? 'force-show' : ''}`}>

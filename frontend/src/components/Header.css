@@ -10,6 +10,15 @@
   padding-top: env(safe-area-inset-top);
 }
 
+.header--topless {
+  position: static;
+  top: auto;
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+  padding-top: 0;
+}
+
 .header-content {
   height: 56px;
   display: flex;
