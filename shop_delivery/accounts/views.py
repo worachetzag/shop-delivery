@@ -1034,9 +1034,13 @@ def line_login_callback(request):
             logger.error(f"LINE profile missing userId: {profile_data}")
             return HttpResponseRedirect(f"{login_url}?error=profile_missing_user_id")
         # ป้องกันข้อมูลเกินความยาวคอลัมน์ (varchar) แล้วทำให้ OAuth callback ล้ม
-        display_name = str(profile_data.get('displayName', '') or '')[:100]
-        picture_url = str(profile_data.get('pictureUrl', '') or '')[:200]
-        status_message = str(profile_data.get('statusMessage', '') or '')[:200]
+        line_user_model = LineUser
+        display_name_max = line_user_model._meta.get_field('display_name').max_length or 100
+        picture_url_max = line_user_model._meta.get_field('picture_url').max_length or 500
+        status_message_max = line_user_model._meta.get_field('status_message').max_length or 500
+        display_name = str(profile_data.get('displayName', '') or '')[:display_name_max]
+        picture_url = str(profile_data.get('pictureUrl', '') or '')[:picture_url_max]
+        status_message = str(profile_data.get('statusMessage', '') or '')[:status_message_max]
         
         def _build_customer_id_card(seed_value):
             digits = ''.join(ch for ch in str(seed_value or '') if ch.isdigit())

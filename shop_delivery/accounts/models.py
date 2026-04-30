@@ -7,8 +7,8 @@ class LineUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='line_user')
     line_user_id = models.CharField(max_length=100, unique=True, verbose_name="LINE User ID")
     display_name = models.CharField(max_length=100, verbose_name="ชื่อแสดงใน LINE")
-    picture_url = models.URLField(blank=True, null=True, verbose_name="URL รูปโปรไฟล์")
-    status_message = models.CharField(max_length=200, blank=True, verbose_name="สถานะ")
+    picture_url = models.URLField(max_length=500, blank=True, null=True, verbose_name="URL รูปโปรไฟล์")
+    status_message = models.CharField(max_length=500, blank=True, verbose_name="สถานะ")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
