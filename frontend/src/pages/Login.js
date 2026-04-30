@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import LineLoginButton, { redirectToShopLineOAuth } from '../components/LineLoginButton';
 import config from '../config';
 import './Login.css';
@@ -9,8 +10,11 @@ function getGlobalLiff() {
 }
 
 const Login = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (localStorage.getItem('auth_token')) {
+      navigate('/customer', { replace: true });
       return undefined;
     }
     let cancelled = false;
@@ -30,7 +34,7 @@ const Login = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="login-page">
