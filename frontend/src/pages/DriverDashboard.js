@@ -52,12 +52,21 @@ const DriverDashboard = () => {
     return nextMap[currentStatus] || null;
   };
 
-  const { activeAssignments, doneAssignments, codCount, codAmount } = useMemo(() => {
+  const {
+    activeAssignments,
+    doneAssignments,
+    codPendingCount,
+    codPendingAmount,
+    codCollectedCount,
+    codCollectedAmount,
+  } = useMemo(() => {
     const doneSet = new Set(['delivered', 'cancelled']);
     const active = [];
     const done = [];
-    let codJobs = 0;
-    let codTotal = 0;
+    let codPendingJobs = 0;
+    let codPendingTotal = 0;
+    let codCollectedJobs = 0;
+    let codCollectedTotal = 0;
     assignments.forEach((assignment) => {
       const isDone = doneSet.has(assignment.status);
       if (isDone) {
@@ -65,16 +74,26 @@ const DriverDashboard = () => {
       } else {
         active.push(assignment);
       }
-      if (!isDone && assignment.payment_method === 'cod') {
-        codJobs += 1;
-        codTotal += Number(assignment.order_total_amount || 0);
+      if (assignment.payment_method !== 'cod') return;
+
+      if (!isDone) {
+        codPendingJobs += 1;
+        codPendingTotal += Number(assignment.order_total_amount || 0);
+        return;
+      }
+
+      if (assignment.status === 'delivered') {
+        codCollectedJobs += 1;
+        codCollectedTotal += Number(assignment.order_total_amount || 0);
       }
     });
     return {
       activeAssignments: active,
       doneAssignments: done,
-      codCount: codJobs,
-      codAmount: codTotal,
+      codPendingCount: codPendingJobs,
+      codPendingAmount: codPendingTotal,
+      codCollectedCount: codCollectedJobs,
+      codCollectedAmount: codCollectedTotal,
     };
   }, [assignments]);
 
@@ -155,8 +174,9 @@ const DriverDashboard = () => {
         </div>
         <div className="driver-kpi-card driver-kpi-card--cod">
           <div className="driver-kpi-label">งาน COD ที่ต้องเก็บเงิน</div>
-          <div className="driver-kpi-value">{codCount} งาน</div>
-          <div className="driver-kpi-sub">รวมประมาณ ฿{codAmount.toLocaleString()}</div>
+          <div className="driver-kpi-value">{codPendingCount} งาน</div>
+          <div className="driver-kpi-sub">คงค้าง ฿{codPendingAmount.toLocaleString()}</div>
+          <div className="driver-kpi-sub">เก็บแล้ว {codCollectedCount} งาน · ฿{codCollectedAmount.toLocaleString()}</div>
         </div>
       </div>
 

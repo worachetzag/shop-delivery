@@ -22,15 +22,6 @@ function formatWhen(iso) {
   }
 }
 
-function formatDateOnly(iso) {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString('th-TH', { dateStyle: 'medium' });
-  } catch {
-    return iso;
-  }
-}
-
 const AdminCustomerDetailPage = () => {
   const { customerId } = useParams();
   const navigate = useNavigate();
@@ -155,18 +146,6 @@ const AdminCustomerDetailPage = () => {
             <tr>
               <th style={{ width: 180 }}>เบอร์โทร</th>
               <td>{customer.phone_number || '—'}</td>
-            </tr>
-            <tr>
-              <th>วันเกิด</th>
-              <td>{formatDateOnly(customer.date_of_birth)}</td>
-            </tr>
-            <tr>
-              <th>เลขบัตรประชาชน</th>
-              <td style={{ fontFamily: 'monospace' }}>{customer.id_card_number || '—'}</td>
-            </tr>
-            <tr>
-              <th>ที่อยู่ลงทะเบียน</th>
-              <td>{customer.address || '—'}</td>
             </tr>
             <tr>
               <th>สมัครเมื่อ</th>
