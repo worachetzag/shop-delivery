@@ -18,7 +18,8 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
-    list_editable = ('price', 'stock_quantity', 'is_available', 'is_special_offer')
+    # ห้ามแก้ stock_quantity ตรงนี้ เพื่อไม่ข้าม flow StockMovement
+    list_editable = ('price', 'is_available', 'is_special_offer')
 
 
 @admin.register(Supplier)

@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import F, Q, Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
@@ -189,8 +190,33 @@ class AdminProductDetailView(generics.RetrieveUpdateDestroyAPIView):
             'is_special_offer': old_inst.is_special_offer,
             'category_id': old_inst.category_id,
         }
-        instance = serializer.save()
-        summary, detail = _audit_log_product_update(instance, old, serializer.validated_data)
+        incoming_fields = dict(serializer.validated_data)
+        stock_in_payload = 'stock_quantity' in incoming_fields
+        target_stock = int(incoming_fields.get('stock_quantity', old_inst.stock_quantity))
+        if stock_in_payload:
+            # ให้การเปลี่ยนสต็อกจากหน้าสินค้าใช้ movement flow เดียวกับหน้าจัดการสต็อก
+            serializer.validated_data.pop('stock_quantity', None)
+
+        with transaction.atomic():
+            instance = serializer.save()
+            if stock_in_payload:
+                delta = target_stock - int(old['stock_quantity'])
+                if delta:
+                    movement_type = 'adjustment_in' if delta > 0 else 'adjustment_out'
+                    apply_stock_movement(
+                        product_id=instance.id,
+                        movement_type=movement_type,
+                        quantity_change=delta,
+                        reserved_change=0,
+                        source_type='admin_product_edit',
+                        source_id=str(instance.id),
+                        reference=f'product:{instance.id}',
+                        note='ปรับสต็อกจากหน้าจัดการสินค้า',
+                        actor=self.request.user,
+                    )
+                    instance.refresh_from_db()
+
+        summary, detail = _audit_log_product_update(instance, old, incoming_fields)
         log_staff_audit(
             self.request,
             StaffAuditLog.Action.PRODUCT_UPDATE,

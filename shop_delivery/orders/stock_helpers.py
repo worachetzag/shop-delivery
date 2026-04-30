@@ -113,7 +113,8 @@ def sync_order_stock_for_status_change(order, old_status: str, new_status: str):
         return order, meta
 
     # --- ออกจาก delivered (ย้อนสถานะ) ---
-    if old_status == 'delivered' and new_status != 'delivered':
+    # หมายเหตุ: delivered -> cancelled ไม่ควรคืน stock/reserved เพราะของออกจากร้านแล้ว
+    if old_status == 'delivered' and new_status not in ['delivered', 'cancelled']:
         rollback_items = _aggregated_line_items(order)
         counts = _quantities_by_product(order)
         for pid, qty in counts.items():
