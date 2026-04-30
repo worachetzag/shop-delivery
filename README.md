@@ -1,6 +1,6 @@
-# 🚀 Samsung Panich Delivery System
+# 🚀 ระบบสั่งซื้อร้านซำสูงพาณิชย์
 
-ระบบจัดการการสั่งซื้อและจัดส่งสินค้าสำหรับ Samsung Panich ที่ใช้ LINE LIFF (Line Front-end Framework)
+ระบบจัดการการสั่งซื้อและจัดส่งสินค้าสำหรับร้าน **ซำสูงพาณิชย์** ผ่าน LINE LIFF (Line Front-end Framework)
 
 ## 📋 ภาพรวม
 
@@ -186,7 +186,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Development Team:** Samsung Panich Development Team
+- **Development Team:** ซำสูงพาณิชย์
 - **Issues:** Create issue in project repository
 - **Documentation:** See docs/ directory
 

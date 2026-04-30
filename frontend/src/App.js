@@ -20,6 +20,8 @@ import AdminLogin from './pages/AdminLogin';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
+import AdminCustomersPage from './pages/AdminCustomersPage';
+import AdminCustomerDetailPage from './pages/AdminCustomerDetailPage';
 import AdminPersonnelStaffPage from './pages/AdminPersonnelStaffPage';
 import AdminPersonnelDriversPage from './pages/AdminPersonnelDriversPage';
 import AdminAuditLogPage from './pages/AdminAuditLogPage';
@@ -47,6 +49,7 @@ function AppContent() {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const username = params.get('username');
+    const userRoleFromUrl = params.get('user_role');
     const loginStatus = params.get('login');
 
     if (!token && !loginStatus) {
@@ -59,10 +62,14 @@ function AppContent() {
     if (username) {
       localStorage.setItem('username', username);
     }
+    if (userRoleFromUrl) {
+      localStorage.setItem('user_role', userRoleFromUrl);
+    }
 
     // Clean auth query params from URL after handling callback data.
     params.delete('token');
     params.delete('username');
+    params.delete('user_role');
     params.delete('login');
     const cleanedSearch = params.toString();
     const nextPath = `${location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
@@ -248,6 +255,22 @@ function AppContent() {
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
                 <AdminCategoriesPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/customers"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminCustomersPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/customers/:customerId"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminCustomerDetailPage />
               </ProtectedRoute>
             )}
           />

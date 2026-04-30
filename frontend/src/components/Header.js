@@ -103,7 +103,7 @@ const Header = () => {
       <div className="header-content">
         <Link to={isDriverMode ? '/driver/dashboard' : '/customer'} className="logo">
           <span className="logo-icon" aria-hidden="true">SP</span>
-          <span className="logo-text">Samsung Panich</span>
+          <span className="logo-text">{config.BRANDING.storeName}</span>
         </Link>
 
         {showTopMenu && (

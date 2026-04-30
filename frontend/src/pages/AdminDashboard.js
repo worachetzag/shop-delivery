@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
@@ -14,6 +14,11 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const UNIT_DETAIL_OPTIONS = ['มล.', 'ลิตร', 'กรัม', 'กก.', 'ชิ้น', 'แพ็ค', 'ขวด', 'กล่อง', 'ซอง', 'ถุง'];
   const navigate = useNavigate();
   const location = useLocation();
+  const ordersCustomerIdFilter = useMemo(() => {
+    const sp = new URLSearchParams(location.search);
+    const raw = (sp.get('customer_id') || '').trim();
+    return /^\d+$/.test(raw) ? raw : '';
+  }, [location.search]);
   const getAdminToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
   const currentUsername = localStorage.getItem('username') || '';
   const userRole = localStorage.getItem('user_role') || '';
@@ -139,17 +144,20 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     is_available: true,
     password: '',
   });
+  const [driverCreatePhoto, setDriverCreatePhoto] = useState(null);
+  const [driverEditPhoto, setDriverEditPhoto] = useState(null);
+  const [driverEditClearPhoto, setDriverEditClearPhoto] = useState(false);
   const selfStaffProfile = staffMembers.find((staff) => staff.username === currentUsername) || null;
 
   useEffect(() => {
     if (activeTab === 'orders') {
       loadOrders();
     }
-  }, [activeTab, ordersPage, ordersSearch]);
+  }, [activeTab, ordersPage, ordersSearch, ordersCustomerIdFilter]);
 
   useEffect(() => {
     setOrdersPage(1);
-  }, [ordersSearch]);
+  }, [ordersSearch, ordersCustomerIdFilter]);
 
   useEffect(() => {
     if (activeTab === 'products') {
@@ -185,6 +193,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       });
       if (ordersSearch.trim()) {
         params.set('q', ordersSearch.trim());
+      }
+      if (ordersCustomerIdFilter) {
+        params.set('customer_id', ordersCustomerIdFilter);
       }
       const response = await fetch(`${config.API_BASE_URL}orders/list/?${params.toString()}`, {
         headers: {
@@ -731,15 +742,27 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     setSavingDriver(true);
     try {
       const token = getAdminToken();
+      const fd = new FormData();
+      fd.append('username', driverForm.username);
+      fd.append('password', driverForm.password);
+      fd.append('first_name', driverForm.first_name || '');
+      fd.append('last_name', driverForm.last_name || '');
+      fd.append('email', driverForm.email || '');
+      fd.append('phone_number', driverForm.phone_number);
+      fd.append('license_number', driverForm.license_number);
+      fd.append('vehicle_type', driverForm.vehicle_type);
+      fd.append('vehicle_number', driverForm.vehicle_number);
+      if (driverCreatePhoto) {
+        fd.append('photo', driverCreatePhoto);
+      }
       const response = await fetch(`${config.LIFF_ENDPOINT_URL}/accounts/admin/drivers/`, {
         method: 'POST',
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
         credentials: 'include',
-        body: JSON.stringify(driverForm),
+        body: fd,
       });
       const data = await response.json();
       if (!response.ok) {
@@ -756,6 +779,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         vehicle_type: '',
         vehicle_number: '',
       });
+      setDriverCreatePhoto(null);
       setPersonnelCreateMode(null);
       await loadDrivers();
       loadStats();
@@ -859,6 +883,8 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
   const startEditDriver = (driver) => {
     setEditingDriver(driver.id);
+    setDriverEditPhoto(null);
+    setDriverEditClearPhoto(false);
     setDriverEditForm({
       id: driver.id,
       username: driver.username || '',
@@ -880,29 +906,33 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     setSavingDriverUpdate(true);
     try {
       const token = getAdminToken();
-      const payload = {
-        username: driverEditForm.username,
-        first_name: driverEditForm.first_name,
-        last_name: driverEditForm.last_name,
-        email: driverEditForm.email,
-        phone_number: driverEditForm.phone_number,
-        license_number: driverEditForm.license_number,
-        vehicle_type: driverEditForm.vehicle_type,
-        vehicle_number: driverEditForm.vehicle_number,
-        is_available: driverEditForm.is_available,
-      };
+      const fd = new FormData();
+      fd.append('username', driverEditForm.username);
+      fd.append('first_name', driverEditForm.first_name || '');
+      fd.append('last_name', driverEditForm.last_name || '');
+      fd.append('email', driverEditForm.email || '');
+      fd.append('phone_number', driverEditForm.phone_number);
+      fd.append('license_number', driverEditForm.license_number);
+      fd.append('vehicle_type', driverEditForm.vehicle_type);
+      fd.append('vehicle_number', driverEditForm.vehicle_number);
+      fd.append('is_available', driverEditForm.is_available ? 'true' : 'false');
       if (driverEditForm.password) {
-        payload.password = driverEditForm.password;
+        fd.append('password', driverEditForm.password);
+      }
+      if (driverEditPhoto) {
+        fd.append('photo', driverEditPhoto);
+      }
+      if (driverEditClearPhoto) {
+        fd.append('clear_photo', 'true');
       }
       const response = await fetch(`${config.LIFF_ENDPOINT_URL}/accounts/admin/drivers/${driverEditForm.id}/`, {
         method: 'PUT',
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
         credentials: 'include',
-        body: JSON.stringify(payload),
+        body: fd,
       });
       const data = await response.json();
       if (!response.ok) {
@@ -910,6 +940,8 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       }
       await loadDrivers();
       setEditingDriver(null);
+      setDriverEditPhoto(null);
+      setDriverEditClearPhoto(false);
       setDriverEditForm({
         id: null,
         username: '',
@@ -962,6 +994,33 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       <div className="admin-content">
         {activeTab === 'orders' && (
           <div className="orders-table">
+            {ordersCustomerIdFilter ? (
+              <div
+                style={{
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  background: '#eaf7ef',
+                  borderRadius: 8,
+                  border: '1px solid #c5e8d5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span style={{ fontSize: '0.92rem', color: '#14532d' }}>
+                  แสดงเฉพาะออเดอร์ของลูกค้ารหัส #{ordersCustomerIdFilter}
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => navigate('/admin/orders')}
+                >
+                  แสดงออเดอร์ทั้งหมด
+                </button>
+              </div>
+            ) : null}
             <div style={{ padding: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 type="text"
@@ -983,13 +1042,16 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
               >
                 ค้นหา
               </button>
-              {(ordersSearch || ordersSearchDraft) && (
+              {(ordersSearch || ordersSearchDraft || ordersCustomerIdFilter) && (
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={() => {
                     setOrdersSearchDraft('');
                     setOrdersSearch('');
+                    if (ordersCustomerIdFilter) {
+                      navigate('/admin/orders');
+                    }
                   }}
                 >
                   ล้าง
@@ -1332,6 +1394,15 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                   <input name="license_number" value={driverForm.license_number} onChange={handleDriverFormChange} placeholder="เลขใบขับขี่" required />
                   <input name="vehicle_type" value={driverForm.vehicle_type} onChange={handleDriverFormChange} placeholder="ประเภทรถ" required />
                   <input name="vehicle_number" value={driverForm.vehicle_number} onChange={handleDriverFormChange} placeholder="ทะเบียนรถ" required />
+                  <label style={{ display: 'block', fontSize: '0.88rem', color: '#555' }}>
+                    รูปประจำตัว (ไม่บังคับ)
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'block', marginTop: 6 }}
+                      onChange={(e) => setDriverCreatePhoto(e.target.files?.[0] || null)}
+                    />
+                  </label>
                   <button type="submit" className="btn-primary" disabled={savingDriver}>
                     {savingDriver ? 'กำลังบันทึก...' : 'เพิ่มคนขับ'}
                   </button>
@@ -1343,6 +1414,62 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
               <div className="personnel-card">
                 <h3>แก้ไขคนขับ</h3>
                 <form className="personnel-form" onSubmit={saveEditDriver}>
+                  {(() => {
+                    const row = drivers.find((d) => d.id === editingDriver);
+                    const showPrev = row?.photo_url && !driverEditClearPhoto;
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                        {showPrev ? (
+                          <img src={row.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '1px solid #e3e9e7' }} />
+                        ) : (
+                          <span
+                            style={{
+                              width: 56,
+                              height: 56,
+                              borderRadius: '50%',
+                              background: '#00b14f',
+                              color: '#fff',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: '1.1rem',
+                            }}
+                          >
+                            {(row?.full_name || row?.username || '?').charAt(0)}
+                          </span>
+                        )}
+                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                          {showPrev ? 'รูปปัจจุบัน' : 'ยังไม่มีรูป — ใช้ตัวอักษรแทน'}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  <label style={{ display: 'block', fontSize: '0.88rem', color: '#555' }}>
+                    เปลี่ยนรูป (ไม่บังคับ)
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'block', marginTop: 6 }}
+                      onChange={(e) => {
+                        setDriverEditPhoto(e.target.files?.[0] || null);
+                        setDriverEditClearPhoto(false);
+                      }}
+                    />
+                  </label>
+                  {drivers.find((d) => d.id === editingDriver)?.photo_url ? (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={driverEditClearPhoto}
+                        onChange={(e) => {
+                          setDriverEditClearPhoto(e.target.checked);
+                          if (e.target.checked) setDriverEditPhoto(null);
+                        }}
+                      />
+                      ลบรูปเดิม (กลับเป็นแบบตัวอักษร)
+                    </label>
+                  ) : null}
                   <input value={driverEditForm.username} onChange={(e) => setDriverEditForm((prev) => ({ ...prev, username: e.target.value }))} placeholder="Username" required />
                   <input value={driverEditForm.first_name} onChange={(e) => setDriverEditForm((prev) => ({ ...prev, first_name: e.target.value }))} placeholder="ชื่อ" />
                   <input value={driverEditForm.last_name} onChange={(e) => setDriverEditForm((prev) => ({ ...prev, last_name: e.target.value }))} placeholder="นามสกุล" />
@@ -1364,7 +1491,15 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                     <button type="submit" className="btn-primary" disabled={savingDriverUpdate}>
                       {savingDriverUpdate ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
                     </button>
-                    <button type="button" className="btn-secondary" onClick={() => setEditingDriver(null)}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        setEditingDriver(null);
+                        setDriverEditPhoto(null);
+                        setDriverEditClearPhoto(false);
+                      }}
+                    >
                       ยกเลิก
                     </button>
                   </div>
@@ -1432,7 +1567,32 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       {drivers.map((driver) => (
                         <tr key={driver.id}>
                           <td>{driver.username}</td>
-                          <td>{driver.full_name || '-'}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              {driver.photo_url ? (
+                                <img src={driver.photo_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                              ) : (
+                                <span
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    background: '#00b14f',
+                                    color: '#fff',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {(driver.full_name || driver.username || '?').charAt(0)}
+                                </span>
+                              )}
+                              <span>{driver.full_name || '-'}</span>
+                            </div>
+                          </td>
                           <td>{driver.phone_number || '-'}</td>
                           <td>{driver.vehicle_number || '-'}</td>
                           <td>

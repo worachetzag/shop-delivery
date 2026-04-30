@@ -1,10 +1,90 @@
-/* Admin shell: desktop sidebar vs tablet/phone top bar + drawer */
+/* Admin navigation shell — scoped classes (avoid .admin-header clashes with legacy CSS) */
 
 .admin-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.14);
   z-index: 1000;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Shared nav controls (desktop sidebar + drawer) */
+.admin-nav-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
+  touch-action: manipulation;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-nav-link:hover {
+  background: #eaf7ef;
+  border-color: #c5e8d5;
+}
+
+.admin-nav-link--active {
+  background: var(--brand-primary);
+  color: #fff;
+  border-color: var(--brand-primary-strong);
+  font-weight: 600;
+}
+
+.admin-nav-link--active:hover {
+  background: var(--brand-primary-strong);
+  color: #fff;
+  border-color: var(--brand-primary-strong);
+}
+
+.admin-nav-section-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 8px 0 2px;
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.admin-nav-group-btn {
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  border: 1px solid var(--border-soft);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  background: var(--surface-muted);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-nav-group-btn:hover {
+  background: #eaf7ef;
+}
+
+.admin-nav-group-btn--open {
+  background: #dff5e8;
+  border-color: var(--brand-accent);
+  font-weight: 600;
+}
+
+.admin-nav-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-left: 12px;
+  border-left: 3px solid var(--brand-primary);
 }
 
 /* ——— Desktop sidebar ——— */
@@ -43,14 +123,17 @@
   margin-top: auto;
 }
 
-/* ——— Compact: sticky top bar ——— */
+/* ——— Compact: brand top bar ——— */
 .admin-header--compact {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-strong) 100%);
+  color: #fff;
+  border-right: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
 
 .admin-header__topbar {
@@ -69,7 +152,7 @@
   justify-content: center;
   border: none;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.22);
   color: #fff;
   cursor: pointer;
   padding: 0;
@@ -77,7 +160,7 @@
 }
 
 .admin-header__menu-btn:active {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .admin-header__menu-icon {
@@ -114,11 +197,15 @@
   white-space: nowrap;
 }
 
-/* ——— Drawer overlay + panel ——— */
+.admin-header__logout-compact:active {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* ——— Drawer ——— */
 .admin-header__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.48);
+  background: rgba(15, 23, 42, 0.45);
   z-index: 1090;
   -webkit-tap-highlight-color: transparent;
 }
@@ -135,9 +222,11 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: linear-gradient(165deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.25);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
   overflow: hidden;
+  border-right: 1px solid var(--border-soft);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -176,17 +265,18 @@
   align-items: center;
   gap: 8px;
   padding: 14px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-muted);
 }
 
 .admin-header__drawer-close {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  border: none;
+  border: 1px solid var(--border-soft);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: var(--surface-card);
+  color: var(--text-primary);
   cursor: pointer;
   font-size: 1.25rem;
   line-height: 1;
@@ -199,6 +289,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 .admin-header__drawer-scroll {
@@ -217,16 +308,16 @@
 }
 
 .admin-header__user-row {
-  opacity: 0.85;
   padding-top: 10px;
   margin-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid var(--border-soft);
   font-size: 0.88rem;
+  color: var(--text-secondary);
   word-break: break-word;
 }
 
 .admin-header__brand-desktop {
-  color: #fff;
+  color: var(--text-primary);
   text-decoration: none;
   margin-bottom: 8px;
 }
@@ -234,15 +325,25 @@
 .admin-header__brand-desktop h1 {
   margin: 0;
   font-size: 20px;
+  font-weight: 700;
 }
 
 .admin-header__logout-full {
   width: 100%;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-secondary);
   cursor: pointer;
   touch-action: manipulation;
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-header__logout-full:hover {
+  background: #eaf7ef;
+  border-color: var(--brand-accent);
+  color: var(--brand-primary-strong);
 }

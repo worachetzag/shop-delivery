@@ -81,7 +81,7 @@ const AdminLogin = () => {
         width: '100%'
       }}>
         <h2 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
-          👨‍💼 เข้าสู่ระบบแอดมินร้านค้า
+          เข้าสู่ระบบแอดมิน · {config.BRANDING.storeName}
         </h2>
         
         <form onSubmit={handleSubmit}>

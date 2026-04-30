@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
+import config from '../config';
 import { productsService } from '../services/api';
 import './Home.css';
 
@@ -91,10 +92,10 @@ const Home = () => {
         <div className="container">
           <div className="hero-content">
             <h1 className="hero-title">
-              ยินดีต้อนรับสู่ Samsung Panich Delivery
+              ยินดีต้อนรับสู่ร้าน{config.BRANDING.storeName}
             </h1>
             <p className="hero-subtitle">
-              สั่งซื้อสินค้า Samsung ผ่าน LINE ได้ง่ายๆ พร้อมบริการจัดส่งถึงบ้าน
+              สั่งซื้อสินค้าผ่าน LINE ได้สะดวก พร้อมบริการจัดส่งถึงบ้าน
             </p>
             <div className="hero-actions">
               <Link to="/customer/products" className="btn btn-primary">

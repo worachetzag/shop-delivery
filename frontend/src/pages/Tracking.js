@@ -54,7 +54,8 @@ const Tracking = () => {
             driver: data.driver || {
               name: 'กำลังรอการมอบหมาย',
               phone: null,
-              vehicle: null
+              vehicle: null,
+              photo_url: null,
             },
             timeline: (data.timeline || []).map((item) => ({
               status: item.code,
@@ -239,7 +240,11 @@ const Tracking = () => {
             <h3 className="section-title">ข้อมูลคนขับ</h3>
             <div className="driver-card">
               <div className="driver-avatar">
-                <span>{trackingInfo.driver.name.charAt(0)}</span>
+                {trackingInfo.driver?.photo_url ? (
+                  <img src={trackingInfo.driver.photo_url} alt="" className="driver-avatar-img" />
+                ) : (
+                  <span>{(trackingInfo.driver?.name || '?').charAt(0)}</span>
+                )}
               </div>
               <div className="driver-details">
                 <h4 className="driver-name">{trackingInfo.driver.name}</h4>

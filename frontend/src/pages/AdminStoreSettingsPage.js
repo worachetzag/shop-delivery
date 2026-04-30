@@ -248,7 +248,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
             <p style={sectionHintStyle}>กำหนดช่วงเวลาเปิดรับคำสั่งซื้อแยกตามประเภทบริการ</p>
             {['pickup', 'delivery'].map((type) => (
               <div key={type} style={{ marginBottom: 16, borderBottom: '1px solid #eee', paddingBottom: 12 }}>
-                <strong>{type === 'pickup' ? 'รับสินค้าเอง (Pickup)' : 'จัดส่ง (Delivery)'}</strong>
+                <strong>{type === 'pickup' ? 'รับสินค้าเองที่ร้าน' : 'จัดส่งถึงบ้าน'}</strong>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
                   <label>
                     เริ่ม

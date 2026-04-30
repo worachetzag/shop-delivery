@@ -216,6 +216,6 @@ class AuditLogAdmin(admin.ModelAdmin):
 
 
 # Admin site customization
-admin.site.site_header = "Samsung Panich Delivery Admin"
-admin.site.site_title = "SSP Admin"
-admin.site.index_title = "จัดการระบบ Samsung Panich Delivery"
+admin.site.site_header = "ซำสูงพาณิชย์ — จัดการระบบ"
+admin.site.site_title = "ซำสูงพาณิชย์"
+admin.site.index_title = "จัดการระบบร้านซำสูงพาณิชย์"

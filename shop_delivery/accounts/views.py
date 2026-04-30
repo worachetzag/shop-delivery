@@ -1,4 +1,5 @@
 from rest_framework import generics, status, permissions
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from shop_delivery.pagination import StandardPagination
@@ -10,14 +11,31 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, DecimalField, Max, Q, Sum, Value
+from django.db.models.functions import Coalesce
 import requests
 import logging
 import secrets
-from urllib.parse import urlencode
 from urllib.parse import quote_plus
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
+
+
+def driver_profile_photo_url(request, profile):
+    """URL เต็มสำหรับรูปคนขับ (หรือ None ถ้าไม่มี)"""
+    if not profile:
+        return None
+    photo = getattr(profile, 'photo', None)
+    if not photo:
+        return None
+    try:
+        url = photo.url
+    except ValueError:
+        return None
+    if request:
+        return request.build_absolute_uri(url)
+    return url
 
 
 class AddressGeocodeView(APIView):
@@ -80,6 +98,7 @@ def _line_callback_url(request):
 
 
 from .models import Customer, CustomerAddress, LineUser, UserRole, DriverProfile, AdminProfile, StaffAuditLog
+
 from .serializers import (
     CustomerSerializer,
     CustomerAddressSerializer,
@@ -87,6 +106,8 @@ from .serializers import (
     CustomerLoginSerializer,
     LineLoginSerializer,
     StaffAuditLogSerializer,
+    AdminCustomerListSerializer,
+    AdminCustomerDetailSerializer,
 )
 from .permissions import is_admin_user, can_manage_staff_accounts
 from .staff_audit import log_staff_audit
@@ -481,6 +502,7 @@ class AdminStaffDetailView(generics.GenericAPIView):
 class AdminDriverListCreateView(generics.GenericAPIView):
     """จัดการคนขับ"""
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request, *args, **kwargs):
         if not is_admin_user(request.user):
@@ -510,6 +532,7 @@ class AdminDriverListCreateView(generics.GenericAPIView):
                 'is_available': effective_available,
                 'has_active_assignment': has_active_assignment,
                 'active_assignment_count': active_jobs.count(),
+                'photo_url': driver_profile_photo_url(request, driver),
             })
         paginator = StandardPagination()
         page = paginator.paginate_queryset(data, request, self)
@@ -547,7 +570,7 @@ class AdminDriverListCreateView(generics.GenericAPIView):
             email=email,
         )
         UserRole.objects.update_or_create(user=user, defaults={'role': 'driver'})
-        DriverProfile.objects.create(
+        profile = DriverProfile.objects.create(
             user=user,
             license_number=license_number,
             vehicle_type=vehicle_type,
@@ -555,16 +578,22 @@ class AdminDriverListCreateView(generics.GenericAPIView):
             phone_number=phone_number,
             is_available=True,
         )
+        upload = request.FILES.get('photo')
+        if upload:
+            profile.photo = upload
+            profile.save(update_fields=['photo'])
 
         return Response({
             'message': 'เพิ่มคนขับสำเร็จ',
             'username': user.username,
+            'photo_url': driver_profile_photo_url(request, profile),
         }, status=status.HTTP_201_CREATED)
 
 
 class AdminDriverDetailView(generics.GenericAPIView):
     """แก้ไข/ลบคนขับ"""
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @transaction.atomic
     def put(self, request, driver_id, *args, **kwargs):
@@ -610,6 +639,22 @@ class AdminDriverDetailView(generics.GenericAPIView):
         driver.vehicle_type = vehicle_type
         driver.vehicle_number = vehicle_number
         driver.is_available = is_available
+
+        clear_photo = request.data.get('clear_photo')
+        clear_photo_flag = False
+        if clear_photo is True:
+            clear_photo_flag = True
+        elif isinstance(clear_photo, str) and clear_photo.strip().lower() in ('true', '1', 'yes', 'on'):
+            clear_photo_flag = True
+        if clear_photo_flag:
+            if driver.photo:
+                driver.photo.delete(save=False)
+            driver.photo = None
+
+        upload = request.FILES.get('photo')
+        if upload:
+            driver.photo = upload
+
         driver.save()
 
         return Response({
@@ -623,6 +668,7 @@ class AdminDriverDetailView(generics.GenericAPIView):
             'vehicle_type': driver.vehicle_type,
             'vehicle_number': driver.vehicle_number,
             'is_available': driver.is_available,
+            'photo_url': driver_profile_photo_url(request, driver),
         }, status=status.HTTP_200_OK)
 
     @transaction.atomic
@@ -886,11 +932,18 @@ def profile_view(request):
         # Redirect กลับไปที่ frontend พร้อม token
         try:
             token = Token.objects.get(user=request.user)
-            return HttpResponseRedirect(f"{frontend_url}?token={token.key}&login=success")
         except Token.DoesNotExist:
-            # ถ้าไม่มี token ให้สร้างใหม่
             token = Token.objects.create(user=request.user)
-            return HttpResponseRedirect(f"{frontend_url}?token={token.key}&login=success")
+        role = getattr(getattr(request.user, 'user_role', None), 'role', None) or 'customer'
+        auth_q = urlencode(
+            {
+                'token': token.key,
+                'login': 'success',
+                'username': request.user.username,
+                'user_role': role,
+            }
+        )
+        return HttpResponseRedirect(f"{frontend_url}?{auth_q}")
     else:
         # ถ้ายังไม่ได้ login ให้ redirect ไปหน้า login
         return HttpResponseRedirect(f"{frontend_url}/login")
@@ -1055,10 +1108,69 @@ def line_login_callback(request):
         needs_phone_completion = len(phone_digits) < 9
         next_path = '/customer/profile?section=personal&complete=phone' if needs_phone_completion else '/customer'
         query_sep = '&' if '?' in next_path else '?'
-        return HttpResponseRedirect(
-            f"{frontend_url}{next_path}{query_sep}token={token.key}&login=success&username={user.username}"
+        role = getattr(getattr(user, 'user_role', None), 'role', None) or 'customer'
+        auth_q = urlencode(
+            {
+                'token': token.key,
+                'login': 'success',
+                'username': user.username,
+                'user_role': role,
+            }
         )
+        return HttpResponseRedirect(f"{frontend_url}{next_path}{query_sep}{auth_q}")
         
     except Exception as e:
         logger.exception("LINE Login Error")
         return HttpResponseRedirect(f"{login_url}?error=line_login_failed&reason={quote_plus(e.__class__.__name__)}")
+
+
+class AdminCustomerListView(generics.ListAPIView):
+    """รายการลูกค้าสำหรับแอดมินร้าน"""
+
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardPagination
+    serializer_class = AdminCustomerListSerializer
+
+    def get_queryset(self):
+        if not is_admin_user(self.request.user):
+            return Customer.objects.none()
+        qs = (
+            Customer.objects.select_related('user')
+            .annotate(
+                order_count=Count('orders', distinct=True),
+                total_spent_delivered=Coalesce(
+                    Sum('orders__total_amount', filter=Q(orders__status='delivered')),
+                    Value(0),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                ),
+                last_order_at=Max('orders__created_at'),
+            )
+            .order_by('-order_count', '-last_order_at', '-id')
+        )
+        q = (self.request.query_params.get('q') or '').strip()
+        if q:
+            qs = qs.filter(
+                Q(user__username__icontains=q)
+                | Q(user__first_name__icontains=q)
+                | Q(user__last_name__icontains=q)
+                | Q(user__email__icontains=q)
+                | Q(phone_number__icontains=q)
+            )
+        return qs
+
+
+class AdminCustomerDetailView(generics.RetrieveAPIView):
+    """รายละเอียดลูกค้า + สรุปออเดอร์สำหรับแอดมิน"""
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AdminCustomerDetailSerializer
+    lookup_field = 'pk'
+    lookup_url_kwarg = 'customer_id'
+
+    def get_queryset(self):
+        if not is_admin_user(self.request.user):
+            return Customer.objects.none()
+        return Customer.objects.select_related('user').prefetch_related(
+            'addresses',
+            'user__line_user',
+        )

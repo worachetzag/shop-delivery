@@ -1,7 +1,7 @@
 {
   "name": "shop-delivery-web",
   "version": "1.0.0",
-  "description": "Samsung Panich Delivery Frontend - LINE LIFF Application",
+  "description": "Frontend ร้านซำสูงพาณิชย์ — สั่งซื้อผ่าน LINE (LIFF)",
   "main": "src/index.js",
   "scripts": {
     "start": "webpack serve --mode development",
@@ -18,7 +18,7 @@
     "delivery",
     "ecommerce"
   ],
-  "author": "Samsung Panich Development Team",
+  "author": "ซำสูงพาณิชย์",
   "license": "ISC",
   "dependencies": {
     "ajv": "^8.17.1",

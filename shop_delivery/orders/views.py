@@ -386,7 +386,10 @@ class OrderListView(generics.ListAPIView):
                 base = Order.objects.filter(customer=customer)
             else:
                 return Order.objects.none()
-        qs = base.order_by('-created_at').prefetch_related('items__product')
+        qs = base.order_by('-created_at').prefetch_related(
+            'items__product',
+            'driver_assignment__driver__driver_profile',
+        )
         # กรองตาม query (?status= / ?group=shipping สำหรับแท็บลูกค้า)
         group = self.request.query_params.get('group')
         if group == 'shipping':
@@ -404,6 +407,12 @@ class OrderListView(generics.ListAPIView):
                 | Q(customer__user__last_name__icontains=q)
                 | Q(customer__user__username__icontains=q)
             )
+        raw_customer_id = (self.request.query_params.get('customer_id') or '').strip()
+        if raw_customer_id and self._is_admin_user(self.request.user):
+            try:
+                qs = qs.filter(customer_id=int(raw_customer_id))
+            except (TypeError, ValueError):
+                pass
         return qs
 
 
@@ -418,10 +427,16 @@ class OrderDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         if self._is_admin_user(self.request.user):
-            return Order.objects.all().prefetch_related('items__product')
+            return Order.objects.all().prefetch_related(
+                'items__product',
+                'driver_assignment__driver__driver_profile',
+            )
         customer = Customer.objects.filter(user=self.request.user).first()
         if customer:
-            return Order.objects.filter(customer=customer).prefetch_related('items__product')
+            return Order.objects.filter(customer=customer).prefetch_related(
+                'items__product',
+                'driver_assignment__driver__driver_profile',
+            )
         return Order.objects.none()
 
 
@@ -787,7 +802,7 @@ class AdminAssignDriverView(APIView):
         if previous_driver and previous_driver.id != driver_user.id:
             _sync_driver_availability(previous_driver)
 
-        serializer = DriverAssignmentSerializer(assignment)
+        serializer = DriverAssignmentSerializer(assignment, context={'request': request})
         log_staff_audit(
             request,
             StaffAuditLog.Action.ASSIGN_DRIVER,
@@ -814,7 +829,13 @@ class DriverAssignmentListView(generics.ListAPIView):
     def get_queryset(self):
         return (
             DriverAssignment.objects.filter(driver=self.request.user)
-            .select_related('order', 'order__customer', 'order__customer__user', 'driver')
+            .select_related(
+                'order',
+                'order__customer',
+                'order__customer__user',
+                'driver',
+                'driver__driver_profile',
+            )
             .prefetch_related('order__items__product')
             .order_by('-assigned_at')
         )
@@ -828,7 +849,11 @@ class DriverAssignmentDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return DriverAssignment.objects.filter(driver=self.request.user).select_related(
-            'order', 'order__customer', 'order__customer__user', 'driver'
+            'order',
+            'order__customer',
+            'order__customer__user',
+            'driver',
+            'driver__driver_profile',
         ).prefetch_related('order__items__product')
 
 
@@ -965,13 +990,17 @@ class DriverAssignmentStatusUpdateView(APIView):
             )
 
         assignment = DriverAssignment.objects.select_related(
-            'order', 'order__customer', 'order__customer__user', 'driver'
+            'order',
+            'order__customer',
+            'order__customer__user',
+            'driver',
+            'driver__driver_profile',
         ).get(id=assignment_id, driver=request.user)
         _sync_driver_availability(assignment.driver)
 
         return Response({
             'message': 'อัปเดตสถานะงานสำเร็จ',
-            'assignment': DriverAssignmentSerializer(assignment).data,
+            'assignment': DriverAssignmentSerializer(assignment, context={'request': request}).data,
         }, status=status.HTTP_200_OK)
 
 
@@ -980,7 +1009,12 @@ class OrderDriverTrackingView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, order_id):
-        order = get_object_or_404(Order, id=order_id)
+        order = get_object_or_404(
+            Order.objects.select_related(
+                'driver_assignment__driver__driver_profile',
+            ).prefetch_related('items__product'),
+            id=order_id,
+        )
         is_owner = hasattr(request.user, 'customer') and order.customer.user_id == request.user.id
         if not (_is_admin_user(request.user) or is_owner or (hasattr(order, 'driver_assignment') and order.driver_assignment.driver_id == request.user.id)):
             return Response({'error': 'ไม่มีสิทธิ์เข้าถึงการติดตามนี้'}, status=status.HTTP_403_FORBIDDEN)
@@ -989,6 +1023,13 @@ class OrderDriverTrackingView(APIView):
         driver_payload = None
         if assignment:
             driver_profile = getattr(assignment.driver, 'driver_profile', None)
+            photo_url = None
+            if driver_profile and getattr(driver_profile, 'photo', None):
+                try:
+                    pu = driver_profile.photo.url
+                    photo_url = request.build_absolute_uri(pu)
+                except ValueError:
+                    photo_url = None
             driver_payload = {
                 'id': assignment.driver_id,
                 'name': assignment.driver.get_full_name() or assignment.driver.username,
@@ -997,6 +1038,7 @@ class OrderDriverTrackingView(APIView):
                     f"{getattr(driver_profile, 'vehicle_type', '')} {getattr(driver_profile, 'vehicle_number', '')}".strip()
                     if driver_profile else ''
                 ),
+                'photo_url': photo_url,
             }
 
         timeline = [

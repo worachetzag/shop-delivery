@@ -29,3 +29,19 @@
   display: grid;
   gap: 0.6rem;
 }
+
+.login-browser-hint {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.04));
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+}
+
+.login-browser-hint strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

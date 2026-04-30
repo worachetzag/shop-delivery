@@ -1,5 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.db.models import Count, Sum, Q, Value, DecimalField
+from django.db.models.functions import Coalesce
+
+from orders.models import Order
 from .models import Customer, CustomerAddress, LineUser, UserRole, DriverProfile, AdminProfile, StaffAuditLog
 
 
@@ -120,3 +124,110 @@ class StaffAuditLogSerializer(serializers.ModelSerializer):
             if custom:
                 return custom
         return obj.get_action_display()
+
+
+class AdminRecentOrderSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'order_number',
+            'status',
+            'status_display',
+            'payment_method',
+            'payment_method_display',
+            'total_amount',
+            'created_at',
+        ]
+
+
+class AdminCustomerListSerializer(serializers.ModelSerializer):
+    user_info = UserSerializer(source='user', read_only=True)
+    order_count = serializers.IntegerField(read_only=True)
+    total_spent_delivered = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    last_order_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
+    class Meta:
+        model = Customer
+        fields = [
+            'id',
+            'user_info',
+            'phone_number',
+            'order_count',
+            'total_spent_delivered',
+            'last_order_at',
+            'created_at',
+        ]
+
+
+class AdminCustomerDetailSerializer(serializers.ModelSerializer):
+    user_info = UserSerializer(source='user', read_only=True)
+    addresses = CustomerAddressSerializer(many=True, read_only=True)
+    line_profile = serializers.SerializerMethodField()
+    stats = serializers.SerializerMethodField()
+    recent_orders = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Customer
+        fields = [
+            'id',
+            'user_info',
+            'phone_number',
+            'address',
+            'date_of_birth',
+            'id_card_number',
+            'latitude',
+            'longitude',
+            'created_at',
+            'updated_at',
+            'addresses',
+            'line_profile',
+            'stats',
+            'recent_orders',
+        ]
+
+    def get_line_profile(self, obj):
+        lu = getattr(obj.user, 'line_user', None)
+        if not lu:
+            return None
+        return {
+            'display_name': lu.display_name,
+            'picture_url': lu.picture_url or '',
+            'line_user_id': lu.line_user_id,
+        }
+
+    def get_stats(self, obj):
+        agg = obj.orders.aggregate(
+            order_count=Count('id'),
+            delivered_count=Count('id', filter=Q(status='delivered')),
+            cancelled_count=Count('id', filter=Q(status='cancelled')),
+            in_progress_count=Count(
+                'id',
+                filter=Q(status__in=['pending', 'preparing', 'ready', 'delivering']),
+            ),
+            total_spent_delivered=Coalesce(
+                Sum('total_amount', filter=Q(status='delivered')),
+                Value(0),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+            lifetime_order_total=Coalesce(
+                Sum('total_amount'),
+                Value(0),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+        )
+        return {
+            'order_count': agg['order_count'],
+            'delivered_count': agg['delivered_count'],
+            'cancelled_count': agg['cancelled_count'],
+            'in_progress_count': agg['in_progress_count'],
+            'total_spent_delivered': agg['total_spent_delivered'],
+            'lifetime_order_total': agg['lifetime_order_total'],
+        }
+
+    def get_recent_orders(self, obj):
+        qs = obj.orders.order_by('-created_at')[:40]
+        return AdminRecentOrderSerializer(qs, many=True).data

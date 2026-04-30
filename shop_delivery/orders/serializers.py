@@ -86,10 +86,20 @@ class OrderSerializer(serializers.ModelSerializer):
         assignment = getattr(obj, 'driver_assignment', None)
         if not assignment:
             return None
+        request = self.context.get('request')
+        dp = getattr(assignment.driver, 'driver_profile', None)
+        driver_photo_url = None
+        if dp and getattr(dp, 'photo', None):
+            try:
+                u = dp.photo.url
+                driver_photo_url = request.build_absolute_uri(u) if request else u
+            except ValueError:
+                driver_photo_url = None
         return {
             'id': assignment.id,
             'driver_id': assignment.driver_id,
             'driver_name': assignment.driver.get_full_name() or assignment.driver.username,
+            'driver_photo_url': driver_photo_url,
             'status': assignment.status,
             'status_display': assignment.get_status_display(),
             'current_location_text': assignment.current_location_text,
@@ -361,6 +371,7 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     order_number = serializers.CharField(source='order.order_number', read_only=True)
     driver_name = serializers.CharField(source='driver.get_full_name', read_only=True)
     driver_phone = serializers.SerializerMethodField()
+    driver_photo_url = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     order_total_amount = serializers.DecimalField(source='order.total_amount', max_digits=10, decimal_places=2, read_only=True)
     delivery_address = serializers.CharField(source='order.delivery_address', read_only=True)
@@ -380,7 +391,7 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverAssignment
         fields = [
-            'id', 'order', 'driver', 'driver_name', 'driver_phone',
+            'id', 'order', 'driver', 'driver_name', 'driver_phone', 'driver_photo_url',
             'order_number',
             'status', 'status_display', 'notes',
             'current_latitude', 'current_longitude', 'current_location_text', 'last_location_at',
@@ -395,6 +406,17 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     def get_driver_phone(self, obj):
         driver_profile = getattr(obj.driver, 'driver_profile', None)
         return getattr(driver_profile, 'phone_number', '')
+
+    def get_driver_photo_url(self, obj):
+        request = self.context.get('request')
+        dp = getattr(obj.driver, 'driver_profile', None)
+        if not dp or not getattr(dp, 'photo', None):
+            return None
+        try:
+            url = dp.photo.url
+        except ValueError:
+            return None
+        return request.build_absolute_uri(url) if request else url
 
     def get_order_items(self, obj):
         items_qs = obj.order.items.select_related('product').all()

@@ -29,6 +29,13 @@ const sameOriginApiBase =
 const sameOriginLiffBase = typeof window !== 'undefined' ? window.location.origin : '';
 const isProdBuild = process.env.REACT_APP_ENVIRONMENT === 'production';
 
+/** ชื่อร้านและข้อความแบรนด์ (แสดงในเว็บ / แอดมิน) */
+export const BRANDING = {
+  storeName: 'ซำสูงพาณิชย์',
+  /** ไตเติลแท็บเบราว์เซอร์ — ลูกค้า */
+  customerPageTitle: 'ซำสูงพาณิชย์ — สั่งซื้อออนไลน์',
+};
+
 const resolvedApiBase = envApiBase || (isProdBuild ? sameOriginApiBase : localApiBase);
 const resolvedLiffBase =
   envLiffBase || derivedLiffFromApi || (isProdBuild ? sameOriginLiffBase : localBackendBase);
@@ -89,7 +96,9 @@ const config = {
     mobile: 768,
     tablet: 1024,
     desktop: 1200
-  }
+  },
+
+  BRANDING,
 };
 
 export default config;

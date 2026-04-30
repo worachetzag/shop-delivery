@@ -70,7 +70,7 @@ def handle_text_message(event):
     
     # Handle different message types
     if message_text.lower() in ['สวัสดี', 'hello', 'hi']:
-        reply_text = f"สวัสดีครับ {line_user.display_name}! ยินดีต้อนรับสู่ Samsung Panich Delivery"
+        reply_text = f"สวัสดีครับ {line_user.display_name}! ยินดีต้อนรับสู่ร้านซำสูงพาณิชย์"
         reply_message = TextSendMessage(text=reply_text)
         line_bot_api.reply_message(event.reply_token, reply_message)
     

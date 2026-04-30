@@ -1,6 +1,6 @@
 import { popupNotify } from '../components/PopupProvider';
 
-// Utility functions for the Samsung Panich Delivery app
+// Utility functions for the storefront web app (ซำสูงพาณิชย์)
 
 /**
  * ชื่อบรรทัดสินค้าจาก API ตะกร้า / รายการในคำสั่งซื้อ (รองรับ product_name, name, product nested)

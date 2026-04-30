@@ -46,6 +46,12 @@ class UserRole(models.Model):
 class DriverProfile(models.Model):
     """ข้อมูลคนขับรถส่ง"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='driver_profile')
+    photo = models.ImageField(
+        upload_to='driver_photos/',
+        blank=True,
+        null=True,
+        verbose_name="รูปประจำตัวคนขับ",
+    )
     license_number = models.CharField(max_length=20, verbose_name="เลขใบขับขี่")
     vehicle_type = models.CharField(max_length=50, verbose_name="ประเภทรถ")
     vehicle_number = models.CharField(max_length=20, verbose_name="เลขทะเบียนรถ")

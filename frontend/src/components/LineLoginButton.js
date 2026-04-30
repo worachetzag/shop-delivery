@@ -1,9 +1,26 @@
 import React from 'react';
 import config from '../config';
 
+/** OAuth ไป Django เพื่อแลก Token ของร้าน (หลัง LINE ยืนยันตัวตนแล้ว) */
+export function redirectToShopLineOAuth() {
+  window.location.href = `${config.LIFF_ENDPOINT_URL}/accounts/line/login/`;
+}
+
 const LineLoginButton = () => {
-  const handleLineLogin = () => {
-    window.location.href = `${config.LIFF_ENDPOINT_URL}/accounts/line/login/`;
+  const handleLineLogin = async () => {
+    try {
+      const liff = (await import('liff')).default;
+      await liff.init({ liffId: config.LIFF_ID });
+      // ใน LINE WebView: ให้ LIFF login ก่อน — มักไม่โผล่หน้าอีเมล/รหัสผ่านเหมือนเปิดใน Safari
+      if (liff.isInClient() && !liff.isLoggedIn()) {
+        const uri = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+        liff.login({ redirectUri: uri });
+        return;
+      }
+    } catch {
+      /* เปิดนอก LINE หรือยังไม่ได้ตั้ง LIFF_ID — ไป OAuth แบบเดิม */
+    }
+    redirectToShopLineOAuth();
   };
 
   return (

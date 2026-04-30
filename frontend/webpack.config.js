@@ -46,7 +46,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './public/index.html',
-      title: 'Samsung Panich Delivery',
+      title: 'ซำสูงพาณิชย์ — สั่งซื้อออนไลน์',
     }),
     // Ensure SPA routes work on static hosts (e.g. Cloudflare Pages).
     {

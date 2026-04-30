@@ -280,8 +280,16 @@ const AdminOrderDetail = () => {
         <div className="order-detail-items">
           <strong>มอบหมายคนขับ</strong>
           <div className="slip-cell" style={{ marginTop: '8px' }}>
-            <span className="muted">
-              คนขับปัจจุบัน: {order?.driver_assignment?.driver_name || 'ยังไม่มอบหมาย'}
+            <span className="muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              คนขับปัจจุบัน:
+              {order?.driver_assignment?.driver_photo_url ? (
+                <img
+                  src={order.driver_assignment.driver_photo_url}
+                  alt=""
+                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle' }}
+                />
+              ) : null}
+              {order?.driver_assignment?.driver_name || 'ยังไม่มอบหมาย'}
             </span>
             {hasAssignedDriver ? (
               <>
