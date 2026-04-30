@@ -1,7 +1,7 @@
 /* Product Card Styles */
 .product-card {
   background: var(--surface-card);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-soft);
   overflow: hidden;
@@ -43,7 +43,7 @@
 
 .product-image {
   width: 100%;
-  height: 140px;
+  height: 116px;
   object-fit: cover;
   background: #f8f9fa;
   transition: transform 0.3s ease;
@@ -58,8 +58,8 @@
   background: #00b14f;
   color: #fff;
   border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 0.72rem;
+  padding: 4px 8px;
+  font-size: 0.64rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(0, 177, 79, 0.35);
@@ -76,12 +76,12 @@
 }
 
 .product-info {
-  padding: 0.62rem;
+  padding: 0.46rem;
   flex: 1;
 }
 
 .product-name {
-  font-size: 0.84rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: #333;
   margin-bottom: 0.5rem;
@@ -90,14 +90,14 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.4rem;
+  min-height: 1.9rem;
   word-break: break-word;
 }
 
 .product-category-inline {
   color: #667085;
-  font-size: 0.78rem;
-  margin-bottom: 0.4rem;
+  font-size: 0.62rem;
+  margin-bottom: 0.2rem;
   font-weight: 600;
   min-height: 1rem;
   overflow: hidden;
@@ -107,27 +107,27 @@
 
 .product-description {
   color: var(--text-secondary);
-  font-size: 0.74rem;
-  margin-bottom: 0.45rem;
+  font-size: 0.64rem;
+  margin-bottom: 0.25rem;
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.05rem;
+  min-height: 0.92rem;
 }
 
 .product-price {
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   font-weight: bold;
   color: #00B900;
   margin-bottom: 0.35rem;
 }
 
 .product-stock {
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   color: #2f8f2f;
-  margin-bottom: 0.22rem;
+  margin-bottom: 0.12rem;
   font-weight: 600;
   min-height: 1rem;
 }
@@ -137,14 +137,14 @@
 }
 
 .product-actions {
-  padding: 0 0.62rem 0.62rem;
+  padding: 0 0.46rem 0.46rem;
   margin-top: auto;
   display: flex;
   flex-direction: column;
 }
 
 .cart-meta-area {
-  min-height: 52px;
+  min-height: 34px;
 }
 
 .cart-meta-area.is-collapsed {
@@ -300,61 +300,62 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .product-image {
-    height: 104px;
+    height: 82px;
   }
 
   .product-info {
-    padding: 0.5rem;
+    padding: 0.38rem;
   }
   
   .product-name {
-    font-size: 0.76rem;
+    font-size: 0.64rem;
     margin-bottom: 0.25rem;
-    min-height: 1.95rem;
+    min-height: 1.58rem;
   }
   
   .product-description {
-    font-size: 0.68rem;
-    margin-bottom: 0.45rem;
+    display: none;
+    font-size: 0.6rem;
+    margin-bottom: 0;
     -webkit-line-clamp: 1;
-    min-height: 0.95rem;
+    min-height: 0;
   }
 
   .product-category-inline {
-    font-size: 0.66rem;
-    margin-bottom: 0.28rem;
+    font-size: 0.56rem;
+    margin-bottom: 0.16rem;
     min-height: 0.86rem;
   }
   
   .product-price {
-    font-size: 0.8rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.54rem;
+    margin-bottom: 0.14rem;
   }
 
   .product-stock {
-    font-size: 0.64rem;
-    margin-bottom: 0.38rem;
-    min-height: 0.86rem;
+    font-size: 0.5rem;
+    margin-bottom: 0.14rem;
+    min-height: 0.6rem;
   }
   
   .product-actions {
-    padding: 0 0.5rem 0.5rem;
+    padding: 0 0.38rem 0.38rem;
   }
 
   .cart-meta-area {
-    min-height: 44px;
+    min-height: 22px;
   }
 
   .product-image-add-btn {
     right: 6px;
     bottom: 6px;
-    padding: 4px 8px;
-    font-size: 0.66rem;
+    padding: 3px 7px;
+    font-size: 0.56rem;
   }
 
   .cart-status {
-    font-size: 0.7rem;
-    margin-bottom: 5px;
+    font-size: 0.58rem;
+    margin-bottom: 2px;
   }
 
   .cart-qty-editor {
@@ -363,14 +364,14 @@
   }
 
   .qty-btn {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 5px;
-    font-size: 0.75rem;
+    font-size: 0.64rem;
   }
 
   .qty-value {
-    font-size: 0.75rem;
+    font-size: 0.62rem;
   }
 
   .btn-sm {
@@ -400,23 +401,27 @@
 
 @media (max-width: 480px) {
   .product-image {
-    height: 96px;
+    height: 76px;
   }
 
   .product-name {
-    font-size: 0.8rem;
+    font-size: 0.6rem;
   }
 
   .product-price {
-    font-size: 0.86rem;
+    font-size: 0.5rem;
+  }
+
+  .product-stock {
+    font-size: 0.48rem;
   }
 
   .btn-sm {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }
 
   .product-card-skeleton-image {
-    height: 96px;
+    height: 76px;
   }
 }
 
