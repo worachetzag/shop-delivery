@@ -76,6 +76,7 @@ const Checkout = () => {
   const [deliveryFeeEstimate, setDeliveryFeeEstimate] = useState(null);
   const [deliveryDistanceEstimateKm, setDeliveryDistanceEstimateKm] = useState(null);
   const [loadingDeliveryFeeEstimate, setLoadingDeliveryFeeEstimate] = useState(false);
+  const [deliveryFeeError, setDeliveryFeeError] = useState(null);
   const [geocoding, setGeocoding] = useState(false);
   const [geocodingError, setGeocodingError] = useState(null);
   const [promptPayInfo, setPromptPayInfo] = useState(null);
@@ -109,6 +110,12 @@ const Checkout = () => {
       Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.asin(Math.min(1, Math.sqrt(a)));
     return R * c;
+  };
+
+  const toFiniteNumberOrNull = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
   };
 
   const [storeOrigin, setStoreOrigin] = useState({ latitude: null, longitude: null });
@@ -150,12 +157,13 @@ const Checkout = () => {
         });
         if (!response.ok) return;
         const data = await response.json();
+        const payload = data?.store_location || data || {};
         setStoreOrigin({
-          latitude: data?.latitude ?? null,
-          longitude: data?.longitude ?? null,
+          latitude: toFiniteNumberOrNull(payload.latitude),
+          longitude: toFiniteNumberOrNull(payload.longitude),
         });
       } catch (e) {
-        // ignore
+        setStoreOrigin({ latitude: null, longitude: null });
       }
     };
     loadStoreLocation();
@@ -314,18 +322,33 @@ const Checkout = () => {
   };
 
   useEffect(() => {
-    const canCalc =
-      storeOrigin?.latitude != null &&
-      storeOrigin?.longitude != null &&
-      shippingInfo?.latitude != null &&
-      shippingInfo?.longitude != null;
+    const originLat = toFiniteNumberOrNull(storeOrigin?.latitude);
+    const originLng = toFiniteNumberOrNull(storeOrigin?.longitude);
+    const destinationLat = toFiniteNumberOrNull(shippingInfo?.latitude);
+    const destinationLng = toFiniteNumberOrNull(shippingInfo?.longitude);
 
-    if (!canCalc) return;
+    setDeliveryFeeEstimate(null);
+    setDeliveryDistanceEstimateKm(null);
+    setDeliveryFeeError(null);
+    setLoadingDeliveryFeeEstimate(false);
+
+    if (originLat == null || originLng == null) {
+      setDeliveryFeeError('ยังไม่ได้ตั้งค่าพิกัดร้านสำหรับคำนวณค่าส่ง');
+      return;
+    }
+    if (destinationLat == null || destinationLng == null) {
+      setDeliveryFeeError(
+        geocoding
+          ? null
+          : 'ยังไม่มีพิกัดที่อยู่จัดส่งสำหรับคำนวณค่าส่ง'
+      );
+      return;
+    }
     const distanceKm = haversineDistanceKm(
-      Number(storeOrigin.latitude),
-      Number(storeOrigin.longitude),
-      Number(shippingInfo.latitude),
-      Number(shippingInfo.longitude)
+      originLat,
+      originLng,
+      destinationLat,
+      destinationLng
     );
 
     if (!Number.isFinite(distanceKm) || distanceKm <= 0) {
@@ -337,7 +360,6 @@ const Checkout = () => {
     // เรียก backend เพื่อคำนวณค่าจัดส่งตาม tier (DB-configurable)
     let cancelled = false;
     setLoadingDeliveryFeeEstimate(true);
-    setDeliveryFeeEstimate(null);
 
     (async () => {
       try {
@@ -355,10 +377,12 @@ const Checkout = () => {
         if (cancelled) return;
         setDeliveryFeeEstimate(Number(data?.delivery_fee ?? 0));
         setDeliveryDistanceEstimateKm(Number(data?.distance ?? distanceKm));
+        setDeliveryFeeError(null);
       } catch (e) {
         if (cancelled) return;
         setDeliveryFeeEstimate(null);
         setDeliveryDistanceEstimateKm(null);
+        setDeliveryFeeError('คำนวณค่าส่งไม่สำเร็จ กรุณาลองใหม่');
       } finally {
         if (!cancelled) setLoadingDeliveryFeeEstimate(false);
       }
@@ -367,7 +391,13 @@ const Checkout = () => {
     return () => {
       cancelled = true;
     };
-  }, [storeOrigin?.latitude, storeOrigin?.longitude, shippingInfo?.latitude, shippingInfo?.longitude]);
+  }, [
+    storeOrigin?.latitude,
+    storeOrigin?.longitude,
+    shippingInfo?.latitude,
+    shippingInfo?.longitude,
+    geocoding,
+  ]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
@@ -421,6 +451,12 @@ const Checkout = () => {
       if (!paymentMethod) issues = [...issues, 'วิธีชำระเงิน'];
     } else {
       issues = [...issues, ...checkoutShippingIssues(shippingInfo, paymentMethod)];
+    }
+    if (deliveryFeeEstimate == null) {
+      issues = [
+        ...issues,
+        deliveryFeeError || 'รอให้ระบบคำนวณค่าส่งให้เสร็จก่อน',
+      ];
     }
 
     if (issues.length) {
@@ -608,7 +644,12 @@ const Checkout = () => {
     addresses.length > 0 &&
     selectedSavedAddress &&
     !manualShippingEntry;
-  const canSubmitOrder = Boolean(paymentMethod) && Boolean(selectedSavedAddress) && !submitting && !createdOrderId;
+  const hasDeliveryFee = deliveryFeeEstimate != null && !deliveryFeeError && !loadingDeliveryFeeEstimate;
+  const canSubmitOrder = Boolean(paymentMethod)
+    && Boolean(selectedSavedAddress)
+    && hasDeliveryFee
+    && !submitting
+    && !createdOrderId;
 
   return (
     <div className="checkout-page">
@@ -658,11 +699,13 @@ const Checkout = () => {
                   <span>
                     {deliveryFeeEstimate == null ? (
                       <span className="free-shipping">
-                        {geocodingError
-                          ? geocodingError
+                        {deliveryFeeError || geocodingError
+                          ? (deliveryFeeError || geocodingError)
                           : geocoding
                             ? 'กำลังหาพิกัด...'
-                            : 'กำลังคำนวณ...'}
+                            : loadingDeliveryFeeEstimate
+                              ? 'กำลังคำนวณ...'
+                              : 'รอข้อมูลที่อยู่'}
                       </span>
                     ) : calculateShipping() === 0 ? (
                       <span className="free-shipping">ฟรี</span>
