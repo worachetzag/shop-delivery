@@ -34,6 +34,17 @@ import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
 import './App.css';
 
+const LIFF_PAGE_ROUTES = {
+  home: '/customer',
+  products: '/customer/products',
+  cart: '/customer/cart',
+  checkout: '/customer/checkout',
+  orders: '/customer/orders',
+  tracking: '/customer/orders',
+  profile: '/customer/profile',
+  login: '/customer/login',
+};
+
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,8 +55,6 @@ function AppContent() {
   const isDriverPage = location.pathname.startsWith('/driver');
   const showDriverChrome = isDriverPage && !isDriverLoginRoute;
   const showCustomerChrome = !isAdminPage && !isDriverPage;
-  const customerShellHasBack =
-    showCustomerChrome && customerShouldShowBackButton(location.pathname);
   const appRoleClass = isAdminPage
     ? 'app-role-admin'
     : (isDriverPage ? 'app-role-mobile app-role-driver' : 'app-role-mobile');
@@ -58,8 +67,10 @@ function AppContent() {
     const username = params.get('username');
     const userRoleFromUrl = params.get('user_role');
     const loginStatus = params.get('login');
+    const liffPage = (params.get('page') || '').toLowerCase();
+    const liffRoute = LIFF_PAGE_ROUTES[liffPage];
 
-    if (!token && !loginStatus) {
+    if (!token && !loginStatus && !liffRoute) {
       return;
     }
 
@@ -78,8 +89,10 @@ function AppContent() {
     params.delete('username');
     params.delete('user_role');
     params.delete('login');
+    params.delete('page');
     const cleanedSearch = params.toString();
-    const nextPath = `${location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
+    const targetPathname = liffRoute || location.pathname;
+    const nextPath = `${targetPathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
 
     if (loginStatus === 'success') {
       navigate(nextPath === '/' ? '/customer' : nextPath, { replace: true });
@@ -140,6 +153,14 @@ function AppContent() {
         <Routes>
           {/* Customer Routes (canonical) */}
           <Route path="/" element={<Navigate to="/customer" replace />} />
+          <Route path="/liff" element={<Navigate to="/customer" replace />} />
+          <Route path="/liff/products" element={<Navigate to="/customer/products" replace />} />
+          <Route path="/liff/cart" element={<Navigate to="/customer/cart" replace />} />
+          <Route path="/liff/checkout" element={<Navigate to="/customer/checkout" replace />} />
+          <Route path="/liff/orders" element={<Navigate to="/customer/orders" replace />} />
+          <Route path="/liff/tracking" element={<Navigate to="/customer/orders" replace />} />
+          <Route path="/liff/profile" element={<Navigate to="/customer/profile" replace />} />
+          <Route path="/liff/login" element={<Navigate to="/customer/login" replace />} />
           <Route path="/customer" element={<Home />} />
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/products/:productId" element={<ProductDetail />} />

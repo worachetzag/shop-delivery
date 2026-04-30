@@ -9,6 +9,18 @@ import json
 from django.conf import settings
 
 
+LIFF_PAGE_ROUTES = {
+    'home': '/customer',
+    'products': '/customer/products',
+    'cart': '/customer/cart',
+    'checkout': '/customer/checkout',
+    'orders': '/customer/orders',
+    'tracking': '/customer/orders',
+    'profile': '/customer/profile',
+    'login': '/customer/login',
+}
+
+
 def _external_frontend_base():
     """
     Redirect ไป SPA เฉพาะเมื่อตั้ง FRONTEND_URL เป็น URL จริง (https และไม่ใช่ localhost)
@@ -23,13 +35,27 @@ def _external_frontend_base():
     return raw.rstrip('/')
 
 
+def _redirect_to_frontend_route(request, route):
+    target = _external_frontend_base()
+    if target:
+        return HttpResponseRedirect(f'{target}{route}')
+
+    base = request.build_absolute_uri('/').rstrip('/')
+    return HttpResponseRedirect(f'{base}{route}')
+
+
 class LiffView(View):
     """หน้าแรก /liff/ — มี SPA แล้ว redirect ไปที่นั้น ไม่มีแสดงข้อความบน Django"""
 
     def get(self, request):
+        page = (request.GET.get('page') or '').lower()
+        route = LIFF_PAGE_ROUTES.get(page)
+        if route:
+            return _redirect_to_frontend_route(request, route)
+
         target = _external_frontend_base()
         if target:
-            return HttpResponseRedirect(f'{target}/')
+            return HttpResponseRedirect(f'{target}/customer')
         base = request.build_absolute_uri('/').rstrip('/')
         return render(
             request,
@@ -48,44 +74,28 @@ class LiffProductsView(View):
     """LIFF Products Page"""
     
     def get(self, request):
-        context = {
-            'liff_id': settings.LINE_LIFF_ID,
-            'page': 'products'
-        }
-        return render(request, 'liff/products.html', context)
+        return _redirect_to_frontend_route(request, '/customer/products')
 
 
 class LiffCartView(View):
     """LIFF Cart Page"""
     
     def get(self, request):
-        context = {
-            'liff_id': settings.LINE_LIFF_ID,
-            'page': 'cart'
-        }
-        return render(request, 'liff/cart.html', context)
+        return _redirect_to_frontend_route(request, '/customer/cart')
 
 
 class LiffOrdersView(View):
     """LIFF Orders Page"""
     
     def get(self, request):
-        context = {
-            'liff_id': settings.LINE_LIFF_ID,
-            'page': 'orders'
-        }
-        return render(request, 'liff/orders.html', context)
+        return _redirect_to_frontend_route(request, '/customer/orders')
 
 
 class LiffTrackingView(View):
     """LIFF Tracking Page"""
     
     def get(self, request):
-        context = {
-            'liff_id': settings.LINE_LIFF_ID,
-            'page': 'tracking'
-        }
-        return render(request, 'liff/tracking.html', context)
+        return _redirect_to_frontend_route(request, '/customer/orders')
 
 
 class LiffDriverView(View):
