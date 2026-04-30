@@ -1034,11 +1034,32 @@ def line_login_callback(request):
         picture_url = profile_data.get('pictureUrl', '')
         status_message = profile_data.get('statusMessage', '')
         
+        def _build_customer_id_card(seed_value):
+            digits = ''.join(ch for ch in str(seed_value or '') if ch.isdigit())
+            if not digits:
+                digits = '0'
+            id_card_candidate = (digits + ('0' * 13))[:13]
+            suffix = 1
+            while Customer.objects.filter(id_card_number=id_card_candidate).exists():
+                suffix_str = str(suffix)
+                id_card_candidate = id_card_candidate[:13 - len(suffix_str)] + suffix_str
+                suffix += 1
+            return id_card_candidate
+
         # หาหรือสร้าง LineUser
         try:
             line_user = LineUser.objects.get(line_user_id=line_user_id)
             user = line_user.user
-            customer = Customer.objects.get(user=user)
+            customer = Customer.objects.filter(user=user).first()
+            if not customer:
+                customer = Customer.objects.create(
+                    user=user,
+                    id_card_number=_build_customer_id_card(line_user_id or user.id),
+                    date_of_birth='2000-01-01',
+                    phone_number='',
+                    address='',
+                )
+            UserRole.objects.get_or_create(user=user, defaults={'role': 'customer'})
         except LineUser.DoesNotExist:
             # สร้าง User ใหม่
             username_base = f"line_{line_user_id}"
@@ -1055,20 +1076,10 @@ def line_login_callback(request):
                 last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
             )
 
-            digits = ''.join(ch for ch in line_user_id if ch.isdigit())
-            if not digits:
-                digits = str(user.id)
-            id_card_candidate = (digits + ('0' * 13))[:13]
-            suffix = 1
-            while Customer.objects.filter(id_card_number=id_card_candidate).exists():
-                suffix_str = str(suffix)
-                id_card_candidate = id_card_candidate[:13 - len(suffix_str)] + suffix_str
-                suffix += 1
-
             # สร้าง Customer
             customer = Customer.objects.create(
                 user=user,
-                id_card_number=id_card_candidate,
+                id_card_number=_build_customer_id_card(line_user_id or user.id),
                 date_of_birth='2000-01-01',
                 phone_number='',
                 address='',
