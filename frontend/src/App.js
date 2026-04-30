@@ -32,6 +32,7 @@ import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
+import { customerShouldShowBackButton } from './utils/customerNavigation';
 import './App.css';
 
 function AppContent() {
