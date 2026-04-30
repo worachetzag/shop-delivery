@@ -1189,7 +1189,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                     {products.map((product) => (
                       <tr
                         key={product.id}
-                        className="admin-product-row"
+                        className={`admin-product-row${product.is_low_stock ? ' admin-product-row--low-stock' : ''}`}
                         onClick={() => navigate(`/admin/products/${product.id}/edit`)}
                         title="คลิกเพื่อแก้ไขสินค้า"
                       >

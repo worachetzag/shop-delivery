@@ -152,6 +152,11 @@
   display: flex;
 }
 
+/* Driver routes render Header without customer force-show; keep bar visible on desktop too */
+.liff-bottom-nav.liff-bottom-nav--driver {
+  display: flex;
+}
+
 .liff-bottom-nav a {
   flex: 1;
   color: #64748b;

@@ -360,10 +360,16 @@ class AdminInventoryOverviewView(APIView):
             total_reserved=Sum('reserved_quantity'),
             stock_value=Sum(F('stock_quantity') * F('price')),
         )
-        low_stock_count = products.filter(
-            is_available=True,
-            stock_quantity__lte=F('reserved_quantity') + F('min_stock_level'),
-        ).count()
+        from orders.models import StoreLocation
+
+        loc = StoreLocation.objects.order_by('id').first()
+        store_thr = int(loc.low_stock_alert_quantity) if loc else 5
+        q_prod = Q(stock_quantity__lte=F('reserved_quantity') + F('min_stock_level'))
+        if store_thr > 0:
+            q_store = Q(stock_quantity__lte=F('reserved_quantity') + store_thr)
+            low_stock_count = products.filter(Q(is_available=True) & (q_prod | q_store)).count()
+        else:
+            low_stock_count = products.filter(is_available=True).filter(q_prod).count()
         out_of_stock_count = products.filter(
             is_available=True,
             stock_quantity__lte=F('reserved_quantity'),

@@ -96,6 +96,7 @@ class AdminStoreSettingsView(APIView):
                 'name': (loc.name if loc else '') or '',
                 'address': (loc.address if loc else '') or '',
                 'promptpay_number': (loc.promptpay_number if loc else '') or '',
+                'low_stock_alert_quantity': int(loc.low_stock_alert_quantity) if loc else 5,
                 'latitude': loc.latitude if loc else None,
                 'longitude': loc.longitude if loc else None,
                 'updated_at': loc.updated_at if loc else None,
@@ -148,6 +149,17 @@ class AdminStoreSettingsView(APIView):
             return Decimal(str(raw))
 
         with transaction.atomic():
+            raw_alert = location_data.get('low_stock_alert_quantity', None)
+            if raw_alert not in (None, ''):
+                try:
+                    alert_qty = int(raw_alert)
+                except (TypeError, ValueError):
+                    return Response({'error': 'low_stock_alert_quantity ต้องเป็นจำนวนเต็มไม่ติดลบ'}, status=status.HTTP_400_BAD_REQUEST)
+                if alert_qty < 0:
+                    return Response({'error': 'low_stock_alert_quantity ต้องไม่ติดลบ'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                alert_qty = None
+
             loc = StoreLocation.objects.order_by('id').first()
             if not loc:
                 loc = StoreLocation.objects.create(
@@ -156,6 +168,7 @@ class AdminStoreSettingsView(APIView):
                     promptpay_number=''.join(ch for ch in str(location_data.get('promptpay_number') or '') if ch.isdigit()),
                     latitude=lat,
                     longitude=lng,
+                    low_stock_alert_quantity=(alert_qty if alert_qty is not None else 5),
                 )
             else:
                 loc.name = (location_data.get('name') or '').strip()
@@ -163,6 +176,8 @@ class AdminStoreSettingsView(APIView):
                 loc.promptpay_number = ''.join(ch for ch in str(location_data.get('promptpay_number') or '') if ch.isdigit())
                 loc.latitude = lat
                 loc.longitude = lng
+                if alert_qty is not None:
+                    loc.low_stock_alert_quantity = alert_qty
                 loc.save()
 
             for service_type in ['pickup', 'delivery']:

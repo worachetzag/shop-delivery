@@ -1,4 +1,15 @@
 from rest_framework import serializers
+
+
+def _store_low_stock_alert_quantity():
+    from orders.models import StoreLocation
+
+    loc = StoreLocation.objects.order_by('id').first()
+    if loc is None:
+        return 5
+    return int(loc.low_stock_alert_quantity)
+
+
 from .models import (
     Category,
     Product,
@@ -20,7 +31,16 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     available_quantity = serializers.SerializerMethodField()
     is_low_stock = serializers.SerializerMethodField()
-    
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cached_store_alert_qty = None
+
+    def _get_store_alert_qty(self):
+        if self._cached_store_alert_qty is None:
+            self._cached_store_alert_qty = _store_low_stock_alert_quantity()
+        return self._cached_store_alert_qty
+
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'price', 'unit_label', 'unit_detail', 'category', 'category_name',
@@ -41,7 +61,12 @@ class ProductSerializer(serializers.ModelSerializer):
         return max(0, int(obj.stock_quantity or 0) - int(obj.reserved_quantity or 0))
 
     def get_is_low_stock(self, obj):
-        return self.get_available_quantity(obj) <= int(obj.min_stock_level or 0)
+        avail = self.get_available_quantity(obj)
+        prod_thr = int(obj.min_stock_level or 0)
+        store_thr = self._get_store_alert_qty()
+        if store_thr > 0 and avail <= store_thr:
+            return True
+        return avail <= prod_thr
 
 
 class SupplierSerializer(serializers.ModelSerializer):

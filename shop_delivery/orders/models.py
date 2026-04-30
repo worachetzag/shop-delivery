@@ -217,6 +217,11 @@ class StoreLocation(models.Model):
         verbose_name="เบอร์พร้อมเพย์ร้าน",
         help_text="ใส่เบอร์มือถือ 10 หลัก หรือเลข PromptPay ที่ต้องการรับเงิน",
     )
+    low_stock_alert_quantity = models.PositiveIntegerField(
+        default=5,
+        verbose_name="แจ้งเตือนสต็อกใกล้หมด",
+        help_text="ถ้าจำนวนคงเหลือ (หลังหักจอง) ไม่เกินค่านี้ ระบบจะถือว่าใกล้หมด — ใส่ 0 เพื่อปิดเกณฑ์ระดับร้าน (ใช้เฉพาะจุดเตือนต่อสินค้า)",
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="อัปเดตล่าสุด")
 
     class Meta:

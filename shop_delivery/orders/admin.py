@@ -19,7 +19,7 @@ class StoreLocationAdmin(admin.ModelAdmin):
     search_fields = ('name', 'address')
     fieldsets = (
         (None, {
-            'fields': ('name', 'address', 'promptpay_number', 'latitude', 'longitude'),
+            'fields': ('name', 'address', 'promptpay_number', 'low_stock_alert_quantity', 'latitude', 'longitude'),
             'description': 'ตั้งพิกัดร้านที่นี่ได้โดยไม่ต้องแก้ .env — ใช้แถวเดียวพอ (ระบบใช้แถวแรกเท่านั้น)',
         }),
     )

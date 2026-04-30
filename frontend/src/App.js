@@ -42,6 +42,7 @@ function AppContent() {
   const isDriverLoginRoute = location.pathname === '/driver/login';
   const showAdminChrome = isAdminPage && !isAdminLoginRoute;
   const isDriverPage = location.pathname.startsWith('/driver');
+  const showDriverChrome = isDriverPage && !isDriverLoginRoute;
   const showCustomerChrome = !isAdminPage && !isDriverPage;
   const appRoleClass = isAdminPage
     ? 'app-role-admin'
@@ -121,7 +122,13 @@ function AppContent() {
   
   return (
     <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}`}>
-      {showAdminChrome ? <AdminHeader /> : showCustomerChrome ? <Header hideCustomerTopBar /> : null}
+      {showAdminChrome ? (
+        <AdminHeader />
+      ) : showCustomerChrome ? (
+        <Header hideCustomerTopBar />
+      ) : showDriverChrome ? (
+        <Header hideCustomerTopBar hideDriverTopBar />
+      ) : null}
       {routeLoading && (
         <div className="route-loading-overlay" aria-live="polite" aria-label="กำลังเปลี่ยนหน้า">
           <div className="route-loading-spinner" />

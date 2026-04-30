@@ -393,6 +393,15 @@
   background: rgba(102, 126, 234, 0.08);
 }
 
+.admin-product-row.admin-product-row--low-stock td {
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.admin-product-row.admin-product-row--low-stock:hover td {
+  background: #fee2e2;
+}
+
 .products-manage-table th {
   background: #f8f9fa;
   font-weight: 600;

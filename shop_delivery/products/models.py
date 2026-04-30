@@ -47,7 +47,21 @@ class Product(models.Model):
 
     @property
     def is_low_stock(self):
-        return self.available_quantity <= int(self.min_stock_level or 0)
+        avail = self.available_quantity
+        prod_thr = int(self.min_stock_level or 0)
+        store_thr = 5
+        try:
+            # Lazy import: orders.models imports Product — avoid cycle at module import time.
+            from orders.models import StoreLocation
+
+            loc = StoreLocation.objects.order_by('id').first()
+            if loc is not None:
+                store_thr = int(loc.low_stock_alert_quantity)
+        except Exception:
+            store_thr = 5
+        if store_thr > 0 and avail <= store_thr:
+            return True
+        return avail <= prod_thr
 
 
 class Supplier(models.Model):

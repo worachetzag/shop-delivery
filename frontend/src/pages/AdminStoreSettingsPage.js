@@ -25,6 +25,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
       name: '',
       address: '',
       promptpay_number: '',
+      low_stock_alert_quantity: '5',
       latitude: '',
       longitude: '',
     },
@@ -55,6 +56,10 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
           name: sl.name || '',
           address: sl.address || '',
           promptpay_number: sl.promptpay_number || '',
+          low_stock_alert_quantity:
+            sl.low_stock_alert_quantity !== undefined && sl.low_stock_alert_quantity !== null
+              ? String(sl.low_stock_alert_quantity)
+              : '5',
           latitude: sl.latitude ?? '',
           longitude: sl.longitude ?? '',
         },
@@ -123,11 +128,17 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
     setSaving(true);
     try {
       const token = getToken();
+      const alertRaw = String(form.store_location.low_stock_alert_quantity ?? '').trim();
+      const alertParsed = parseInt(alertRaw, 10);
+      const lowStockAlertQty =
+        Number.isFinite(alertParsed) && alertParsed >= 0 ? alertParsed : 0;
+
       const payload = {
         store_location: {
           ...form.store_location,
           latitude: form.store_location.latitude === '' ? null : form.store_location.latitude,
           longitude: form.store_location.longitude === '' ? null : form.store_location.longitude,
+          low_stock_alert_quantity: lowStockAlertQty,
         },
         service_hours: form.service_hours,
         delivery_fee_tiers: form.delivery_fee_tiers.map((t) => ({
@@ -205,6 +216,21 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
                 placeholder="ที่อยู่ร้าน"
                 rows={3}
               />
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontWeight: 700 }}>แจ้งเตือนสต็อกใกล้หมด</span>
+                <span style={{ margin: 0, fontSize: 13, color: '#6b7280', lineHeight: 1.45 }}>
+                  ถ้าจำนวนคงเหลือหลังหักจองไม่เกินค่านี้ ระบบจะถือว่าใกล้หมด (แดงในแอดมิน / ข้อความในแอปลูกค้า)
+                  — ใส่ 0 เพื่อปิดเกณฑ์ระดับร้านและใช้เฉพาะจุดเตือนต่อสินค้า
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  value={form.store_location.low_stock_alert_quantity}
+                  onChange={(e) => onLocationChange('low_stock_alert_quantity', e.target.value)}
+                />
+              </label>
             </div>
           </section>
           )}

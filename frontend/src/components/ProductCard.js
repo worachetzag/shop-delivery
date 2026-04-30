@@ -62,7 +62,11 @@ const ProductCard = ({
 
   const effectiveCartQuantity = isControlled ? Number(cartQuantity || 0) : Number(localCartQuantity || 0);
   const stockQuantity = Number(product.stock_quantity || 0);
-  const remainingStock = Math.max(0, stockQuantity - effectiveCartQuantity);
+  const availableQty = Number(
+    product.available_quantity ??
+      Math.max(0, stockQuantity - Number(product.reserved_quantity || 0)),
+  );
+  const remainingStock = Math.max(0, availableQty - effectiveCartQuantity);
   const isOutOfStock = remainingStock <= 0;
   const hasInCart = effectiveCartQuantity > 0;
   const categoryLabel = (() => {
@@ -112,7 +116,7 @@ const ProductCard = ({
       return;
     }
     const nextQty = effectiveCartQuantity + 1;
-    if (nextQty > stockQuantity) return;
+    if (nextQty > availableQty) return;
     cartService
       .updateCartItem(product.id, nextQty)
       .then(() => setLocalCartQuantity(nextQty))
@@ -160,6 +164,9 @@ const ProductCard = ({
         {listingOnly && product.is_special_offer && (
           <span className="product-special-badge">ราคาพิเศษ</span>
         )}
+        {listingOnly && product.is_low_stock && availableQty > 0 && (
+          <span className="product-low-stock-badge">สินค้าใกล้หมด</span>
+        )}
         {!listingOnly && (
           <button
             className="product-image-add-btn"
@@ -196,11 +203,18 @@ const ProductCard = ({
           {listingOnly && (
             <p className="product-browse-hint">
               จำนวนสินค้ามีการเปลี่ยนแปลง ตามจำนวนคงเหลือของร้าน
+              {product.is_low_stock && availableQty > 0 ? (
+                <span className="product-browse-low-stock"> · สินค้าใกล้หมด</span>
+              ) : null}
             </p>
           )}
           {!listingOnly && (
             <div className={`product-stock ${isOutOfStock ? 'out' : ''}`}>
-              {isOutOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
+              {isOutOfStock
+                ? 'สินค้าหมด'
+                : product.is_low_stock && availableQty > 0
+                  ? 'สินค้าใกล้หมด · พร้อมสั่งซื้อ'
+                  : 'พร้อมสั่งซื้อ'}
             </div>
           )}
         </div>

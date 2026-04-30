@@ -104,16 +104,6 @@ const AdminLogin = () => {
             เข้าสู่ระบบ
           </button>
         </form>
-
-        <div className="admin-login-footer">
-          <p>สำหรับลูกค้า</p>
-          <button 
-            onClick={() => navigate('/customer/login')}
-            className="admin-login-customer-btn"
-          >
-            เข้าสู่ระบบลูกค้า
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -78,12 +78,18 @@ const ProductDetail = () => {
     };
   }, [numericProductId, popup]);
 
-  const stock = Number(product?.stock_quantity || 0);
-  const outOfStock = Math.max(0, stock - Number(cartQty || 0)) <= 0;
+  const availStock = Number(
+    product?.available_quantity ??
+      Math.max(
+        0,
+        Number(product?.stock_quantity || 0) - Number(product?.reserved_quantity || 0),
+      ),
+  );
+  const outOfStock = Math.max(0, availStock - Number(cartQty || 0)) <= 0;
 
   const updateQty = async (nextQty) => {
     if (!product) return;
-    if (nextQty < 0 || nextQty > stock) return;
+    if (nextQty < 0 || nextQty > availStock) return;
     setSubmitting(true);
     try {
       if (nextQty === 0) {
@@ -105,7 +111,7 @@ const ProductDetail = () => {
   const handlePrimaryAddToCart = async () => {
     if (!product || submitting || outOfStock) return;
     const nextQty = cartQty + 1;
-    if (nextQty > stock) return;
+    if (nextQty > availStock) return;
     setSubmitting(true);
     try {
       if (cartQty === 0) {
@@ -187,7 +193,11 @@ const ProductDetail = () => {
               จำนวนสินค้ามีการเปลี่ยนแปลง ตามจำนวนคงเหลือของร้าน
             </p>
             <p className={`product-detail-stock ${outOfStock ? 'out' : ''}`}>
-              {outOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
+              {outOfStock
+                ? 'สินค้าหมด'
+                : product.is_low_stock && availStock > 0
+                  ? 'สินค้าใกล้หมด · พร้อมสั่งซื้อ'
+                  : 'พร้อมสั่งซื้อ'}
             </p>
             <p className="product-detail-description">{product.description || 'ไม่มีรายละเอียดสินค้า'}</p>
 

@@ -4,7 +4,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import config from '../config';
 import './Header.css';
 
-const Header = ({ hideCustomerTopBar = false }) => {
+const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const location = useLocation();
@@ -97,7 +97,8 @@ const Header = ({ hideCustomerTopBar = false }) => {
   const isActiveGroup = (paths) => paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const isDriverMode = location.pathname.startsWith('/driver');
   const showTopMenu = !isMobileView && isDriverMode;
-  const shouldHideTopBar = hideCustomerTopBar && !isDriverMode;
+  const shouldHideTopBar =
+    (hideCustomerTopBar && !isDriverMode) || (hideDriverTopBar && isDriverMode);
 
   return (
     <header className={`header${shouldHideTopBar ? ' header--topless' : ''}`}>
@@ -151,8 +152,7 @@ const Header = ({ hideCustomerTopBar = false }) => {
         </div>
       )}
 
-      {(isMobileView || !isDriverMode) && (
-        <nav className={`liff-bottom-nav ${!isDriverMode ? 'force-show' : ''}`}>
+      <nav className={`liff-bottom-nav ${!isDriverMode ? 'force-show' : ''}${isDriverMode ? ' liff-bottom-nav--driver' : ''}`}>
           {isDriverMode ? (
             <>
               <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>
@@ -189,8 +189,7 @@ const Header = ({ hideCustomerTopBar = false }) => {
               </Link>
             </>
           )}
-        </nav>
-      )}
+      </nav>
     </header>
   );
 };
