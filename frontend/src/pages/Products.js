@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ApiPaginationBar from '../components/ApiPaginationBar';
 import { productsService, cartService } from '../services/api';
 import './Products.css';
 import { usePopup } from '../components/PopupProvider';
+import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 
 const PAGE_SIZE = 12;
 const SKELETON_CARD_COUNT = 8;
 
 const Products = () => {
+  const location = useLocation();
+  useRestoreCustomerListingScroll(location);
   const popup = usePopup();
   const readCartCache = () => {
     try {
@@ -132,27 +135,6 @@ const Products = () => {
     }
   }, [cartQuantities]);
 
-  const handleAddToCart = async (product) => {
-    const currentQty = Number(cartQuantities[product.id] || 0);
-    const nextQty = currentQty + 1;
-    if (nextQty > Number(product.stock_quantity || 0)) {
-      return;
-    }
-
-    try {
-      if (currentQty > 0) {
-        await cartService.updateCartItem(product.id, nextQty);
-      } else {
-        await cartService.addToCart(product.id, 1);
-      }
-      setCartQuantities((prev) => ({ ...prev, [product.id]: nextQty }));
-      syncCartQuantities();
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      popup.error(error?.error || 'ไม่สามารถเพิ่มสินค้าในตะกร้าได้');
-    }
-  };
-
   const handleIncreaseQuantity = async (product) => {
     const currentQty = Number(cartQuantities[product.id] || 0);
     const nextQty = currentQty + 1;
@@ -220,13 +202,7 @@ const Products = () => {
                   <div className="product-card-skeleton-image" />
                   <div className="product-card-skeleton-body">
                     <div className="product-card-skeleton-line name" />
-                    <div className="product-card-skeleton-line category" />
-                    <div className="product-card-skeleton-line description" />
                     <div className="product-card-skeleton-line price" />
-                    <div className="product-card-skeleton-line stock" />
-                  </div>
-                  <div className="product-card-skeleton-action">
-                    <div className="product-card-skeleton-button" />
                   </div>
                 </div>
               ))}
@@ -301,15 +277,7 @@ const Products = () => {
             <>
               <div className="products-grid">
                 {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    cartQuantity={Number(cartQuantities[product.id] || 0)}
-                    onAddToCart={handleAddToCart}
-                    onIncreaseQuantity={handleIncreaseQuantity}
-                    onDecreaseQuantity={handleDecreaseQuantity}
-                    showCartInfo
-                  />
+                  <ProductCard key={product.id} product={product} listingOnly />
                 ))}
               </div>
               <ApiPaginationBar

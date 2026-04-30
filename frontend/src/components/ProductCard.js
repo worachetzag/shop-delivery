@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { usePopup } from './PopupProvider';
 import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
+import { formatBahtAmount } from '../utils/formatPrice';
+import { captureListingScrollBeforeProductDetail } from '../utils/listingScrollRestore';
 import './ProductCard.css';
 
 const ProductCard = ({
@@ -12,6 +14,8 @@ const ProductCard = ({
   onIncreaseQuantity,
   onDecreaseQuantity,
   showCartInfo = true,
+  /** Browse-only tile: tap opens detail; no quick add / cart controls */
+  listingOnly = false,
 }) => {
   const popup = usePopup();
   const [hasEntered, setHasEntered] = useState(false);
@@ -25,9 +29,8 @@ const ProductCard = ({
   const [localCartQuantity, setLocalCartQuantity] = useState(Number(cartQuantity || 0));
 
   useEffect(() => {
-    if (isControlled) {
-      setLocalCartQuantity(Number(cartQuantity || 0));
-    }
+    if (!isControlled) return;
+    setLocalCartQuantity(Number(cartQuantity || 0));
   }, [cartQuantity, isControlled]);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ const ProductCard = ({
   }, []);
 
   useEffect(() => {
-    if (isControlled) return;
+    if (listingOnly || isControlled) return;
     let cancelled = false;
     (async () => {
       try {
@@ -55,7 +58,7 @@ const ProductCard = ({
     return () => {
       cancelled = true;
     };
-  }, [isControlled, product.id]);
+  }, [listingOnly, isControlled, product.id]);
 
   const effectiveCartQuantity = isControlled ? Number(cartQuantity || 0) : Number(localCartQuantity || 0);
   const stockQuantity = Number(product.stock_quantity || 0);
@@ -83,6 +86,7 @@ const ProductCard = ({
   };
 
   const handleAddToCart = async (e) => {
+    if (listingOnly) return;
     e.preventDefault();
     e.stopPropagation();
     if (onAddToCart) {
@@ -100,6 +104,7 @@ const ProductCard = ({
   };
 
   const handleIncrease = (e) => {
+    if (listingOnly) return;
     e.preventDefault();
     e.stopPropagation();
     if (onIncreaseQuantity) {
@@ -115,6 +120,7 @@ const ProductCard = ({
   };
 
   const handleDecrease = (e) => {
+    if (listingOnly) return;
     e.preventDefault();
     e.stopPropagation();
     if (onDecreaseQuantity) {
@@ -128,10 +134,20 @@ const ProductCard = ({
       .catch(() => popup.error('ไม่สามารถอัปเดตจำนวนสินค้าได้'));
   };
 
+  const showCartChrome = !listingOnly && showCartInfo;
+
+  const prepListingDetailNavigation = listingOnly ? captureListingScrollBeforeProductDetail : undefined;
+
   return (
-    <div className={`product-card ${hasEntered ? 'is-entered' : ''}`}>
+    <div
+      className={`product-card ${listingOnly ? 'product-card--browse' : ''} ${hasEntered ? 'is-entered' : ''}`}
+    >
       <div className="product-image-container">
-        <Link to={`/customer/products/${product.id}`} className="product-image-link">
+        <Link
+          to={`/customer/products/${product.id}`}
+          className="product-image-link"
+          onClick={prepListingDetailNavigation}
+        >
           <img 
             src={pickProductImage(product, PLACEHOLDER_IMAGES.md)} 
             alt={product.name}
@@ -141,56 +157,82 @@ const ProductCard = ({
             }}
           />
         </Link>
-        <button
-          className="product-image-add-btn"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          type="button"
-        >
-          {isOutOfStock ? 'หมด' : '+ ตะกร้า'}
-        </button>
+        {listingOnly && product.is_special_offer && (
+          <span className="product-special-badge">ราคาพิเศษ</span>
+        )}
+        {!listingOnly && (
+          <button
+            className="product-image-add-btn"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            type="button"
+          >
+            {isOutOfStock ? 'หมด' : '+ ตะกร้า'}
+          </button>
+        )}
       </div>
 
-      <Link to={`/customer/products/${product.id}`} className="product-link">
+      <Link
+        to={`/customer/products/${product.id}`}
+        className="product-link"
+        onClick={prepListingDetailNavigation}
+      >
         <div className="product-info">
           <h3 className="product-name" title={product.name}>{product.name}</h3>
-          {categoryLabel && (
+          {!listingOnly && categoryLabel && (
             <p className="product-category-inline">• {categoryLabel}</p>
           )}
-          <p className="product-description">{product.description}</p>
-          <div className="product-price">
-            {formatPrice(product.price)}
+          {!listingOnly && <p className="product-description">{product.description}</p>}
+          <div className={`product-price ${listingOnly ? 'product-price--browse' : ''}`}>
+            {listingOnly ? (
+              <>
+                <span className="product-price-value">{formatBahtAmount(product.price)}</span>
+                <span className="product-price-unit"> บาท</span>
+              </>
+            ) : (
+              formatPrice(product.price)
+            )}
           </div>
-          <div className={`product-stock ${isOutOfStock ? 'out' : ''}`}>
-            {isOutOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
-          </div>
+          {listingOnly && (
+            <p className="product-browse-hint">
+              จำนวนสินค้ามีการเปลี่ยนแปลง ตามจำนวนคงเหลือของร้าน
+            </p>
+          )}
+          {!listingOnly && (
+            <div className={`product-stock ${isOutOfStock ? 'out' : ''}`}>
+              {isOutOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
+            </div>
+          )}
         </div>
       </Link>
       
-      <div className="product-actions">
-        <div className={`cart-meta-area ${showCartInfo ? '' : 'is-collapsed'}`}>
-          {showCartInfo && hasInCart && (
-            <div className="cart-status">
-              <span className="cart-icon">🛒</span>
-              <span>ใส่แล้ว {effectiveCartQuantity} ชิ้น</span>
-            </div>
-          )}
+      {!listingOnly && (
+        <div className="product-actions">
+          <div className={`cart-meta-area ${showCartChrome ? '' : 'is-collapsed'}`}>
+            {showCartChrome && hasInCart && (
+              <div className="cart-status">
+                <span className="cart-icon">🛒</span>
+                <span>ใส่แล้ว {effectiveCartQuantity} ชิ้น</span>
+              </div>
+            )}
 
-          {showCartInfo && hasInCart && (
-            <div className="cart-qty-editor">
-              <button className="qty-btn" onClick={handleDecrease}>-</button>
-              <span className="qty-value">{effectiveCartQuantity}</span>
-              <button
-                className="qty-btn"
-                onClick={handleIncrease}
-                disabled={remainingStock <= 0}
-              >
-                +
-              </button>
-            </div>
-          )}
+            {showCartChrome && hasInCart && (
+              <div className="cart-qty-editor">
+                <button type="button" className="qty-btn" onClick={handleDecrease}>-</button>
+                <span className="qty-value">{effectiveCartQuantity}</span>
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={handleIncrease}
+                  disabled={remainingStock <= 0}
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

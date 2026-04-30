@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import config from '../config';
 import { productsService } from '../services/api';
+import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import './Home.css';
 
 const SKELETON_CARD_COUNT = 8;
 
 const Home = () => {
+  const location = useLocation();
+  useRestoreCustomerListingScroll(location);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,13 +61,7 @@ const Home = () => {
                   <div className="product-card-skeleton-image" />
                   <div className="product-card-skeleton-body">
                     <div className="product-card-skeleton-line name" />
-                    <div className="product-card-skeleton-line category" />
-                    <div className="product-card-skeleton-line description" />
                     <div className="product-card-skeleton-line price" />
-                    <div className="product-card-skeleton-line stock" />
-                  </div>
-                  <div className="product-card-skeleton-action">
-                    <div className="product-card-skeleton-button" />
                   </div>
                 </div>
               ))}
@@ -116,7 +113,7 @@ const Home = () => {
           <div className="products-grid">
             {Array.isArray(featuredProducts) && featuredProducts.length > 0 ? (
               featuredProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} listingOnly />
               ))
             ) : (
               <p>ไม่มีสินค้าแนะนำ</p>

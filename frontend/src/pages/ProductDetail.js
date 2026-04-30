@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { productsService, cartService } from '../services/api';
 import { usePopup } from '../components/PopupProvider';
 import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
+import { formatBahtAmount } from '../utils/formatPrice';
+import { peekCustomerListingScrollRestore } from '../utils/listingScrollRestore';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
   const { productId } = useParams();
+  const navigate = useNavigate();
   const popup = usePopup();
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState(null);
@@ -47,13 +50,13 @@ const ProductDetail = () => {
         setProduct(productData || null);
         const relatedResponse = await productsService.getProducts({
           category_id: resolveCategoryId(productData),
-          page_size: 8,
+          page_size: 24,
           ordering: 'name',
         }).catch(() => ({ results: [] }));
         const relatedList = Array.isArray(relatedResponse?.results)
           ? relatedResponse.results
           : (Array.isArray(relatedResponse) ? relatedResponse : []);
-        const filtered = relatedList.filter((item) => Number(item.id) !== numericProductId).slice(0, 4);
+        const filtered = relatedList.filter((item) => Number(item.id) !== numericProductId).slice(0, 18);
         setRelatedProducts(filtered);
 
         const items = Array.isArray(cartData?.items) ? cartData.items : [];
@@ -78,10 +81,6 @@ const ProductDetail = () => {
   const stock = Number(product?.stock_quantity || 0);
   const outOfStock = Math.max(0, stock - Number(cartQty || 0)) <= 0;
 
-  const formatPrice = (price) => (
-    new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(Number(price || 0))
-  );
-
   const updateQty = async (nextQty) => {
     if (!product) return;
     if (nextQty < 0 || nextQty > stock) return;
@@ -95,6 +94,32 @@ const ProductDetail = () => {
         await cartService.updateCartItem(product.id, nextQty);
       }
       setCartQty(nextQty);
+    } catch (error) {
+      popup.error(error?.error || 'ไม่สามารถอัปเดตตะกร้าได้');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /** Primary CTA: add one piece then return to previous listing scroll position */
+  const handlePrimaryAddToCart = async () => {
+    if (!product || submitting || outOfStock) return;
+    const nextQty = cartQty + 1;
+    if (nextQty > stock) return;
+    setSubmitting(true);
+    try {
+      if (cartQty === 0) {
+        await cartService.addToCart(product.id, nextQty);
+      } else {
+        await cartService.updateCartItem(product.id, nextQty);
+      }
+      setCartQty(nextQty);
+      const backToListing = peekCustomerListingScrollRestore();
+      if (backToListing?.path) {
+        navigate(backToListing.path);
+      } else {
+        navigate(-1);
+      }
     } catch (error) {
       popup.error(error?.error || 'ไม่สามารถอัปเดตตะกร้าได้');
     } finally {
@@ -118,6 +143,9 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  const cartLineDisplayAmount =
+    Number(product.price || 0) * Math.max(Number(cartQty || 0), 1);
 
   return (
     <div className="product-detail-page">
@@ -146,7 +174,17 @@ const ProductDetail = () => {
               <p className="product-detail-category">หมวดหมู่: {resolveCategoryLabel(product)}</p>
             )}
             <p className="product-detail-price">
-              {formatPrice(product.price)} / {product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}
+              <span className="product-detail-price-value">{formatBahtAmount(product.price)}</span>
+              <span className="product-detail-price-unit"> บาท</span>
+              {(product.unit_label || product.unit_detail) && (
+                <span className="product-detail-price-meta">
+                  {' '}/ {product.unit_label || 'ชิ้น'}
+                  {product.unit_detail ? ` (${product.unit_detail})` : ''}
+                </span>
+              )}
+            </p>
+            <p className="product-detail-stock-note">
+              จำนวนสินค้ามีการเปลี่ยนแปลง ตามจำนวนคงเหลือของร้าน
             </p>
             <p className={`product-detail-stock ${outOfStock ? 'out' : ''}`}>
               {outOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
@@ -161,11 +199,11 @@ const ProductDetail = () => {
               </div>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary product-detail-add-cart-btn"
                 disabled={submitting || outOfStock}
-                onClick={() => updateQty(cartQty + 1)}
+                onClick={handlePrimaryAddToCart}
               >
-                เพิ่มในตะกร้า
+                ใส่ตะกร้า {formatBahtAmount(cartLineDisplayAmount)} บาท
               </button>
               <Link to="/customer/cart" className="btn btn-outline">ไปตะกร้า</Link>
             </div>
@@ -175,19 +213,31 @@ const ProductDetail = () => {
         {relatedProducts.length > 0 && (
           <section className="related-products-section">
             <h2>สินค้าที่เกี่ยวข้อง</h2>
-            <div className="related-products-grid">
+            <div
+              className="related-products-scroll"
+              role="region"
+              aria-label="สินค้าที่เกี่ยวข้อง — เลื่อนดูด้านข้าง"
+            >
               {relatedProducts.map((item) => (
                 <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
-                  <img
-                    src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
-                    alt={item.name}
-                    onError={(e) => {
-                      e.currentTarget.src = PLACEHOLDER_IMAGES.lg;
-                    }}
-                  />
+                  <div className="related-product-image-wrap">
+                    {item.is_special_offer && (
+                      <span className="related-product-badge">ราคาพิเศษ</span>
+                    )}
+                    <img
+                      src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
+                      alt={item.name}
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER_IMAGES.lg;
+                      }}
+                    />
+                  </div>
                   <div className="related-product-info">
                     <div className="related-product-name">{item.name}</div>
-                    <div className="related-product-price">{formatPrice(item.price)}</div>
+                    <div className="related-product-price">
+                      <span className="related-product-price-value">{formatBahtAmount(item.price)}</span>
+                      <span className="related-product-price-unit"> บาท</span>
+                    </div>
                   </div>
                 </Link>
               ))}
