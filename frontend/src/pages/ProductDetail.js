@@ -76,8 +76,7 @@ const ProductDetail = () => {
   }, [numericProductId, popup]);
 
   const stock = Number(product?.stock_quantity || 0);
-  const remaining = Math.max(0, stock - Number(cartQty || 0));
-  const outOfStock = remaining <= 0;
+  const outOfStock = Math.max(0, stock - Number(cartQty || 0)) <= 0;
 
   const formatPrice = (price) => (
     new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(Number(price || 0))
@@ -150,7 +149,7 @@ const ProductDetail = () => {
               {formatPrice(product.price)} / {product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}
             </p>
             <p className={`product-detail-stock ${outOfStock ? 'out' : ''}`}>
-              {outOfStock ? 'สินค้าหมด' : `คงเหลือ ${remaining} ${product.unit_label || 'ชิ้น'}`}
+              {outOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
             </p>
             <p className="product-detail-description">{product.description || 'ไม่มีรายละเอียดสินค้า'}</p>
 

@@ -19,81 +19,87 @@
     'Leelawadee UI',
     'Tahoma',
     sans-serif;
-  background: var(--surface-card, #ffffff);
+  background:
+    radial-gradient(120% 140% at 20% 0%, rgba(56, 189, 248, 0.2) 0%, rgba(15, 23, 42, 0) 45%),
+    linear-gradient(180deg, #0f172a 0%, #111827 100%);
   color: var(--admin-nav-text);
-  border-right: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-soft);
+  border-right: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 10px 0 28px rgba(2, 6, 23, 0.35);
 }
 
 /* Shared nav controls (desktop sidebar + drawer) */
 .admin-nav-link {
-  color: var(--admin-nav-text);
+  color: #dbeafe;
   text-decoration: none;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  border-radius: 12px;
   font-size: 0.92rem;
   font-weight: 600;
   min-height: 44px;
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  background: var(--surface-muted, #eef3f1);
-  border: 1px solid var(--border-soft);
+  background: rgba(15, 23, 42, 0.48);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   touch-action: manipulation;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .admin-nav-link:hover {
-  background: #eaf7ef;
-  border-color: #c5e8d5;
+  background: rgba(30, 41, 59, 0.82);
+  border-color: rgba(103, 232, 249, 0.48);
+  color: #f8fafc;
 }
 
 .admin-nav-link--active {
-  background: var(--brand-primary, #00b14f);
+  background: linear-gradient(135deg, #0ea5e9 0%, #22d3ee 100%);
   color: #fff;
-  border-color: var(--brand-primary-strong, #008e42);
+  border-color: rgba(103, 232, 249, 0.95);
+  box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
   font-weight: 700;
 }
 
 .admin-nav-link--active:hover {
-  background: var(--brand-primary-strong, #008e42);
+  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
   color: #fff;
-  border-color: var(--brand-primary-strong, #008e42);
+  border-color: rgba(103, 232, 249, 0.95);
 }
 
 .admin-nav-section-label {
   font-size: 0.74rem;
-  color: var(--admin-nav-text-soft);
+  color: #93c5fd;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin: 8px 0 2px;
+  margin: 10px 0 4px;
   padding: 0 4px;
   font-weight: 700;
 }
 
 .admin-nav-group-btn {
-  color: var(--admin-nav-text);
+  color: #dbeafe;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.92rem;
   font-weight: 600;
-  border: 1px solid var(--border-soft);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   width: 100%;
   text-align: left;
   cursor: pointer;
   min-height: 44px;
   touch-action: manipulation;
-  background: var(--surface-muted, #eef3f1);
+  background: rgba(15, 23, 42, 0.5);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .admin-nav-group-btn:hover {
-  background: #eaf7ef;
+  background: rgba(30, 41, 59, 0.82);
+  border-color: rgba(103, 232, 249, 0.48);
+  color: #f8fafc;
 }
 
 .admin-nav-group-btn--open {
-  background: #dff5e8;
-  border-color: var(--brand-accent);
+  background: rgba(14, 165, 233, 0.22);
+  border-color: rgba(103, 232, 249, 0.72);
   font-weight: 600;
 }
 
@@ -103,7 +109,7 @@
   gap: 6px;
   margin-top: 6px;
   padding-left: 12px;
-  border-left: 3px solid var(--brand-primary);
+  border-left: 3px solid rgba(103, 232, 249, 0.85);
 }
 
 /* ——— Desktop sidebar ——— */
@@ -112,7 +118,7 @@
   top: 0;
   left: 0;
   bottom: 0;
-  width: 240px;
+  width: 258px;
   padding: 16px 14px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -123,7 +129,7 @@
 .admin-header--desktop .admin-header__shell {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   align-items: stretch;
   min-height: min-content;
   height: 100%;
@@ -358,25 +364,30 @@
 }
 
 .admin-header__brand-desktop {
-  color: var(--admin-nav-text);
+  color: #f8fafc;
   text-decoration: none;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.45);
 }
 
 .admin-header__brand-desktop h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
-  color: var(--admin-nav-text);
+  color: #f8fafc;
+  line-height: 1.35;
 }
 
 .admin-header__logout-full {
   width: 100%;
   padding: 10px 12px;
-  background: var(--surface-muted, #eef3f1);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  color: var(--admin-nav-text-soft);
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  color: #cbd5e1;
   cursor: pointer;
   touch-action: manipulation;
   font-size: 0.92rem;
@@ -385,9 +396,9 @@
 }
 
 .admin-header__logout-full:hover {
-  background: #eaf7ef;
-  border-color: var(--brand-accent, #1fbf67);
-  color: var(--brand-primary-strong, #008e42);
+  background: rgba(127, 29, 29, 0.4);
+  border-color: rgba(248, 113, 113, 0.65);
+  color: #fecaca;
 }
 
 /*
@@ -395,7 +406,7 @@
  * (ไม่ใช้ -webkit-text-fill-color: unset — บางเวอร์ชัน WebKit ทำให้ตัวหนังสือโปร่ง)
  */
 .admin-header.admin-header--desktop .admin-nav-link:not(.admin-nav-link--active) {
-  color: #0f172a !important;
+  color: #dbeafe !important;
 }
 
 .admin-header.admin-header--desktop .admin-nav-link--active {
@@ -404,28 +415,28 @@
 }
 
 .admin-header.admin-header--desktop .admin-nav-group-btn {
-  color: #0f172a !important;
+  color: #dbeafe !important;
 }
 
 .admin-header.admin-header--desktop .admin-nav-section-label {
-  color: #334155 !important;
+  color: #93c5fd !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__brand-desktop,
 .admin-header.admin-header--desktop .admin-header__brand-desktop h1 {
-  color: #0f172a !important;
+  color: #f8fafc !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__user-row {
-  color: #475569 !important;
+  color: #bfdbfe !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__logout-full {
-  color: #334155 !important;
+  color: #cbd5e1 !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__logout-full:hover {
-  color: #008e42 !important;
+  color: #fecaca !important;
 }
 
 .admin-header__drawer-panel .admin-nav-link:not(.admin-nav-link--active) {

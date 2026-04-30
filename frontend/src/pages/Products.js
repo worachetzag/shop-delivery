@@ -308,7 +308,7 @@ const Products = () => {
                     onAddToCart={handleAddToCart}
                     onIncreaseQuantity={handleIncreaseQuantity}
                     onDecreaseQuantity={handleDecreaseQuantity}
-                    showCartInfo={false}
+                    showCartInfo
                   />
                 ))}
               </div>

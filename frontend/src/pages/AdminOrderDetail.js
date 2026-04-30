@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { usePopup } from '../components/PopupProvider';
+import './AdminOrderDetail.css';
 
 const AdminOrderDetail = () => {
   const popup = usePopup();
@@ -277,47 +278,63 @@ const AdminOrderDetail = () => {
           </div>
         )}
 
-        <div className="order-detail-items">
-          <strong>มอบหมายคนขับ</strong>
-          <div className="slip-cell" style={{ marginTop: '8px' }}>
-            <span className="muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              คนขับปัจจุบัน:
-              {order?.driver_assignment?.driver_photo_url ? (
-                <img
-                  src={order.driver_assignment.driver_photo_url}
-                  alt=""
-                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle' }}
-                />
-              ) : null}
-              {order?.driver_assignment?.driver_name || 'ยังไม่มอบหมาย'}
-            </span>
-            {hasAssignedDriver ? (
-              <>
-                {order?.driver_assignment?.status_display && (
-                  <span className="status status-delivering">{order.driver_assignment.status_display}</span>
+        <div className="order-detail-items assign-driver-section">
+          <strong className="assign-driver-section__title">มอบหมายคนขับ</strong>
+          <div className="assign-driver-card">
+            <div className="assign-driver-current">
+              <span className="assign-driver-current__label">คนขับปัจจุบัน</span>
+              <div className="assign-driver-current__value">
+                {order?.driver_assignment?.driver_photo_url ? (
+                  <img
+                    src={order.driver_assignment.driver_photo_url}
+                    alt=""
+                    className="assign-driver-avatar"
+                  />
+                ) : (
+                  <span className="assign-driver-avatar assign-driver-avatar--fallback">D</span>
                 )}
-              </>
+                <span>{order?.driver_assignment?.driver_name || 'ยังไม่มอบหมาย'}</span>
+                {order?.driver_assignment?.status_display ? (
+                  <span className="assign-driver-status-chip">{order.driver_assignment.status_display}</span>
+                ) : null}
+              </div>
+            </div>
+
+            {!hasAssignedDriver ? (
+              <div className="assign-driver-form">
+                <label className="assign-driver-form__label" htmlFor="assign-driver-select">
+                  เลือกคนขับที่พร้อมรับงาน
+                </label>
+                <div className="assign-driver-form__controls">
+                  <select
+                    id="assign-driver-select"
+                    className="assign-driver-select"
+                    value={assignmentDraft}
+                    onChange={(e) => setAssignmentDraft(e.target.value)}
+                  >
+                    <option value="">เลือกคนขับ</option>
+                    {drivers.map((driver) => (
+                      <option
+                        key={driver.id}
+                        value={driver.id}
+                        disabled={!driver.is_available || driver.has_active_assignment}
+                      >
+                        {driver.full_name} ({driver.vehicle_number || '-'}) - {(driver.is_available && !driver.has_active_assignment) ? 'ว่างรับงาน' : 'ติดงาน'}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="assign-driver-btn"
+                    onClick={assignDriver}
+                    disabled={savingAssign || !assignmentDraft}
+                  >
+                    {savingAssign ? 'กำลังมอบหมาย...' : 'มอบหมายงาน'}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <>
-                <select
-                  value={assignmentDraft}
-                  onChange={(e) => setAssignmentDraft(e.target.value)}
-                >
-                  <option value="">เลือกคนขับ</option>
-                  {drivers.map((driver) => (
-                    <option
-                      key={driver.id}
-                      value={driver.id}
-                      disabled={!driver.is_available || driver.has_active_assignment}
-                    >
-                      {driver.full_name} ({driver.vehicle_number || '-'}) - {(driver.is_available && !driver.has_active_assignment) ? 'ว่างรับงาน' : 'ติดงาน'}
-                    </option>
-                  ))}
-                </select>
-                <button type="button" onClick={assignDriver} disabled={savingAssign || !assignmentDraft}>
-                  {savingAssign ? 'กำลังมอบหมาย...' : 'มอบหมาย'}
-                </button>
-              </>
+              <p className="assign-driver-note">ออเดอร์นี้มีผู้รับงานแล้ว หากต้องการเปลี่ยนคนขับให้ยกเลิกมอบหมายจากขั้นตอนจัดการคนขับก่อน</p>
             )}
           </div>
         </div>

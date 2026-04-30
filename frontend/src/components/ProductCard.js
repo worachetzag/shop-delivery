@@ -153,7 +153,7 @@ const ProductCard = ({
             {product.unit_detail ? ` (${product.unit_detail})` : ''}
           </div>
           <div className={`product-stock ${isOutOfStock ? 'out' : ''}`}>
-            {isOutOfStock ? 'สินค้าหมด' : `คงเหลือ ${remainingStock} ${product.unit_label || 'ชิ้น'}`}
+            {isOutOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
           </div>
         </div>
       </Link>
