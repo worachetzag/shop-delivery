@@ -18,7 +18,7 @@ const Login = () => {
       try {
         const token = localStorage.getItem('auth_token');
         if (token) {
-          const res = await fetch(`${config.API_BASE_URL}orders/cart/`, {
+          const res = await fetch(`${config.API_BASE_URL}accounts/api-profile/`, {
             headers: {
               Authorization: `Token ${token}`,
               'Content-Type': 'application/json',

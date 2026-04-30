@@ -78,8 +78,8 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
             credentials: 'include',
           });
         } else {
-          // Validate customer token with authenticated cart endpoint.
-          response = await fetch(`${config.API_BASE_URL}orders/cart/`, {
+          // Validate customer token with profile endpoint (เสถียรกว่า cart flow)
+          response = await fetch(`${config.API_BASE_URL}accounts/api-profile/`, {
             method: 'GET',
             headers: {
               Authorization: `Token ${token}`,
