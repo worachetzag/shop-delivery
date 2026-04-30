@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from linebot import LineBotApi
 from linebot.models import FlexSendMessage, TextSendMessage
+from urllib.parse import quote
 
 from .models import LineBotUser, LineNotification
 
@@ -40,6 +41,12 @@ def _display_name(user):
 
 
 def _order_detail_url(order_id: int) -> str:
+    liff_id = (getattr(settings, 'LINE_LIFF_ID', '') or '').strip()
+    if liff_id:
+        # LIFF deeplink format: https://liff.line.me/{liffId}/{path}
+        path = quote(f'/customer/orders/{order_id}')
+        return f'https://liff.line.me/{liff_id}{path}'
+
     frontend = (getattr(settings, 'FRONTEND_URL', '') or '').strip().rstrip('/')
     if not frontend:
         return f'/customer/orders/{order_id}'

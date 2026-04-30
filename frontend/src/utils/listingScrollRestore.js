@@ -39,11 +39,26 @@ export function useRestoreCustomerListingScroll(location) {
       const data = JSON.parse(raw);
       const current = `${location.pathname}${location.search || ''}`;
       if (data.path !== current) return;
-      sessionStorage.removeItem(STORAGE_KEY);
-      const y = Number(data.y);
-      requestAnimationFrame(() => {
-        window.scrollTo(0, Number.isFinite(y) ? y : 0);
-      });
+      const targetY = Number.isFinite(Number(data.y)) ? Number(data.y) : 0;
+      let attempts = 0;
+      const maxAttempts = 30;
+
+      const restoreWhenReady = () => {
+        attempts += 1;
+        const maxScrollableY = Math.max(
+          0,
+          document.documentElement.scrollHeight - window.innerHeight
+        );
+        const canReachTarget = maxScrollableY >= targetY - 2;
+        if (canReachTarget || attempts >= maxAttempts) {
+          window.scrollTo(0, Math.min(targetY, maxScrollableY));
+          sessionStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        requestAnimationFrame(restoreWhenReady);
+      };
+
+      requestAnimationFrame(restoreWhenReady);
     } catch (_) {
       try {
         sessionStorage.removeItem(STORAGE_KEY);

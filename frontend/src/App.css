@@ -15,7 +15,9 @@
 
 .App.app-role-admin {
   max-width: 1400px;
-  background: #f8fafc;
+  background:
+    radial-gradient(120% 90% at 8% 0%, rgba(56, 189, 248, 0.18) 0%, rgba(15, 23, 42, 0) 45%),
+    linear-gradient(180deg, #f3f8ff 0%, #eef4fb 100%);
   box-shadow: none;
   border-radius: 0;
 }
@@ -35,10 +37,72 @@
 
 /* Full-width body on admin login (no sidebar/header chrome) */
 .App.app-role-admin.admin-login-layout .main-content {
-  padding-left: 16px;
-  padding-right: 16px;
-  padding-top: 24px;
-  padding-bottom: 24px;
+  padding: 0;
+}
+
+/* Let admin login page fill edge-to-edge (no white side gutters) */
+.App.app-role-admin.admin-login-layout {
+  max-width: none;
+  width: 100%;
+}
+
+/* Driver app shell (login + internal screens) */
+.App.app-role-driver {
+  background:
+    radial-gradient(120% 85% at 12% 0%, rgba(56, 189, 248, 0.2) 0%, rgba(15, 23, 42, 0) 45%),
+    linear-gradient(180deg, #eef6ff 0%, #e9f2fd 100%);
+}
+
+.App.app-role-driver.driver-login-layout {
+  max-width: none;
+  width: 100%;
+  box-shadow: none;
+}
+
+.App.app-role-driver.driver-login-layout .main-content {
+  padding: 0;
+}
+
+.App.app-role-driver .route-loading-overlay {
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.App.app-role-driver .route-loading-spinner {
+  background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+}
+
+/* Admin-wide surface tone aligned to sidebar menu palette */
+.App.app-role-admin .admin-dashboard {
+  min-height: calc(100dvh - 24px);
+}
+
+.App.app-role-admin .admin-content {
+  background: rgba(248, 251, 255, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(2px);
+  padding: 14px;
+}
+
+/* Driver internal pages themed to match admin sidebar palette */
+.App.app-role-driver .driver-dashboard-page {
+  background: rgba(248, 251, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.App.app-role-driver .driver-kpi-card {
+  border-color: #c7ddf5;
+  background: linear-gradient(150deg, #ffffff 0%, #ebf3ff 100%);
+}
+
+.App.app-role-driver .driver-assignment-card,
+.App.app-role-driver .driver-customer-block,
+.App.app-role-driver .driver-order-items {
+  border-color: #d3e2f6;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
 .route-loading-overlay {

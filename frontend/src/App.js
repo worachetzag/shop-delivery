@@ -39,10 +39,13 @@ function AppContent() {
   const navigate = useNavigate();
   const isAdminPage = location.pathname.startsWith('/admin');
   const isAdminLoginRoute = location.pathname === '/admin/login';
+  const isDriverLoginRoute = location.pathname === '/driver/login';
   const showAdminChrome = isAdminPage && !isAdminLoginRoute;
   const isDriverPage = location.pathname.startsWith('/driver');
   const showCustomerChrome = !isAdminPage && !isDriverPage;
-  const appRoleClass = isAdminPage ? 'app-role-admin' : (isDriverPage || location.pathname.startsWith('/customer') ? 'app-role-mobile' : 'app-role-mobile');
+  const appRoleClass = isAdminPage
+    ? 'app-role-admin'
+    : (isDriverPage ? 'app-role-mobile app-role-driver' : 'app-role-mobile');
   const [routeLoading, setRouteLoading] = useState(false);
   const previousPathRef = useRef(location.pathname + location.search);
 
@@ -117,7 +120,7 @@ function AppContent() {
   }, [location.pathname, location.search]);
   
   return (
-    <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}`}>
+    <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}`}>
       {showAdminChrome ? <AdminHeader /> : showCustomerChrome ? <Header hideCustomerTopBar /> : null}
       {routeLoading && (
         <div className="route-loading-overlay" aria-live="polite" aria-label="กำลังเปลี่ยนหน้า">

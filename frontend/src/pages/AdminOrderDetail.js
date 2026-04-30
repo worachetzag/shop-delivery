@@ -244,6 +244,21 @@ const AdminOrderDetail = () => {
     order.payment_slip_status === 'uploaded';
   const hasAssignedDriver = Boolean(order?.driver_assignment?.driver_id);
   const customerId = order.customer || order.customer_id || null;
+  const deliveryFee = Number(order.delivery_fee || 0);
+  const orderTotal = Number(order.total_amount || 0);
+  const subtotalFromOrder = Number(
+    order.subtotal_amount ?? order.subtotal ?? order.items_total ?? Number.NaN
+  );
+  const subtotalFromItems = (order.items || []).reduce((sum, item) => {
+    const lineTotal = Number(
+      item.line_total ?? item.total_amount ?? item.total_price ?? Number.NaN
+    );
+    if (Number.isFinite(lineTotal)) return sum + lineTotal;
+    return sum + (Number(item.price || 0) * Number(item.quantity || 0));
+  }, 0);
+  const productSubtotal = Number.isFinite(subtotalFromOrder)
+    ? subtotalFromOrder
+    : (subtotalFromItems > 0 ? subtotalFromItems : Math.max(orderTotal - deliveryFee, 0));
 
   return (
     <div className="admin-dashboard">
@@ -261,7 +276,6 @@ const AdminOrderDetail = () => {
         </p>
         <p><strong>สถานะ:</strong> {order.status_display || order.status}</p>
         <p><strong>วิธีชำระเงิน:</strong> {order.payment_method_display || order.payment_method}</p>
-        <p><strong>ยอดรวม:</strong> ฿{Number(order.total_amount || 0).toLocaleString()}</p>
         <p><strong>ที่อยู่จัดส่ง:</strong> {order.delivery_address || '-'}</p>
         <p><strong>เบอร์โทร:</strong> {order.delivery_phone || '-'}</p>
         <p><strong>หมายเหตุ:</strong> {order.delivery_notes || '-'}</p>
@@ -396,14 +410,28 @@ const AdminOrderDetail = () => {
           {(order.items || []).length === 0 ? (
             <div className="muted">ไม่มีข้อมูลรายการสินค้า</div>
           ) : (
-            (order.items || []).map((item) => (
-              <div key={item.id} className="order-detail-item-row">
-                <span>{displayProductLineName(item)}</span>
-                <span>x{item.quantity}</span>
-                <span>฿{Number(item.price || 0).toLocaleString()}</span>
-              </div>
-            ))
+            <>
+              {(order.items || []).map((item) => (
+                <div key={item.id} className="order-detail-item-row">
+                  <span>{displayProductLineName(item)}</span>
+                  <span>x{item.quantity}</span>
+                  <span>฿{Number(item.price || 0).toLocaleString()}</span>
+                </div>
+              ))}
+            </>
           )}
+          <div className="order-detail-items-total-row">
+            <span>ราคาสินค้า</span>
+            <strong>฿{Number(productSubtotal || 0).toLocaleString()}</strong>
+          </div>
+          <div className="order-detail-items-total-row">
+            <span>ราคาค่าส่ง</span>
+            <strong>฿{Number(deliveryFee || 0).toLocaleString()}</strong>
+          </div>
+          <div className="order-detail-items-total-row is-grand-total">
+            <span>ราคารวม</span>
+            <strong>฿{Number(orderTotal || 0).toLocaleString()}</strong>
+          </div>
         </div>
 
         <div style={{ marginTop: '14px' }}>

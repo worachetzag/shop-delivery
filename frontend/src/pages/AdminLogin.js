@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import './AdminLogin.css';
 
 const AdminLogin = () => {
   const popup = usePopup();
@@ -65,94 +66,50 @@ const AdminLogin = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    }}>
-      <div style={{
-        background: 'white',
-        padding: '40px',
-        borderRadius: '10px',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-        maxWidth: '400px',
-        width: '100%'
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
+    <div className="admin-login-page">
+      <div className="admin-login-card">
+        <h2 className="admin-login-title">
           เข้าสู่ระบบแอดมิน · {config.BRANDING.storeName}
         </h2>
         
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#666' }}>ชื่อผู้ใช้:</label>
+          <div className="admin-login-field">
+            <label className="admin-login-label">ชื่อผู้ใช้:</label>
             <input
               type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '6px',
-                fontSize: '16px'
-              }}
+              className="admin-login-input"
             />
           </div>
           
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#666' }}>รหัสผ่าน:</label>
+          <div className="admin-login-field">
+            <label className="admin-login-label">รหัสผ่าน:</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '6px',
-                fontSize: '16px'
-              }}
+              className="admin-login-input"
             />
           </div>
           
           <button
             type="submit"
-            style={{
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#667eea',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '16px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              marginBottom: '15px'
-            }}
+            className="admin-login-submit"
           >
             เข้าสู่ระบบ
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', color: '#666', fontSize: '14px' }}>
+        <div className="admin-login-footer">
           <p>สำหรับลูกค้า</p>
           <button 
             onClick={() => navigate('/customer/login')}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#00B900',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginTop: '10px'
-            }}
+            className="admin-login-customer-btn"
           >
             เข้าสู่ระบบลูกค้า
           </button>

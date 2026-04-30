@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import './DriverLogin.css';
 
 const DriverLogin = () => {
   const popup = usePopup();
@@ -48,62 +49,43 @@ const DriverLogin = () => {
   };
 
   return (
-    <div className="driver-login-page" style={{ padding: '20px', maxWidth: '400px', margin: '0 auto' }}>
-      <h2>เข้าสู่ระบบคนขับรถส่ง</h2>
+    <div className="driver-login-page">
+      <div className="driver-login-card">
+      <h2 className="driver-login-title">เข้าสู่ระบบคนขับรถส่ง</h2>
       
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label>ชื่อผู้ใช้:</label>
+        <div className="driver-login-field">
+          <label className="driver-login-label">ชื่อผู้ใช้:</label>
           <input
             type="text"
             name="username"
             value={formData.username}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              marginTop: '5px'
-            }}
+            className="driver-login-input"
           />
         </div>
         
-        <div style={{ marginBottom: '15px' }}>
-          <label>รหัสผ่าน:</label>
+        <div className="driver-login-field">
+          <label className="driver-login-label">รหัสผ่าน:</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              marginTop: '5px'
-            }}
+            className="driver-login-input"
           />
         </div>
         
         <button
           type="submit"
-          style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#00B900',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '16px',
-            cursor: 'pointer'
-          }}
+          className="driver-login-submit"
         >
           เข้าสู่ระบบ
         </button>
       </form>
+      </div>
     </div>
   );
 };
