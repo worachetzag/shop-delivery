@@ -1030,6 +1030,9 @@ def line_login_callback(request):
         
         profile_data = profile_response.json()
         line_user_id = profile_data.get('userId')
+        if not line_user_id:
+            logger.error(f"LINE profile missing userId: {profile_data}")
+            return HttpResponseRedirect(f"{login_url}?error=profile_missing_user_id")
         display_name = profile_data.get('displayName', '')
         picture_url = profile_data.get('pictureUrl', '')
         status_message = profile_data.get('statusMessage', '')
@@ -1061,29 +1064,34 @@ def line_login_callback(request):
                 )
             UserRole.objects.get_or_create(user=user, defaults={'role': 'customer'})
         except LineUser.DoesNotExist:
-            # สร้าง User ใหม่
             username_base = f"line_{line_user_id}"
-            username = username_base
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{username_base[:140]}_{counter}"
-                counter += 1
-
-            user = User.objects.create_user(
-                username=username,
-                email=f"{line_user_id}@line.local",
-                first_name=display_name.split()[0] if display_name else '',
-                last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
-            )
+            line_email = f"{line_user_id}@line.local"
+            # พยายามผูกกลับ user เดิมก่อน เพื่อลดการสร้างบัญชีซ้ำ
+            user = User.objects.filter(username=username_base).first() or User.objects.filter(email=line_email).first()
+            if not user:
+                # สร้าง User ใหม่เมื่อไม่พบของเดิมจริงๆ
+                username = username_base
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{username_base[:140]}_{counter}"
+                    counter += 1
+                user = User.objects.create_user(
+                    username=username,
+                    email=line_email,
+                    first_name=display_name.split()[0] if display_name else '',
+                    last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
+                )
 
             # สร้าง Customer
-            customer = Customer.objects.create(
-                user=user,
-                id_card_number=_build_customer_id_card(line_user_id or user.id),
-                date_of_birth='2000-01-01',
-                phone_number='',
-                address='',
-            )
+            customer = Customer.objects.filter(user=user).first()
+            if not customer:
+                customer = Customer.objects.create(
+                    user=user,
+                    id_card_number=_build_customer_id_card(line_user_id or user.id),
+                    date_of_birth='2000-01-01',
+                    phone_number='',
+                    address='',
+                )
             
             # สร้าง LineUser
             line_user = LineUser.objects.create(
