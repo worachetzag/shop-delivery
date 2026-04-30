@@ -33,6 +33,14 @@
   padding-bottom: 24px;
 }
 
+/* Full-width body on admin login (no sidebar/header chrome) */
+.App.app-role-admin.admin-login-layout .main-content {
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
 .route-loading-overlay {
   position: fixed;
   top: 0;
@@ -391,7 +399,7 @@ button.btn:disabled {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .App.app-role-admin .main-content {
+  .App.app-role-admin:not(.admin-login-layout) .main-content {
     padding-left: 16px;
     padding-right: 16px;
     padding-top: 90px;

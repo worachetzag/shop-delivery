@@ -36,6 +36,8 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminLoginRoute = location.pathname === '/admin/login';
+  const showAdminChrome = isAdminPage && !isAdminLoginRoute;
   const isDriverPage = location.pathname.startsWith('/driver');
   const appRoleClass = isAdminPage ? 'app-role-admin' : (isDriverPage || location.pathname.startsWith('/customer') ? 'app-role-mobile' : 'app-role-mobile');
   const [routeLoading, setRouteLoading] = useState(false);
@@ -107,8 +109,8 @@ function AppContent() {
   }, [location.pathname, location.search]);
   
   return (
-    <div className={`App ${appRoleClass}`}>
-      {isAdminPage ? <AdminHeader /> : <Header />}
+    <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}`}>
+      {showAdminChrome ? <AdminHeader /> : !isAdminPage ? <Header /> : null}
       {routeLoading && (
         <div className="route-loading-overlay" aria-live="polite" aria-label="กำลังเปลี่ยนหน้า">
           <div className="route-loading-spinner" />
