@@ -160,7 +160,6 @@ const ProductCard = ({
           <p className="product-description">{product.description}</p>
           <div className="product-price">
             {formatPrice(product.price)} / {product.unit_label || 'ชิ้น'}
-            {product.unit_detail ? ` (${product.unit_detail})` : ''}
           </div>
           <div className={`product-stock ${isOutOfStock ? 'out' : ''}`}>
             {isOutOfStock ? 'สินค้าหมด' : 'พร้อมสั่งซื้อ'}
