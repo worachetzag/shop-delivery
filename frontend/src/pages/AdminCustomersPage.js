@@ -25,6 +25,14 @@ function formatWhen(iso) {
   }
 }
 
+function shouldShowUsername(username) {
+  const raw = String(username || '').trim();
+  if (!raw) return false;
+  if (raw.length > 18) return false;
+  if (raw.toLowerCase().startsWith('line_')) return false;
+  return true;
+}
+
 const AdminCustomersPage = () => {
   const popup = usePopup();
   const token = useMemo(() => localStorage.getItem('admin_token') || localStorage.getItem('auth_token'), []);
@@ -85,7 +93,7 @@ const AdminCustomersPage = () => {
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>ลูกค้า</h1>
         <p style={{ margin: 0, color: '#666', fontSize: '0.92rem' }}>
-          ดูข้อมูลผู้ใช้ที่ลงทะเบียนเป็นลูกค้า จำนวนออเดอร์ และยอดสะสม (ออเดอร์ที่จัดส่งสำเร็จ)
+          รายชื่อลูกค้า จำนวนออเดอร์ และยอดซื้อสะสม
         </p>
       </div>
 
@@ -150,19 +158,34 @@ const AdminCustomersPage = () => {
                 rows.map((row) => {
                   const u = row.user_info || {};
                   const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || '—';
+                  const showUsername = shouldShowUsername(u.username);
                   return (
                     <tr key={row.id}>
                       <td>
-                        <strong>{name}</strong>
-                        <div className="muted" style={{ fontSize: 12 }}>
-                          @{u.username || '—'}
-                        </div>
+                        <strong style={{ display: 'block' }}>{name}</strong>
+                        {showUsername ? (
+                          <div className="muted" style={{ fontSize: 12 }}>
+                            @{u.username}
+                          </div>
+                        ) : null}
                       </td>
                       <td>
-                        <div>{row.phone_number || '—'}</div>
+                        <div style={{ whiteSpace: 'nowrap' }}>{row.phone_number || '—'}</div>
                         {u.email ? (
                           <div className="muted" style={{ fontSize: 12 }}>
-                            {u.email}
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                maxWidth: 220,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                verticalAlign: 'bottom',
+                              }}
+                              title={u.email}
+                            >
+                              {u.email}
+                            </span>
                           </div>
                         ) : null}
                       </td>
