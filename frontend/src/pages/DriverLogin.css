@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 12px;
+  padding: 20px 12px calc(20px + env(safe-area-inset-bottom));
   background:
     radial-gradient(120% 90% at 8% 0%, rgba(34, 211, 238, 0.24) 0%, rgba(2, 6, 23, 0) 42%),
     linear-gradient(165deg, #0b1220 0%, #0f172a 60%, #111827 100%);

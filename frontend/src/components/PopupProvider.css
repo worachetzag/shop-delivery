@@ -1,11 +1,11 @@
 .popup-toast-stack {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 1200;
+  z-index: 1400;
 }
 
 .popup-toast {
@@ -128,5 +128,11 @@
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@media (min-width: 1025px) {
+  .popup-toast-stack {
+    bottom: 16px;
   }
 }

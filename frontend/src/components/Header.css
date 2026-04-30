@@ -160,10 +160,16 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  padding: 11px 4px 10px;
-  font-size: 0.72rem;
+  gap: 4px;
+  min-height: 58px;
+  padding: 14px 6px 12px;
+  font-size: 0.78rem;
   font-weight: 700;
+}
+
+.liff-bottom-nav a span,
+.liff-bottom-nav a small {
+  line-height: 1.1;
 }
 
 .liff-bottom-nav a.active {

@@ -44,6 +44,9 @@
 .App.app-role-admin.admin-login-layout {
   max-width: none;
   width: 100%;
+  background:
+    radial-gradient(110% 80% at 10% 0%, rgba(56, 189, 248, 0.25) 0%, rgba(15, 23, 42, 0) 45%),
+    linear-gradient(165deg, #0f172a 0%, #111827 58%, #0b1220 100%);
 }
 
 /* Driver app shell (login + internal screens) */
@@ -57,10 +60,18 @@
   max-width: none;
   width: 100%;
   box-shadow: none;
+  background:
+    radial-gradient(120% 90% at 8% 0%, rgba(34, 211, 238, 0.24) 0%, rgba(2, 6, 23, 0) 42%),
+    linear-gradient(165deg, #0b1220 0%, #0f172a 60%, #111827 100%);
 }
 
 .App.app-role-driver.driver-login-layout .main-content {
   padding: 0;
+  min-height: 100dvh;
+}
+
+.App.app-role-admin.admin-login-layout .main-content {
+  min-height: 100dvh;
 }
 
 .App.app-role-driver .route-loading-overlay {
