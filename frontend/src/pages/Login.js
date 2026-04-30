@@ -13,13 +13,30 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem('auth_token')) {
-      navigate('/customer', { replace: true });
-      return undefined;
-    }
     let cancelled = false;
     (async () => {
       try {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          const res = await fetch(`${config.API_BASE_URL}orders/cart/`, {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            credentials: 'include',
+          });
+          if (cancelled) return;
+          if (res.ok) {
+            navigate('/customer', { replace: true });
+            return;
+          }
+          // token ค้าง/หมดอายุ: ล้างเพื่อไม่ให้ติดลูปเข้า-ออกหน้า login
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('username');
+          localStorage.removeItem('user_role');
+        }
+
         const liff = getGlobalLiff();
         if (!liff) throw new Error('LIFF SDK not loaded');
         await liff.init({ liffId: config.LIFF_ID });
