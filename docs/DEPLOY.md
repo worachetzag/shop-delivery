@@ -41,7 +41,8 @@
 | `CORS_ALLOWED_ORIGINS_EXTRA` | URL เดียวกับ frontend เช่น `https://shop-delivery.pages.dev` |
 | `CSRF_TRUSTED_ORIGINS_EXTRA` | เดียวกับแถวบน |
 | `NGROK_CROSS_SITE_COOKIES` | `True` (ให้ cookie/session ข้ามโดเมนได้เมื่อ API กับ SPA คนละโดเมนและเป็น HTTPS) |
-| `SEED_DEMO_ON_START` | `1` (ถ้าต้องการให้ seed สินค้า+ดาวน์โหลดรูปใหม่ทุกครั้งที่ service start) |
+| `RESET_DB_ON_START` | **`0`** บน production เสมอ — ถ้าเป็น `1` จะ `flush` DB ทุกครั้งที่ container start และโหลดข้อมูลสำรองยาวมาก → Render ขึ้น `No open ports detected` นานจนกว่า startup จะจบ |
+| `SEED_DEMO_ON_START` | **`0`** เป็นค่าปกติ — ใส่ **`1` เฉพาะครั้งเดียว** เมื่ออยากให้รัน `seed_grocery_demo` + โหลดรูป (ใช้เวลานาน) แล้วตั้งกลับเป็น `0` ทันที — อย่าปล่อย `1` ค้างเพราะทุก deploy/restart จะ seed ใหม่ทั้งก้อน |
 
 ค่าที่ควรมีถ้าใช้ LINE / LIFF / PromptPay (ตามที่มีอยู่ในโปรเจ็กต์):
 
@@ -50,7 +51,7 @@
 
 5. กด **Create Web Service** แล้วรอ build เสร็จ  
 6. จด URL backend เช่น `https://shop-delivery-api.onrender.com`
-7. ถ้ารูปจาก seed ขึ้น 404 หลัง deploy/restart ให้เปิด `SEED_DEMO_ON_START=1` แล้ว deploy ใหม่หนึ่งรอบ
+7. ถ้ารูปจาก seed ขึ้น 404 หลัง deploy/restart ให้ตั้ง `SEED_DEMO_ON_START=1` แล้ว deploy **หนึ่งรอบ** — พอขึ้นปกติแล้วให้ตั้งกลับเป็น `0` (ถ้าปล่อย `1` ค้าง + `RESET_DB_ON_START=1` จะเห็น log คล้าย seed หมวดสินค้ายาวๆ และ `"No open ports detected"` ค้างจนกว่า startup จะจบ)
 
 ### Shell บน Render (ครั้งแรก)
 

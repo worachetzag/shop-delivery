@@ -16,6 +16,8 @@ def healthz(request):
 router = DefaultRouter()
 
 urlpatterns = [
+    # Render มักเรียก /healthz ไม่มี slash — อย่าให้ redirect 301 แล้ว health check ล้ม
+    path('healthz', healthz),
     path('healthz/', healthz),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),

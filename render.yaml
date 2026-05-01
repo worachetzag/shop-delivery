@@ -11,8 +11,14 @@ services:
     dockerContext: .
     plan: free
     region: singapore
+    # Django มีทั้ง /healthz และ /healthz/
     healthCheckPath: /healthz
     envVars:
+      # อย่าเปิดบน production — flush DB + seed 67 สินค้าโหลดรูปทุกครั้งที่ container start = พอร์ตเปิดช้ามาก และข้อความ "No open ports"
+      - key: RESET_DB_ON_START
+        value: "0"
+      - key: SEED_DEMO_ON_START
+        value: "0"
       - key: DEBUG
         value: "False"
       - key: SECRET_KEY
