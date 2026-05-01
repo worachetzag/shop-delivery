@@ -138,19 +138,20 @@ const AdminCustomersPage = () => {
                 <th>จำนวนออเดอร์</th>
                 <th>ยอดซื้อสะสม (ส่งแล้ว)</th>
                 <th>ออเดอร์ล่าสุด</th>
+                <th>โปรไฟล์</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={8}>
                     <div className="empty-state">กำลังโหลด...</div>
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={8}>
                     <div className="empty-state">ไม่พบลูกค้า</div>
                   </td>
                 </tr>
@@ -201,6 +202,17 @@ const AdminCustomersPage = () => {
                       </td>
                       <td>{formatBaht(row.total_spent_delivered)}</td>
                       <td>{formatWhen(row.last_order_at)}</td>
+                      <td>
+                        {row.profile_completed ? (
+                          <span className="status status-delivered" style={{ fontSize: '0.75rem' }}>
+                            ครบ
+                          </span>
+                        ) : (
+                          <span className="status status-pending" style={{ fontSize: '0.75rem' }}>
+                            ยังไม่ครบ
+                          </span>
+                        )}
+                      </td>
                       <td>
                         <Link className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-block' }} to={`/admin/customers/${row.id}`}>
                           รายละเอียด

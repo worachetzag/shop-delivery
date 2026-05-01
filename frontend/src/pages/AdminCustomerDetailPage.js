@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { formatCitizenThirteenDisplay, formatMobileTenDisplay } from '../utils/thaiFormInputs';
 import './AdminDashboard.css';
 
 function formatBaht(value) {
@@ -20,6 +21,15 @@ function formatWhen(iso) {
   } catch {
     return iso;
   }
+}
+
+function formatDobThBe(isoDate) {
+  if (!isoDate) return '—';
+  const parts = String(isoDate).split('-').map(Number);
+  const [y, m, d] = parts;
+  if (!y || !m || !d) return isoDate;
+  const be = y + 543;
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${be} (พ.ศ.)`;
 }
 
 const AdminCustomerDetailPage = () => {
@@ -145,8 +155,30 @@ const AdminCustomerDetailPage = () => {
         <table className="orders-table" style={{ boxShadow: 'none' }}>
           <tbody>
             <tr>
+              <th style={{ width: 180 }}>สถานะโปรไฟล์</th>
+              <td>
+                {customer.profile_completed ? (
+                  <span className="status status-delivered">ครบถ้วน</span>
+                ) : (
+                  <span className="status status-pending">ยังไม่ครบ</span>
+                )}
+              </td>
+            </tr>
+            <tr>
               <th style={{ width: 180 }}>เบอร์โทร</th>
-              <td>{customer.phone_number || '—'}</td>
+              <td>{customer.phone_number ? formatMobileTenDisplay(customer.phone_number) : '—'}</td>
+            </tr>
+            <tr>
+              <th>เลขบัตรประชาชน</th>
+              <td>{customer.id_card_number ? formatCitizenThirteenDisplay(customer.id_card_number) : '—'}</td>
+            </tr>
+            <tr>
+              <th>วันเกิด</th>
+              <td>{formatDobThBe(customer.date_of_birth)}</td>
+            </tr>
+            <tr>
+              <th style={{ verticalAlign: 'top' }}>ที่อยู่ตามโปรไฟล์</th>
+              <td style={{ whiteSpace: 'pre-wrap' }}>{customer.address?.trim() ? customer.address : '—'}</td>
             </tr>
             <tr>
               <th>อีเมลติดต่อ (จากลูกค้า)</th>

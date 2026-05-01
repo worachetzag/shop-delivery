@@ -298,26 +298,24 @@ const Orders = () => {
                       )}
                     </>
                   )}
-                </div>
-                <div className="order-list-summary">
-                  <span className="total-amount">{formatPrice(order.total)}</span>
-                  <span>
+                  <p className="order-preview-count-line">
                     {order.itemCount} รายการ
                     {order.totalQuantity > order.itemCount && (
                       <span className="order-qty-hint"> · {order.totalQuantity} ชิ้น</span>
                     )}
-                  </span>
+                  </p>
                 </div>
               </div>
-              <div className="order-header order-list-row order-card-bottom">
-                <div className="order-list-summary">
-                  <span>ค่าสินค้า: {formatPrice(order.subtotal)}</span>
-                  <span>ค่าส่ง: {formatPrice(order.deliveryFee)}</span>
-                  <span className="total-amount">รวม: {formatPrice(order.total)}</span>
-                </div>
-                <div className="order-status">
+              <div className="order-card-under-items">
+                <p className="order-price-split">
+                  <span>ค่าสินค้า {formatPrice(order.subtotal)}</span>
+                  <span className="order-price-split-dot">·</span>
+                  <span>ค่าส่ง {formatPrice(order.deliveryFee)}</span>
+                </p>
+                <div className="order-meta-inline">
+                  <span className="order-meta-total">รวม {formatPrice(order.total)}</span>
                   <span
-                    className="status-badge"
+                    className="status-badge order-meta-status"
                     style={{ backgroundColor: getStatusColor(order.status) }}
                   >
                     {order.statusDisplay || getStatusText(order.status)}
