@@ -1,37 +1,43 @@
-.customer-sort-dropdown-wrap .form-label {
-  margin-bottom: 0.45rem;
+/* เรียงสินค้า — ปุ่ม + เมนู ไม่ใช้ฟอร์ม */
+
+.customer-sort {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.customer-sort-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.customer-sort-caption {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary, #64748b);
+  letter-spacing: 0.02em;
 }
 
 .customer-sort-dropdown {
   position: relative;
 }
 
-.customer-sort-trigger {
-  width: 100%;
-  display: flex;
+.customer-sort-trigger.btn.btn-outline {
+  display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.72rem 0.85rem;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text-primary, #1e293b);
-  cursor: pointer;
+  gap: 0.45rem;
+  width: auto;
+  min-width: 11rem;
+  max-width: 100%;
   text-align: left;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 0.58rem 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 10px);
   -webkit-tap-highlight-color: transparent;
-}
-
-.customer-sort-trigger:hover {
-  border-color: #cbd5e1;
-}
-
-.customer-sort-trigger:focus-visible {
-  outline: 2px solid var(--brand-primary, #00a651);
-  outline-offset: 2px;
 }
 
 .customer-sort-trigger-label {
@@ -41,23 +47,26 @@
 
 .customer-sort-trigger-chevron {
   flex-shrink: 0;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--text-secondary, #64748b);
   line-height: 1;
+  opacity: 0.85;
 }
 
 .customer-sort-menu {
   position: absolute;
   left: 0;
-  right: 0;
   top: calc(100% + 6px);
   margin: 0;
   padding: 0.35rem;
   list-style: none;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(100vw - 2rem, 18rem);
   background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  border: 1px solid var(--border-soft, #e5e7eb);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-soft, 0 12px 28px rgba(15, 23, 42, 0.12));
   z-index: 50;
   max-height: min(70vh, 280px);
   overflow-y: auto;
@@ -107,17 +116,28 @@
   line-height: 1.25;
 }
 
-/* หน้าแรก: ปุ่มแคบขึ้นเมื่ออยู่ข้างแถบชิป */
-.customer-sort-dropdown-wrap--compact .customer-sort-trigger {
-  padding: 0.58rem 0.72rem;
-  font-size: 0.84rem;
-  min-height: 2.65rem;
+/* หน้าแรก — ซ้อนแคปชันเหนือปุ่มให้พอดีแถบเครื่องมือ */
+.customer-sort--compact .customer-sort-inner {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
 }
 
-.customer-sort-dropdown-wrap--compact .customer-sort-option-label {
+.customer-sort--compact .customer-sort-trigger.btn.btn-outline {
+  min-width: 0;
+  width: 100%;
+  padding: 0.52rem 0.72rem;
   font-size: 0.84rem;
 }
 
-.customer-sort-dropdown-wrap--compact .customer-sort-option-hint {
+.customer-sort--compact .customer-sort-caption {
+  font-size: 0.78rem;
+}
+
+.customer-sort--compact .customer-sort-option-label {
+  font-size: 0.84rem;
+}
+
+.customer-sort--compact .customer-sort-option-hint {
   font-size: 0.7rem;
 }

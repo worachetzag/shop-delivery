@@ -114,6 +114,7 @@
 
 .filters.filters-sort-only {
   grid-template-columns: 1fr;
+  justify-items: start;
 }
 
 /* Results Section */

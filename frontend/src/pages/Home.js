@@ -504,7 +504,7 @@ const Home = () => {
               />
             </div>
             <CustomerProductSortDropdown
-              className="customer-sort-dropdown-wrap--compact"
+              className="customer-sort--compact"
               options={HOME_FEATURED_SORT_OPTIONS}
               value={featuredSort}
               onChange={setFeaturedSort}
@@ -548,7 +548,7 @@ const Home = () => {
               />
             </div>
             <CustomerProductSortDropdown
-              className="customer-sort-dropdown-wrap--compact"
+              className="customer-sort--compact"
               options={HOME_PROMO_SORT_OPTIONS}
               value={promoSort}
               onChange={setPromoSort}
