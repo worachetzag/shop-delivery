@@ -136,6 +136,7 @@ class Customer(models.Model):
     date_of_birth = models.DateField(verbose_name="วันเดือนปีเกิด")
     address = models.TextField(verbose_name="ที่อยู่")
     phone_number = models.CharField(max_length=15, verbose_name="เบอร์โทรศัพท์")
+    contact_email = models.EmailField(blank=True, default='', verbose_name="อีเมลติดต่อ (จากลูกค้า)")
     # เพิ่ม lat/lon สำหรับเก็บพิกัดที่อยู่
     latitude = models.DecimalField(max_digits=18, decimal_places=15, null=True, blank=True, verbose_name="ละติจูด")
     longitude = models.DecimalField(max_digits=18, decimal_places=15, null=True, blank=True, verbose_name="ลองจิจูด")

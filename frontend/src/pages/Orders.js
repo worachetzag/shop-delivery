@@ -4,7 +4,6 @@ import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { displayProductLineName } from '../utils/helpers';
-import CustomerInlineBack from '../components/CustomerInlineBack';
 import './Orders.css';
 
 const PAGE_SIZE = 10;
@@ -163,7 +162,6 @@ const Orders = () => {
     return (
       <div className="orders-page">
         <div className="container">
-          <CustomerInlineBack />
           <div className="page-header">
             <h1 className="page-title">คำสั่งซื้อของฉัน</h1>
           </div>
@@ -190,7 +188,6 @@ const Orders = () => {
   return (
     <div className="orders-page">
       <div className="container">
-        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">คำสั่งซื้อของฉัน</h1>
           <p className="page-subtitle">ติดตามสถานะคำสั่งซื้อของคุณ · ทั้งหมดในหมวดนี้ {totalCount} รายการ</p>

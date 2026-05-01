@@ -4,6 +4,7 @@ import { cartService } from '../services/api';
 import { usePopup } from './PopupProvider';
 import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
 import { formatBahtAmount } from '../utils/formatPrice';
+import { getProductCompareAtPrice } from '../utils/productPricing';
 import { captureListingScrollBeforeProductDetail } from '../utils/listingScrollRestore';
 import './ProductCard.css';
 
@@ -69,6 +70,8 @@ const ProductCard = ({
   const remainingStock = Math.max(0, availableQty - effectiveCartQuantity);
   const isOutOfStock = remainingStock <= 0;
   const hasInCart = effectiveCartQuantity > 0;
+  const compareAtPrice = getProductCompareAtPrice(product);
+
   const categoryLabel = (() => {
     if (typeof product.category_name === 'string' && product.category_name.trim()) {
       return product.category_name.trim();
@@ -161,8 +164,8 @@ const ProductCard = ({
             }}
           />
         </Link>
-        {listingOnly && product.is_special_offer && (
-          <span className="product-special-badge">ราคาพิเศษ</span>
+        {listingOnly && (compareAtPrice != null || product.is_special_offer) && (
+          <span className="product-special-badge">{compareAtPrice != null ? 'ลดราคา' : 'ราคาพิเศษ'}</span>
         )}
         {listingOnly && product.is_low_stock && availableQty > 0 && (
           <span className="product-low-stock-badge">สินค้าใกล้หมด</span>
@@ -193,9 +196,22 @@ const ProductCard = ({
           <div className={`product-price ${listingOnly ? 'product-price--browse' : ''}`}>
             {listingOnly ? (
               <>
-                <span className="product-price-value">{formatBahtAmount(product.price)}</span>
+                {compareAtPrice != null && (
+                  <>
+                    <span className="product-price-compare-at">{formatBahtAmount(compareAtPrice)}</span>
+                    <span className="product-price-unit product-price-unit--muted"> บาท · </span>
+                  </>
+                )}
+                <span className={`product-price-value${compareAtPrice != null ? ' product-price-value--sale' : ''}`}>
+                  {formatBahtAmount(product.price)}
+                </span>
                 <span className="product-price-unit"> บาท</span>
               </>
+            ) : compareAtPrice != null ? (
+              <span className="product-price-stack">
+                <span className="product-price-compare-at">{formatPrice(compareAtPrice)}</span>
+                <span className="product-price-current">{formatPrice(product.price)}</span>
+              </span>
             ) : (
               formatPrice(product.price)
             )}

@@ -3,8 +3,6 @@ from django.conf import settings
 from django.utils import timezone
 from linebot import LineBotApi
 from linebot.models import FlexSendMessage, TextSendMessage
-from urllib.parse import quote
-
 from .models import LineBotUser, LineNotification
 
 logger = logging.getLogger(__name__)
@@ -43,9 +41,10 @@ def _display_name(user):
 def _order_detail_url(order_id: int) -> str:
     liff_id = (getattr(settings, 'LINE_LIFF_ID', '') or '').strip()
     if liff_id:
-        # LIFF deeplink format: https://liff.line.me/{liffId}/{path}
-        path = quote(f'/customer/orders/{order_id}')
-        return f'https://liff.line.me/{liff_id}{path}'
+        # LIFF: ต้องมี / คั่นหลัง liffId แล้วตามด้วย path จริง — ห้าม quote เป็น %2F ต่อท้าย id
+        # (รูปแบบผิดเช่น .../liffId%2Fcustomer%2Forders%2F1 จะไม่เปิด SPA ที่ root ของ order)
+        oid = int(order_id)
+        return f'https://liff.line.me/{liff_id}/customer/orders/{oid}'
 
     frontend = (getattr(settings, 'FRONTEND_URL', '') or '').strip().rstrip('/')
     if not frontend:

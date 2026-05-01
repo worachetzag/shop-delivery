@@ -1178,7 +1178,8 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       <th>ชื่อสินค้า</th>
                       <th>หมวดหมู่</th>
                       <th>หน่วย</th>
-                      <th>ราคา</th>
+                      <th>ราคาขาย</th>
+                      <th>ราคาก่อนลด</th>
                       <th>พร้อมขาย</th>
                       <th>จอง</th>
                       <th>สต็อก</th>
@@ -1197,6 +1198,11 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                         <td>{product.category_name || '-'}</td>
                         <td>{product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}</td>
                         <td>฿{Number(product.price || 0).toLocaleString()}</td>
+                        <td className="admin-product-compare-price">
+                          {product.compare_at_price != null && product.compare_at_price !== ''
+                            ? `฿${Number(product.compare_at_price).toLocaleString()}`
+                            : '—'}
+                        </td>
                         <td>{Number(product.available_quantity ?? ((product.stock_quantity || 0) - (product.reserved_quantity || 0)))}</td>
                         <td>{Number(product.reserved_quantity || 0)}</td>
                         <td onClick={(e) => e.stopPropagation()}>

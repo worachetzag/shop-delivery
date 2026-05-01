@@ -22,7 +22,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['id', 'user', 'user_info', 'id_card_number', 'date_of_birth', 
-                 'address', 'phone_number', 'latitude', 'longitude', 'picture_url', 'created_at', 'updated_at']
+                 'address', 'phone_number', 'contact_email', 'latitude', 'longitude', 'picture_url', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
     
     def get_picture_url(self, obj):
@@ -156,6 +156,7 @@ class AdminCustomerListSerializer(serializers.ModelSerializer):
             'id',
             'user_info',
             'phone_number',
+            'contact_email',
             'order_count',
             'total_spent_delivered',
             'last_order_at',
@@ -176,6 +177,7 @@ class AdminCustomerDetailSerializer(serializers.ModelSerializer):
             'id',
             'user_info',
             'phone_number',
+            'contact_email',
             'latitude',
             'longitude',
             'created_at',

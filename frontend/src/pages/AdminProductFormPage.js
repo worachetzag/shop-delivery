@@ -11,6 +11,7 @@ const getDefaultCreateForm = () => ({
   name: '',
   description: '',
   price: '',
+  compare_at_price: '',
   unit_label: 'ชิ้น',
   custom_unit_label: '',
   unit_detail: '',
@@ -73,6 +74,10 @@ const AdminProductFormPage = () => {
             name: product.name || '',
             description: product.description || '',
             price: String(product.price ?? ''),
+            compare_at_price:
+              product.compare_at_price != null && product.compare_at_price !== ''
+                ? String(product.compare_at_price)
+                : '',
             unit_label: normalizedUnit || 'ชิ้น',
             custom_unit_label: normalizedUnit === 'อื่นๆ' ? (product.unit_label || '') : '',
             unit_detail: product.unit_detail || '',
@@ -150,6 +155,8 @@ const AdminProductFormPage = () => {
       formData.append('name', form.name.trim());
       formData.append('description', form.description.trim());
       formData.append('price', String(parseFloat(form.price)));
+      const cmpRaw = form.compare_at_price.trim();
+      formData.append('compare_at_price', cmpRaw === '' ? '' : String(parseFloat(cmpRaw)));
       formData.append('unit_label', resolvedUnitLabel);
       formData.append('unit_detail', mergedUnitDetail);
       formData.append('category', String(parseInt(form.category, 10)));
@@ -227,7 +234,16 @@ const AdminProductFormPage = () => {
 
           <div className="product-form-grid">
             <input name="name" value={form.name} onChange={handleInputChange} placeholder="ชื่อสินค้า" required />
-            <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleInputChange} placeholder="ราคา" required />
+            <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleInputChange} placeholder="ราคาขาย (หลังลด)" required />
+            <input
+              name="compare_at_price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.compare_at_price}
+              onChange={handleInputChange}
+              placeholder="ราคาก่อนลด (ไม่บังคับ)"
+            />
             <select name="unit_label" value={form.unit_label} onChange={handleInputChange} required>
               {UNIT_OPTIONS.map((unit) => (
                 <option key={unit} value={unit}>{unit}</option>

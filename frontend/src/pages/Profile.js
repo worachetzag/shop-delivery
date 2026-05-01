@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import AddressPicker from '../components/AddressPicker';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
-import CustomerInlineBack from '../components/CustomerInlineBack';
 import './Profile.css';
+import { validateEmail } from '../utils/helpers';
 
 /** แปลงพิกัดจาก API (string/Decimal) เป็นตัวเลข — ใช้ก่อน .toFixed() / ส่ง backend */
 function parseCoord(value) {
@@ -76,7 +76,8 @@ const Profile = () => {
           
           setUserProfile({
             displayName: fullName,
-            email: userInfo.email || '',
+            // อีเมลที่ลูกค้ากรอกและบันทึกในระบบเท่านั้น (ไม่ดึงจากบัญชี OAuth)
+            email: data.contact_email || '',
             phone: data.phone_number || '',
             pictureUrl: data.picture_url || null
           });
@@ -179,6 +180,7 @@ const Profile = () => {
 
   const handleSaveProfile = async () => {
     const phone = String(userProfile.phone || '').trim();
+    const emailTrim = String(userProfile.email || '').trim();
     if (!phone) {
       popup.error('กรุณากรอกเบอร์โทรศัพท์ก่อนบันทึก');
       setEditing(true);
@@ -187,6 +189,10 @@ const Profile = () => {
         phoneInputRef.current?.focus();
         phoneInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
+      return;
+    }
+    if (emailTrim && !validateEmail(emailTrim)) {
+      popup.error('รูปแบบอีเมลไม่ถูกต้อง');
       return;
     }
     try {
@@ -200,14 +206,19 @@ const Profile = () => {
         credentials: 'include',
         body: JSON.stringify({
           phone_number: phone,
+          contact_email: emailTrim,
         })
       });
-      
+
+      const payload = await response.json().catch(() => ({}));
+
       if (response.ok) {
+        const savedEmail = payload?.data?.contact_email ?? '';
+        setUserProfile((prev) => ({ ...prev, email: savedEmail }));
         popup.info('บันทึกข้อมูลสำเร็จ');
         setEditing(false);
       } else {
-        popup.error('ไม่สามารถบันทึกข้อมูลได้');
+        popup.error(payload?.error || 'ไม่สามารถบันทึกข้อมูลได้');
       }
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -387,7 +398,6 @@ const Profile = () => {
   return (
     <div className="profile-page">
       <div className="container">
-        <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">โปรไฟล์ของฉัน</h1>
           <p className="page-subtitle">จัดการข้อมูลส่วนตัวและที่อยู่</p>
@@ -481,8 +491,8 @@ const Profile = () => {
               {!editing ? (
                 <div className="profile-display">
                   <p><strong>ชื่อ-นามสกุล</strong><br />{userProfile.displayName || '—'}</p>
-                  <p><strong>อีเมล</strong><br />{userProfile.email || '—'}</p>
-                  <p><strong>เบอร์โทรศัพท์</strong><br />{userProfile.phone || '—'}</p>
+                  <p><strong>อีเมล</strong> <span className="profile-muted-label">(ไม่บังคับ)</span><br />{(userProfile.email || '').trim() ? userProfile.email : '—'}</p>
+                  <p><strong>เบอร์โทรศัพท์</strong> <span className="profile-muted-label">(บังคับ)</span><br />{userProfile.phone || '—'}</p>
                 </div>
               ) : (
                 <div className="profile-form customer-form-stack">
@@ -498,18 +508,20 @@ const Profile = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">อีเมล</label>
+                    <label className="form-label">อีเมล <span className="profile-muted-label">(ไม่บังคับ)</span></label>
                     <input
                       type="email"
                       name="email"
                       value={userProfile.email}
                       onChange={handleInputChange}
                       className="form-input"
+                      placeholder="ถ้ามีค่อยกรอก — เว้นว่างได้"
+                      autoComplete="email"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">เบอร์โทรศัพท์</label>
+                    <label className="form-label">เบอร์โทรศัพท์ <span className="profile-muted-label">(บังคับ)</span></label>
                     <input
                       type="tel"
                       name="phone"

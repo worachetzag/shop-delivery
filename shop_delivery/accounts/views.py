@@ -11,6 +11,8 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 from django.db.models import Count, DecimalField, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce
 import requests
@@ -20,6 +22,15 @@ from urllib.parse import quote_plus
 from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_contact_email(raw):
+    """ค่าที่ลูกค้ากรอก — ว่างได้; ถ้าไม่ว่างต้องเป็นอีเมลที่ใช้ได้"""
+    s = '' if raw is None else str(raw).strip()
+    if not s:
+        return ''
+    EmailValidator(message='รูปแบบอีเมลไม่ถูกต้อง')(s)
+    return s
 
 
 def driver_profile_photo_url(request, profile):
@@ -820,6 +831,21 @@ class CustomerProfileView(generics.RetrieveUpdateDestroyAPIView):
             instance.address = request.data['address']
         if 'phone_number' in request.data:
             instance.phone_number = request.data['phone_number']
+        if 'contact_email' in request.data or 'email' in request.data:
+            raw = (
+                request.data['contact_email']
+                if 'contact_email' in request.data
+                else request.data.get('email')
+            )
+            try:
+                instance.contact_email = _normalize_contact_email(raw)
+            except ValidationError as e:
+                msg = (
+                    e.messages[0]
+                    if getattr(e, 'messages', None)
+                    else 'รูปแบบอีเมลไม่ถูกต้อง'
+                )
+                return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         if 'latitude' in request.data and request.data['latitude']:
             instance.latitude = request.data['latitude']
         if 'longitude' in request.data and request.data['longitude']:
@@ -1178,6 +1204,7 @@ class AdminCustomerListView(generics.ListAPIView):
                 | Q(user__first_name__icontains=q)
                 | Q(user__last_name__icontains=q)
                 | Q(user__email__icontains=q)
+                | Q(contact_email__icontains=q)
                 | Q(phone_number__icontains=q)
             )
         return qs

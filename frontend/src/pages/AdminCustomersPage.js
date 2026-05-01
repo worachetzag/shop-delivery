@@ -171,7 +171,7 @@ const AdminCustomersPage = () => {
                       </td>
                       <td>
                         <div style={{ whiteSpace: 'nowrap' }}>{row.phone_number || '—'}</div>
-                        {u.email ? (
+                        {(row.contact_email || u.email) ? (
                           <div className="muted" style={{ fontSize: 12 }}>
                             <span
                               style={{
@@ -182,9 +182,9 @@ const AdminCustomersPage = () => {
                                 whiteSpace: 'nowrap',
                                 verticalAlign: 'bottom',
                               }}
-                              title={u.email}
+                              title={row.contact_email || u.email}
                             >
-                              {u.email}
+                              {row.contact_email || u.email}
                             </span>
                           </div>
                         ) : null}

@@ -20,9 +20,9 @@ class CustomUserAdmin(UserAdmin):
 # Customer Admin
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('user', 'id_card_number', 'phone_number', 'created_at')
+    list_display = ('user', 'id_card_number', 'phone_number', 'contact_email', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('user__first_name', 'user__last_name', 'id_card_number', 'phone_number')
+    search_fields = ('user__first_name', 'user__last_name', 'id_card_number', 'phone_number', 'contact_email')
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
 

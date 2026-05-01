@@ -393,6 +393,11 @@
   background: rgba(102, 126, 234, 0.08);
 }
 
+.products-manage-table .admin-product-compare-price {
+  color: #64748b;
+  white-space: nowrap;
+}
+
 .admin-product-row.admin-product-row--low-stock td {
   background: #fef2f2;
   color: #7f1d1d;

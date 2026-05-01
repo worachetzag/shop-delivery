@@ -11,8 +11,8 @@
   max-width: 480px;
   background: var(--surface-bg);
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.03), 0 8px 22px rgba(15, 23, 42, 0.1);
-  /* Matches compact bottom nav + home indicator — floating cart & toasts use this too */
-  --mobile-bottom-nav-clearance: calc(50px + env(safe-area-inset-bottom));
+  /* ความสูงโดยประมาณของแถบล่าง + home indicator — ใช้คู่กับ floating cart / toast */
+  --mobile-bottom-nav-clearance: calc(42px + env(safe-area-inset-bottom));
 }
 
 .App.app-role-admin {
@@ -31,7 +31,7 @@
 }
 
 .App.app-role-mobile .main-content {
-  padding-bottom: calc(var(--mobile-bottom-nav-clearance) + 10px);
+  padding-bottom: calc(var(--mobile-bottom-nav-clearance) + 4px);
 }
 
 .App.app-role-admin .main-content {

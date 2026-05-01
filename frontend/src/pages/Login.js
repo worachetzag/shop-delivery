@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LineLoginButton, { redirectToShopLineOAuth } from '../components/LineLoginButton';
 import config from '../config';
-import CustomerInlineBack from '../components/CustomerInlineBack';
 import './Login.css';
 
 function getGlobalLiff() {
@@ -57,7 +56,6 @@ const Login = () => {
   return (
     <div className="login-page">
       <div className="container">
-        <CustomerInlineBack />
         <div className="login-card">
           <h2>เข้าสู่ระบบ</h2>
           <p className="login-subtitle">

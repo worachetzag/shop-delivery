@@ -21,7 +21,15 @@ class Product(models.Model):
     """สินค้า"""
     name = models.CharField(max_length=200, verbose_name="ชื่อสินค้า")
     description = models.TextField(blank=True, verbose_name="คำอธิบาย")
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ราคา")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ราคาขาย")
+    compare_at_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="ราคาก่อนลด (แสดงขีดฆ่า)",
+        help_text="ถ้ากรอกและมากกว่าราคาขาย ระบบจะแสดงว่าลดราคาในหน้าลูกค้า",
+    )
     unit_label = models.CharField(max_length=50, default='ชิ้น', verbose_name="หน่วยสินค้า")
     unit_detail = models.CharField(max_length=100, blank=True, default='', verbose_name="รายละเอียดหน่วย/ขนาด")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', verbose_name="หมวดหมู่")

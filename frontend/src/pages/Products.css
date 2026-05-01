@@ -120,7 +120,7 @@
 .floating-cart-wrapper {
   position: fixed;
   right: 12px;
-  bottom: calc(var(--mobile-bottom-nav-clearance, 72px) + 12px);
+  bottom: calc(var(--mobile-bottom-nav-clearance, 46px) + 8px);
   z-index: 1250;
   display: grid;
   gap: 6px;
@@ -285,7 +285,7 @@
 
   .floating-cart-wrapper {
     right: 10px;
-    bottom: calc(var(--mobile-bottom-nav-clearance, 72px) + 10px);
+    bottom: calc(var(--mobile-bottom-nav-clearance, 46px) + 8px);
   }
 
   .floating-cart-summary {

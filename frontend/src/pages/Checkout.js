@@ -626,6 +626,7 @@ const Checkout = () => {
     return (
       <div className="checkout-page">
         <div className="container">
+          <CustomerInlineBack />
           <div className="empty-cart">
             <h2>ไม่มีสินค้าในตะกร้า</h2>
             <Link to="/customer/products" className="btn btn-primary">

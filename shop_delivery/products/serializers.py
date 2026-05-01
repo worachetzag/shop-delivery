@@ -1,3 +1,4 @@
+from django.http import QueryDict
 from rest_framework import serializers
 
 
@@ -18,6 +19,24 @@ from .models import (
     StockMovement,
     Supplier,
 )
+
+
+def _normalize_product_payload(initial_data):
+    """Multipart forms send ''; treat as null for nullable compare_at_price."""
+    if isinstance(initial_data, QueryDict):
+        flat = {}
+        for key in initial_data.keys():
+            values = initial_data.getlist(key)
+            flat[key] = values[0] if len(values) == 1 else values
+        if flat.get('compare_at_price') == '':
+            flat['compare_at_price'] = None
+        return flat
+    if isinstance(initial_data, dict):
+        merged = dict(initial_data)
+        if merged.get('compare_at_price') == '':
+            merged['compare_at_price'] = None
+        return merged
+    return initial_data
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -43,11 +62,33 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'unit_label', 'unit_detail', 'category', 'category_name',
+        fields = ['id', 'name', 'description', 'price', 'compare_at_price', 'unit_label', 'unit_detail', 'category', 'category_name',
                  'image', 'stock_quantity', 'reserved_quantity', 'available_quantity', 'min_stock_level',
                  'is_low_stock', 'is_available', 'is_special_offer',
                  'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at', 'reserved_quantity', 'available_quantity', 'is_low_stock']
+
+    def to_internal_value(self, initial_data):
+        return super().to_internal_value(_normalize_product_payload(initial_data))
+
+    def validate(self, attrs):
+        instance = getattr(self, 'instance', None)
+        price = attrs.get('price')
+        if price is None and instance is not None:
+            price = instance.price
+
+        if 'compare_at_price' in attrs:
+            compare = attrs['compare_at_price']
+        elif instance is not None:
+            compare = instance.compare_at_price
+        else:
+            compare = None
+
+        if compare is not None and price is not None and compare <= price:
+            raise serializers.ValidationError({
+                'compare_at_price': 'ราคาก่อนลดต้องมากกว่าราคาขาย',
+            })
+        return attrs
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

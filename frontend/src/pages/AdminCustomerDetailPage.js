@@ -106,7 +106,8 @@ const AdminCustomerDetailPage = () => {
       <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>{displayName}</h1>
       <p style={{ margin: '0 0 16px', color: '#666' }}>
         @{u.username || '—'}
-        {u.email ? ` · ${u.email}` : ''}
+        {customer.contact_email ? ` · อีเมลลูกค้า: ${customer.contact_email}` : ''}
+        {!customer.contact_email && u.email ? ` · ${u.email}` : ''}
       </p>
 
       <div className="admin-stats" style={{ marginBottom: 16 }}>
@@ -146,6 +147,14 @@ const AdminCustomerDetailPage = () => {
             <tr>
               <th style={{ width: 180 }}>เบอร์โทร</th>
               <td>{customer.phone_number || '—'}</td>
+            </tr>
+            <tr>
+              <th>อีเมลติดต่อ (จากลูกค้า)</th>
+              <td>{customer.contact_email || '—'}</td>
+            </tr>
+            <tr>
+              <th>อีเมลบัญชีระบบ</th>
+              <td>{u.email || '—'}</td>
             </tr>
             <tr>
               <th>สมัครเมื่อ</th>

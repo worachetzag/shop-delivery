@@ -4,6 +4,7 @@ import { productsService, cartService } from '../services/api';
 import { usePopup } from '../components/PopupProvider';
 import { PLACEHOLDER_IMAGES, pickProductImage } from '../utils/media';
 import { formatBahtAmount } from '../utils/formatPrice';
+import { getProductCompareAtPrice } from '../utils/productPricing';
 import { peekCustomerListingScrollRestore } from '../utils/listingScrollRestore';
 import { displayProductLineName } from '../utils/helpers';
 import CustomerInlineBack from '../components/CustomerInlineBack';
@@ -206,6 +207,7 @@ const ProductDetail = () => {
   }
 
   const cartLineDisplayAmount = Number(product.price || 0) * Number(qty || 0);
+  const detailCompareAt = getProductCompareAtPrice(product);
 
   return (
     <div className="product-detail-page">
@@ -235,7 +237,12 @@ const ProductDetail = () => {
               <p className="product-detail-category">หมวดหมู่: {resolveCategoryLabel(product)}</p>
             )}
             <p className="product-detail-price">
-              <span className="product-detail-price-value">{formatBahtAmount(product.price)}</span>
+              {detailCompareAt != null && (
+                <span className="product-detail-price-compare">{formatBahtAmount(detailCompareAt)} บาท</span>
+              )}
+              <span className={`product-detail-price-value${detailCompareAt != null ? ' product-detail-price-value--sale' : ''}`}>
+                {formatBahtAmount(product.price)}
+              </span>
               <span className="product-detail-price-unit"> บาท</span>
               {(product.unit_label || product.unit_detail) && (
                 <span className="product-detail-price-meta">
@@ -289,27 +296,39 @@ const ProductDetail = () => {
               role="region"
               aria-label="สินค้าที่เกี่ยวข้อง — เลื่อนดูด้านข้าง"
             >
-              {relatedProducts.map((item) => (
-                <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
-                  <div className="related-product-image-wrap">
-                    {item.is_special_offer && <span className="related-product-badge">ราคาพิเศษ</span>}
-                    <img
-                      src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
-                      alt={item.name}
-                      onError={(e) => {
-                        e.currentTarget.src = PLACEHOLDER_IMAGES.lg;
-                      }}
-                    />
-                  </div>
-                  <div className="related-product-info">
-                    <div className="related-product-name">{item.name}</div>
-                    <div className="related-product-price">
-                      <span className="related-product-price-value">{formatBahtAmount(item.price)}</span>
-                      <span className="related-product-price-unit"> บาท</span>
+              {relatedProducts.map((item) => {
+                const relCmp = getProductCompareAtPrice(item);
+                return (
+                  <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
+                    <div className="related-product-image-wrap">
+                      {(relCmp != null || item.is_special_offer) && (
+                        <span className="related-product-badge">{relCmp != null ? 'ลดราคา' : 'ราคาพิเศษ'}</span>
+                      )}
+                      <img
+                        src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
+                        alt={item.name}
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGES.lg;
+                        }}
+                      />
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="related-product-info">
+                      <div className="related-product-name">{item.name}</div>
+                      <div className="related-product-price">
+                        {relCmp != null && (
+                          <span className="related-product-price-compare">{formatBahtAmount(relCmp)} </span>
+                        )}
+                        <span
+                          className={`related-product-price-value${relCmp != null ? ' related-product-price-value--sale' : ''}`}
+                        >
+                          {formatBahtAmount(item.price)}
+                        </span>
+                        <span className="related-product-price-unit"> บาท</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
