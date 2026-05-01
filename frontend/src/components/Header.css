@@ -142,13 +142,13 @@
   bottom: 0;
   align-items: stretch;
   justify-content: space-around;
-  gap: 1px;
-  padding: 2px 4px calc(3px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.94);
-  border-top: 1px solid rgba(226, 232, 230, 0.95);
-  box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  gap: 2px;
+  padding: 10px 6px calc(10px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: none;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   display: none;
   z-index: 1100;
 }
@@ -196,6 +196,17 @@
     background: rgba(0, 177, 79, 0.14);
     color: var(--brand-primary-strong);
   }
+
+  .liff-bottom-nav--customer a:not(.active):hover {
+    background: #f8fafc;
+    color: #334155;
+  }
+
+  .liff-bottom-nav--customer a.active:hover {
+    background: #ecfdf5;
+    color: #047857;
+    box-shadow: inset 0 0 0 1px #6ee7b7;
+  }
 }
 
 .liff-bottom-nav a.active {
@@ -208,21 +219,22 @@
   display: none;
 }
 
-/* Compact customer bar — shorter so floating cart / sheets stay usable */
+/* ลูกค้า — ข้อความล้วน เม็ดเขียวตอน active (คล้ายแอปร้านสะดวกซื้อ) */
 .liff-bottom-nav--customer a {
   flex-direction: column;
   gap: 0;
-  min-height: 34px;
-  padding: 3px 2px 4px;
-  font-size: 0.56rem;
+  min-height: 40px;
+  padding: 6px 6px;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #64748b;
-  border-radius: 9px;
+  letter-spacing: 0.01em;
+  color: #475569;
+  border-radius: 999px;
+  background: transparent;
 }
 
 .liff-bottom-nav--customer a span {
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -230,9 +242,10 @@
 }
 
 .liff-bottom-nav--customer a.active {
-  background: rgba(0, 177, 79, 0.12);
-  color: var(--brand-primary-strong);
-  box-shadow: inset 0 0 0 1px rgba(0, 177, 79, 0.22);
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px #6ee7b7;
 }
 
 .liff-bottom-nav--driver {

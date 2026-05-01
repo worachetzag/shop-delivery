@@ -12,7 +12,7 @@
   background: var(--surface-bg);
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.03), 0 8px 22px rgba(15, 23, 42, 0.1);
   /* ความสูงโดยประมาณของแถบล่าง + home indicator — ใช้คู่กับ floating cart / toast */
-  --mobile-bottom-nav-clearance: calc(42px + env(safe-area-inset-bottom));
+  --mobile-bottom-nav-clearance: calc(56px + env(safe-area-inset-bottom));
 }
 
 .App.app-role-admin {

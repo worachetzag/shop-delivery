@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import CategoryChipsRow from '../components/CategoryChipsRow';
+import CustomerCategoryStrip from '../components/CustomerCategoryStrip';
 import ApiPaginationBar from '../components/ApiPaginationBar';
 import { productsService, cartService } from '../services/api';
 import './Products.css';
@@ -51,19 +51,15 @@ const Products = () => {
     setPage(1);
   }, [categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly]);
 
-  const handleCategoryChange = useCallback(
-    (cid) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (cid) next.set('category_id', cid);
-          else next.delete('category_id');
-          return next;
-        },
-        { replace: true },
-      );
+  const categoryStripHref = useCallback(
+    (categoryId) => {
+      const next = new URLSearchParams(searchParams);
+      if (categoryId) next.set('category_id', categoryId);
+      else next.delete('category_id');
+      const qs = next.toString();
+      return qs ? `/customer/products?${qs}` : '/customer/products';
     },
-    [setSearchParams],
+    [searchParams],
   );
 
   useEffect(() => {
@@ -250,12 +246,17 @@ const Products = () => {
             />
           </div>
 
-          <CategoryChipsRow
-            categories={categories}
-            value={categoryIdFromUrl}
-            onChange={handleCategoryChange}
-            ariaLabel="หมวดหมู่สินค้า"
-          />
+          {categories.length > 0 ? (
+            <CustomerCategoryStrip
+              categories={categories}
+              showSeeAllLink={false}
+              showAllTile
+              selectedCategoryId={categoryIdFromUrl}
+              resolveHref={categoryStripHref}
+              headingId="products-category-strip-heading"
+              noOuterContainer
+            />
+          ) : null}
 
           {(featuredOnly || onSaleOnly) && (
             <div className="products-filter-banners">

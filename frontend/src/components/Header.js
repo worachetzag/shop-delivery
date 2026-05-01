@@ -95,6 +95,10 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   const isMobileView = isMobile || isTablet;
   const isActive = (path) => location.pathname === path;
   const isActiveGroup = (paths) => paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  const isCustomerHomeActive =
+    location.pathname === '/customer' || location.pathname === '/customer/';
+  const isCustomerProductsActive =
+    location.pathname === '/customer/products' || location.pathname.startsWith('/customer/products/');
   const isDriverMode = location.pathname.startsWith('/driver');
   const showTopMenu = !isMobileView && isDriverMode;
   const shouldHideTopBar =
@@ -115,8 +119,8 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
                 <Link to="/driver/dashboard" className={isActiveGroup(['/driver/dashboard', '/driver/assignments']) ? 'active' : ''}>งานของคนขับ</Link>
               ) : (
                 <>
-                  <Link to="/customer" className={isActive('/customer') ? 'active' : ''}>หน้าแรก</Link>
-                  <Link to="/customer/products" className={isActive('/customer/products') ? 'active' : ''}>สินค้า</Link>
+                  <Link to="/customer" className={isCustomerHomeActive ? 'active' : ''}>หน้าแรก</Link>
+                  <Link to="/customer/products" className={isCustomerProductsActive ? 'active' : ''}>สินค้า</Link>
                   <Link to="/customer/orders" className={isActive('/customer/orders') ? 'active' : ''}>คำสั่งซื้อ</Link>
                   <Link to="/customer/orders" className={isActiveGroup(['/customer/tracking', '/customer/orders']) ? 'active' : ''}>ติดตาม</Link>
                 </>
@@ -174,10 +178,10 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
             </>
           ) : (
             <>
-              <Link to="/customer" className={isActive('/customer') ? 'active' : ''}>
+              <Link to="/customer" className={isCustomerHomeActive ? 'active' : ''}>
                 <span>หน้าแรก</span>
               </Link>
-              <Link to="/customer/products" className={isActive('/customer/products') ? 'active' : ''}>
+              <Link to="/customer/products" className={isCustomerProductsActive ? 'active' : ''}>
                 <span>สินค้า</span>
               </Link>
               <Link to="/customer/cart" className={isActive('/customer/cart') ? 'active' : ''}>

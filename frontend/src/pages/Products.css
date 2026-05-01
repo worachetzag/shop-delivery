@@ -1,5 +1,3 @@
-@import '../components/CategoryChipsRow.css';
-
 /* Products Page Styles */
 .products-page {
   min-height: 100vh;
@@ -41,10 +39,6 @@
   font-size: 0.95rem;
   padding: 0.72rem 0.78rem;
   border-radius: 10px;
-}
-
-.filters-section .category-chips-scroll {
-  --category-chips-fade-bg: #fff;
 }
 
 .products-filter-banners {
