@@ -9,6 +9,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
   useEffect(() => {
     const verifyAuth = async () => {
       const urlParams = new URLSearchParams(location.search);
@@ -19,6 +20,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
 
       if (!token) {
         setIsAuthenticated(false);
+        setNeedsProfileCompletion(false);
         setIsChecking(false);
         return;
       }
@@ -36,6 +38,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
         if (!requireAdmin && !requireDriver && DRIVER_ROLES.includes(userRole)) {
           // Driver should not access customer-only protected pages.
           setIsAuthenticated(true);
+          setNeedsProfileCompletion(false);
           setIsChecking(false);
           return;
         }
@@ -45,6 +48,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
           const userRole = localStorage.getItem('user_role');
           if (!ADMIN_ROLES.includes(userRole || '')) {
             setIsAuthenticated(false);
+            setNeedsProfileCompletion(false);
             setIsChecking(false);
             return;
           }
@@ -63,6 +67,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
           const userRole = localStorage.getItem('user_role');
           if (!DRIVER_ROLES.includes(userRole || '')) {
             setIsAuthenticated(false);
+            setNeedsProfileCompletion(false);
             setIsChecking(false);
             return;
           }
@@ -101,10 +106,21 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
             localStorage.removeItem('username');
           }
           setIsAuthenticated(false);
+          setNeedsProfileCompletion(false);
           setIsChecking(false);
           return;
         }
 
+        let incomplete = false;
+        if (!requireAdmin && !requireDriver && !DRIVER_ROLES.includes(localStorage.getItem('user_role') || '')) {
+          try {
+            const profilePayload = await response.json();
+            incomplete = profilePayload && profilePayload.profile_completed === false;
+          } catch {
+            incomplete = false;
+          }
+        }
+        setNeedsProfileCompletion(Boolean(incomplete));
         setIsAuthenticated(true);
       } catch (error) {
         if (requireAdmin) {
@@ -115,6 +131,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
         localStorage.removeItem('user_role');
         localStorage.removeItem('username');
         setIsAuthenticated(false);
+        setNeedsProfileCompletion(false);
       } finally {
         setIsChecking(false);
       }
@@ -132,6 +149,22 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
   }
 
   const userRole = localStorage.getItem('user_role');
+  /** ตรวจผ่าน accounts/api-profile/ แล้ว — ถ้ายังไม่ครบให้จับอยู่หน้าโปรไฟล์ (ไม่พึ่ง user_role เพราะบางเซสชันอาจว่าง) */
+  if (
+    needsProfileCompletion
+    && !requireAdmin
+    && !requireDriver
+    && location.pathname !== '/customer/profile'
+  ) {
+    return (
+      <Navigate
+        to="/customer/profile?section=personal&complete=required"
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
   if (!requireAdmin && !requireDriver && DRIVER_ROLES.includes(userRole || '')) {
     return <Navigate to="/driver/dashboard" replace state={{ from: location }} />;
   }

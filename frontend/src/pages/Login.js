@@ -28,6 +28,11 @@ const Login = () => {
           });
           if (cancelled) return;
           if (res.ok) {
+            const profile = await res.json().catch(() => ({}));
+            if (profile && profile.profile_completed === false) {
+              navigate('/customer/profile?section=personal&complete=required', { replace: true });
+              return;
+            }
             navigate('/customer', { replace: true });
             return;
           }

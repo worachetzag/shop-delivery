@@ -32,6 +32,7 @@ import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
+import config from './config';
 import './App.css';
 
 const LIFF_PAGE_ROUTES = {
@@ -124,6 +125,46 @@ function AppContent() {
     ) {
       navigate('/customer', { replace: true });
     }
+  }, [location.pathname, navigate]);
+
+  /** ลูกค้าที่ล็อกอินแล้วแต่ยังไม่กรอกโปรไฟล์ครบ — จำกัดอยู่หน้าโปรไฟล์ / login */
+  useEffect(() => {
+    let cancelled = false;
+    const token = localStorage.getItem('auth_token');
+    const role = localStorage.getItem('user_role') || '';
+    if (!token) return;
+    if (['admin', 'store_admin', 'super_admin', 'driver'].includes(role)) return;
+
+    const path = location.pathname;
+    const inCustomerShop = path.startsWith('/customer') || path.startsWith('/products');
+    if (!inCustomerShop) return;
+    if (path.startsWith('/customer/profile') || path === '/customer/login') return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${config.API_BASE_URL}accounts/api-profile/`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (data.profile_completed === false) {
+          navigate('/customer/profile?section=personal&complete=required', { replace: true });
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, navigate]);
 
   useEffect(() => {

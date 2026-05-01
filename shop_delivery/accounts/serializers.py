@@ -5,6 +5,7 @@ from django.db.models.functions import Coalesce
 
 from orders.models import Order
 from .models import Customer, CustomerAddress, LineUser, UserRole, DriverProfile, AdminProfile, StaffAuditLog
+from .validators import refresh_customer_profile_completed
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,9 +22,10 @@ class CustomerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Customer
-        fields = ['id', 'user', 'user_info', 'id_card_number', 'date_of_birth', 
-                 'address', 'phone_number', 'contact_email', 'latitude', 'longitude', 'picture_url', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = ['id', 'user', 'user_info', 'id_card_number', 'date_of_birth',
+                  'address', 'phone_number', 'contact_email', 'latitude', 'longitude',
+                  'picture_url', 'profile_completed', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'profile_completed']
     
     def get_picture_url(self, obj):
         """ดึงรูปโปรไฟล์จาก LineUser ถ้ามี"""
@@ -57,6 +59,8 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
         
         user = User.objects.create_user(**user_data)
         customer = Customer.objects.create(user=user, **validated_data)
+        refresh_customer_profile_completed(customer)
+        customer.save(update_fields=['profile_completed'])
         return customer
 
 

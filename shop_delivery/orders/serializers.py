@@ -1,4 +1,5 @@
 from collections import Counter
+from typing import Optional, Tuple
 
 from django.db import transaction
 from rest_framework import serializers
@@ -9,6 +10,14 @@ from .models import Order, OrderItem, DriverAssignment
 from products.models import Product
 from products.stock import apply_stock_movement
 from accounts.models import Customer, CustomerAddress
+
+
+def _normalize_thai_mobile_ten_digits(raw) -> Tuple[Optional[str], Optional[str]]:
+    """คืนค่า (ตัวเลข 10 หลัก, ข้อความ error) — เก็บแค่ตัวเลขในระบบ"""
+    digits = ''.join(ch for ch in str(raw or '') if ch.isdigit())
+    if len(digits) != 10:
+        return None, 'กรุณากรอกเบอร์โทร 10 หลัก (เช่น 0812345678)'
+    return digits, None
 
 
 def _format_delivery_address_from_saved(addr: CustomerAddress) -> str:
@@ -146,13 +155,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order_type = data.get('order_type')
         if order_type == 'pickup':
             data['delivery_distance'] = None
-            phone = (data.get('delivery_phone') or '').strip()
-            digits = ''.join(ch for ch in phone if ch.isdigit())
-            if len(digits) < 9:
-                raise serializers.ValidationError({
-                    'delivery_phone': 'กรุณากรอกเบอร์โทรติดต่ออย่างน้อย 9 หลักสำหรับการรับที่ร้าน',
-                })
-            data['delivery_phone'] = phone
+            digits_ok, phone_err = _normalize_thai_mobile_ten_digits(data.get('delivery_phone'))
+            if phone_err:
+                raise serializers.ValidationError({'delivery_phone': phone_err})
+            data['delivery_phone'] = digits_ok
             return data
 
         ca_id = data.get('customer_address_id')
@@ -197,10 +203,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         addr = (data.get('delivery_address') or '').strip()
         if not addr:
             raise serializers.ValidationError({
-                'delivery_address': (
-                    'กรุณาระบุที่อยู่จัดส่ง หรือส่ง customer_address_id '
-                    'เพื่อเลือกจากที่อยู่ที่บันทึกไว้'
-                ),
+                'delivery_address': 'กรุณาระบุที่อยู่จัดส่ง',
             })
 
         o_lat, o_lng = get_delivery_origin_lat_lng()
@@ -232,6 +235,11 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'delivery_distance': 'ระยะทางต้องไม่ติดลบ',
                 })
+
+        digits_ok, phone_err = _normalize_thai_mobile_ten_digits(data.get('delivery_phone'))
+        if phone_err:
+            raise serializers.ValidationError({'delivery_phone': phone_err})
+        data['delivery_phone'] = digits_ok
 
         return data
 

@@ -10,7 +10,8 @@ from django.contrib.auth import authenticate
 from django.http import HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
+from django.db import transaction, IntegrityError
+from datetime import datetime
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.db.models import Count, DecimalField, Max, Q, Sum, Value
@@ -122,6 +123,12 @@ from .serializers import (
 )
 from .permissions import is_admin_user, can_manage_staff_accounts
 from .staff_audit import log_staff_audit
+from .validators import (
+    is_reasonable_customer_dob,
+    is_valid_thai_citizen_id,
+    refresh_customer_profile_completed,
+    thai_citizen_id_digits,
+)
 
 
 class CustomerLoginView(generics.GenericAPIView):
@@ -826,12 +833,59 @@ class CustomerProfileView(generics.RetrieveUpdateDestroyAPIView):
                 'is_authenticated': request.user.is_authenticated
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # อัพเดทข้อมูลโดยตรง
-        if 'address' in request.data:
-            instance.address = request.data['address']
-        if 'phone_number' in request.data:
-            instance.phone_number = request.data['phone_number']
-        if 'contact_email' in request.data or 'email' in request.data:
+        user = request.user
+        data = request.data
+
+        if 'first_name' in data:
+            user.first_name = str(data.get('first_name') or '').strip()[:150]
+        if 'last_name' in data:
+            user.last_name = str(data.get('last_name') or '').strip()[:150]
+        if 'first_name' in data or 'last_name' in data:
+            user.save(update_fields=['first_name', 'last_name'])
+
+        if 'id_card_number' in data:
+            nid = thai_citizen_id_digits(str(data.get('id_card_number') or ''))
+            if len(nid) != 13:
+                return Response(
+                    {'error': 'เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not is_valid_thai_citizen_id(nid):
+                return Response(
+                    {'error': 'เลขบัตรประชาชนไม่ถูกต้อง'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            instance.id_card_number = nid
+
+        if 'date_of_birth' in data:
+            raw_dob = data.get('date_of_birth')
+            parsed = None
+            if hasattr(raw_dob, 'year'):
+                parsed = raw_dob
+            elif raw_dob not in (None, ''):
+                try:
+                    parsed = datetime.strptime(str(raw_dob).strip()[:10], '%Y-%m-%d').date()
+                except ValueError:
+                    parsed = None
+            if parsed is None:
+                return Response(
+                    {'error': 'วันเกิดไม่ถูกต้อง (ใช้รูปแบบ ค.ศ. YYYY-MM-DD)'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not is_reasonable_customer_dob(parsed):
+                return Response(
+                    {'error': 'วันเกิดอยู่นอกช่วงที่ใช้ได้'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            instance.date_of_birth = parsed
+
+        if 'address' in data:
+            instance.address = str(data.get('address') or '').strip()
+
+        if 'phone_number' in data:
+            instance.phone_number = str(data.get('phone_number') or '').strip()[:15]
+
+        if 'contact_email' in data or 'email' in data:
             raw = (
                 request.data['contact_email']
                 if 'contact_email' in request.data
@@ -846,12 +900,20 @@ class CustomerProfileView(generics.RetrieveUpdateDestroyAPIView):
                     else 'รูปแบบอีเมลไม่ถูกต้อง'
                 )
                 return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
-        if 'latitude' in request.data and request.data['latitude']:
-            instance.latitude = request.data['latitude']
-        if 'longitude' in request.data and request.data['longitude']:
-            instance.longitude = request.data['longitude']
-        
-        instance.save()
+
+        if 'latitude' in data and data['latitude']:
+            instance.latitude = data['latitude']
+        if 'longitude' in data and data['longitude']:
+            instance.longitude = data['longitude']
+
+        refresh_customer_profile_completed(instance)
+        try:
+            instance.save()
+        except IntegrityError:
+            return Response(
+                {'error': 'เลขบัตรประชาชนซ้ำกับผู้ใช้อื่นในระบบ'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
         serializer = self.get_serializer(instance)
         
@@ -1154,9 +1216,11 @@ def line_login_callback(request):
         
         # Redirect กลับไปที่ frontend พร้อม token
         logger.info(f"Redirecting to frontend with token for user: {user.username}")
-        phone_digits = ''.join(ch for ch in str(getattr(customer, 'phone_number', '') or '') if ch.isdigit())
-        needs_phone_completion = len(phone_digits) < 9
-        next_path = '/customer/profile?section=personal&complete=phone' if needs_phone_completion else '/customer'
+        next_path = (
+            '/customer/profile?section=personal&complete=required'
+            if not getattr(customer, 'profile_completed', False)
+            else '/customer'
+        )
         query_sep = '&' if '?' in next_path else '?'
         role = getattr(getattr(user, 'user_role', None), 'role', None) or 'customer'
         auth_q = urlencode(

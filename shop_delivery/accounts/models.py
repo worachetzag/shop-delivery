@@ -140,6 +140,11 @@ class Customer(models.Model):
     # เพิ่ม lat/lon สำหรับเก็บพิกัดที่อยู่
     latitude = models.DecimalField(max_digits=18, decimal_places=15, null=True, blank=True, verbose_name="ละติจูด")
     longitude = models.DecimalField(max_digits=18, decimal_places=15, null=True, blank=True, verbose_name="ลองจิจูด")
+    profile_completed = models.BooleanField(
+        default=False,
+        verbose_name="กรอกโปรไฟล์ครบแล้ว",
+        help_text="ครบถ้ามีชื่อ–สกุล เลขบัตรประชาชนถูกต้อง วันเกิด ที่อยู่ เบอร์โทร",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

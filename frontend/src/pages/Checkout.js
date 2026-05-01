@@ -6,6 +6,7 @@ import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import CustomerInlineBack from '../components/CustomerInlineBack';
+import { clampPhoneTen, formatMobileTenDisplay } from '../utils/thaiFormInputs';
 import './Checkout.css';
 
 const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
@@ -19,7 +20,7 @@ function checkoutShippingIssues(shippingInfo, paymentMethod) {
   const issues = [];
   if (!(shippingInfo.name || '').trim()) issues.push('ชื่อผู้รับ');
   const digits = (shippingInfo.phone || '').replace(/\D/g, '');
-  if (digits.length < 9) issues.push('เบอร์โทร (อย่างน้อย 9 หลัก)');
+  if (digits.length !== 10) issues.push('เบอร์โทรผู้รับ 10 หลัก');
   if (!(shippingInfo.address || '').trim()) issues.push('ที่อยู่จัดส่ง');
   if (!(shippingInfo.district || '').trim()) issues.push('อำเภอ/เขต');
   if (!(shippingInfo.province || '').trim()) issues.push('จังหวัด');
@@ -37,25 +38,8 @@ function checkoutPickupIssues(shippingInfo, paymentMethod) {
   const issues = [];
   if (!(shippingInfo.name || '').trim()) issues.push('ชื่อผู้มารับ');
   const digits = (shippingInfo.phone || '').replace(/\D/g, '');
-  if (digits.length < 9) issues.push('เบอร์โทรติดต่อ (อย่างน้อย 9 หลัก)');
+  if (digits.length !== 10) issues.push('เบอร์โทรติดต่อ 10 หลัก');
   if (!paymentMethod) issues.push('วิธีชำระเงิน');
-  return issues;
-}
-
-/** ตรวจที่อยู่ที่บันทึกไว้ (ใช้เมื่อส่งออเดอร์ด้วย customer_address_id) */
-function savedAddressIssues(addr) {
-  const issues = [];
-  if (!addr) issues.push('เลือกที่อยู่จัดส่ง');
-  if (addr) {
-    if (!(addr.recipient_name || '').trim()) issues.push('ชื่อผู้รับในที่อยู่ที่บันทึก');
-    const digits = (addr.phone_number || '').replace(/\D/g, '');
-    if (digits.length < 9) issues.push('เบอร์โทรในที่อยู่ที่บันทึก');
-    if (!(addr.address_line || '').trim()) issues.push('ที่อยู่ในที่อยู่ที่บันทึก');
-    if (!(addr.district || '').trim()) issues.push('อำเภอ/เขตในที่อยู่ที่บันทึก');
-    if (!(addr.province || '').trim()) issues.push('จังหวัดในที่อยู่ที่บันทึก');
-    if (!/^\d{5}$/.test((addr.postal_code || '').trim())) issues.push('รหัสไปรษณีย์ 5 หลักในที่อยู่ที่บันทึก');
-    if (addr.latitude == null || addr.longitude == null) issues.push('ที่อยู่ที่บันทึกนี้ยังไม่มีพิกัดสำหรับค่าส่ง');
-  }
   return issues;
 }
 
@@ -64,10 +48,6 @@ const Checkout = () => {
   const navigate = useNavigate();
   const shippingSectionRef = useRef(null);
   const [cartItems, setCartItems] = useState([]);
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState('');
-  /** true = แสดงฟอร์มกรอกเต็ม; false = เลือกจาก dropdown แล้วแสดงแค่สรุป */
-  const [manualShippingEntry, setManualShippingEntry] = useState(true);
   const [shippingInfo, setShippingInfo] = useState({
     name: '',
     phone: '',
@@ -97,21 +77,6 @@ const Checkout = () => {
   const [uploadingSlip, setUploadingSlip] = useState(false);
   /** หลังส่งสลิปสำเร็จ — ปิดปุ่มก่อน redirect กันกดซ้ำ */
   const [paymentSlipSubmitted, setPaymentSlipSubmitted] = useState(false);
-
-  const applyAddressToShipping = (address) => {
-    if (!address) return;
-    setShippingInfo((prev) => ({
-      ...prev,
-      name: address.recipient_name || prev.name,
-      phone: address.phone_number || prev.phone,
-      address: address.address_line || prev.address,
-      district: address.district || prev.district,
-      province: address.province || prev.province,
-      postalCode: address.postal_code || prev.postalCode,
-      latitude: address.latitude ?? prev.latitude,
-      longitude: address.longitude ?? prev.longitude,
-    }));
-  };
 
   const haversineDistanceKm = (lat1, lon1, lat2, lon2) => {
     const toRad = (v) => (Number(v) * Math.PI) / 180;
@@ -188,9 +153,9 @@ const Checkout = () => {
     loadStoreLocation();
   }, []);
 
-  // กรณี "กรอกที่อยู่เอง" ให้หาพิกัด (lat/lng) อัตโนมัติเพื่อคำนวณค่าส่งตามระยะทาง
+  // จัดส่ง: หาพิกัดจากที่อยู่ที่กรอกในหน้านี้ (กรอกใหม่ทุกครั้ง — ไม่ดึงจากโปรไฟล์)
   useEffect(() => {
-    if (fulfillmentMode !== 'delivery' || !manualShippingEntry) return;
+    if (fulfillmentMode !== 'delivery') return;
 
     if (shippingInfo?.latitude != null && shippingInfo?.longitude != null) return;
 
@@ -235,7 +200,6 @@ const Checkout = () => {
     };
   }, [
     fulfillmentMode,
-    manualShippingEntry,
     shippingInfo?.address,
     shippingInfo?.district,
     shippingInfo?.province,
@@ -284,36 +248,8 @@ const Checkout = () => {
           setShippingInfo((prev) => ({
             ...prev,
             name: prev.name || fullName,
-            phone: prev.phone || (profile?.phone_number || ''),
-            address: prev.address || (profile?.address || ''),
+            phone: prev.phone || clampPhoneTen(String(profile?.phone_number || '')),
           }));
-        }
-
-        const addressResponse = await fetch(`${config.API_BASE_URL}accounts/addresses/`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
-          credentials: 'include',
-        });
-        if (addressResponse.ok) {
-          const addressData = await addressResponse.json();
-          const list = Array.isArray(addressData)
-            ? addressData
-            : (Array.isArray(addressData?.results) ? addressData.results : []);
-          setAddresses(list);
-          const defaultAddress = list.find((addr) => addr.is_default) || list[0];
-          if (defaultAddress) {
-            setSelectedAddressId(String(defaultAddress.id));
-            applyAddressToShipping(defaultAddress);
-            setManualShippingEntry(false);
-          } else {
-            setManualShippingEntry(true);
-          }
-        } else {
-          setManualShippingEntry(true);
         }
 
         setLoading(false);
@@ -437,22 +373,13 @@ const Checkout = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setShippingInfo(prev => ({
+    let v = value;
+    if (name === 'phone') v = clampPhoneTen(value);
+    if (name === 'postalCode') v = String(value || '').replace(/\D/g, '').slice(0, 5);
+    setShippingInfo((prev) => ({
       ...prev,
-      [name]: value
+      [name]: v,
     }));
-  };
-
-  const handleSelectAddress = (e) => {
-    const nextId = e.target.value;
-    setSelectedAddressId(nextId);
-    if (!nextId) {
-      setManualShippingEntry(true);
-      return;
-    }
-    setManualShippingEntry(false);
-    const selected = addresses.find((addr) => String(addr.id) === String(nextId));
-    applyAddressToShipping(selected);
   };
 
   const handleSubmit = async (e) => {
@@ -461,20 +388,9 @@ const Checkout = () => {
       return;
     }
 
-    const selectedSavedAddress = selectedAddressId
-      ? addresses.find((a) => String(a.id) === String(selectedAddressId))
-      : null;
-    const useSavedAddressFlow =
-      addresses.length > 0 &&
-      selectedSavedAddress &&
-      !manualShippingEntry;
-
     let issues = [];
     if (fulfillmentMode === 'pickup') {
       issues = [...checkoutPickupIssues(shippingInfo, paymentMethod)];
-    } else if (useSavedAddressFlow) {
-      issues = [...savedAddressIssues(selectedSavedAddress)];
-      if (!paymentMethod) issues.push('วิธีชำระเงิน');
     } else {
       issues = [...checkoutShippingIssues(shippingInfo, paymentMethod)];
     }
@@ -488,7 +404,7 @@ const Checkout = () => {
       const goProfile = await popup.confirm(
         fulfillmentMode === 'pickup'
           ? 'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อและเบอร์โทรหรือไม่?'
-          : 'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อ เบอร์โทร และที่อยู่จัดส่งหรือไม่?',
+          : 'ต้องการไปหน้าโปรไฟล์เพื่อแก้ชื่อหรือเบอร์ในบัญชีหรือไม่? (ที่อยู่จัดส่งกรอกในหน้านี้ทุกครั้ง)',
         {
           title: 'ยืนยันคำสั่งซื้อ',
           confirmText: 'ไปหน้าโปรไฟล์',
@@ -509,14 +425,6 @@ const Checkout = () => {
     try {
       const token = localStorage.getItem('auth_token');
 
-      const selectedSaved = selectedAddressId
-        ? addresses.find((a) => String(a.id) === String(selectedAddressId))
-        : null;
-      const useSaved =
-        addresses.length > 0 &&
-        selectedSaved &&
-        !manualShippingEntry;
-
       let orderData;
       if (fulfillmentMode === 'pickup') {
         const storeLine = ['รับที่ร้าน', storeListing.name, storeListing.address].filter(Boolean).join(' — ');
@@ -527,21 +435,8 @@ const Checkout = () => {
           order_type: 'pickup',
           payment_method: paymentMethod,
           delivery_address: storeLine || 'รับที่ร้าน',
-          delivery_phone: (shippingInfo.phone || '').trim(),
+          delivery_phone: clampPhoneTen(shippingInfo.phone),
           delivery_notes: noteParts.join(' · ') || 'รับสินค้าที่ร้าน',
-          items: cartItems.map((item) => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-          })),
-        };
-      } else if (useSaved) {
-        const recipient =
-          (selectedSaved.recipient_name || '').trim() || shippingInfo.name || '';
-        orderData = {
-          order_type: 'delivery',
-          payment_method: paymentMethod,
-          customer_address_id: Number(selectedAddressId),
-          delivery_notes: recipient ? `ผู้รับ: ${recipient}` : '',
           items: cartItems.map((item) => ({
             product_id: item.productId,
             quantity: item.quantity,
@@ -555,7 +450,7 @@ const Checkout = () => {
           order_type: 'delivery',
           payment_method: paymentMethod,
           delivery_address: fullAddress,
-          delivery_phone: shippingInfo.phone,
+          delivery_phone: clampPhoneTen(shippingInfo.phone),
           delivery_notes: `ผู้รับ: ${shippingInfo.name}`,
           delivery_latitude: shippingInfo.latitude,
           delivery_longitude: shippingInfo.longitude,
@@ -680,24 +575,14 @@ const Checkout = () => {
     );
   }
 
-  const selectedSavedAddress = selectedAddressId
-    ? addresses.find((a) => String(a.id) === String(selectedAddressId))
-    : null;
-  const useSavedAddressFlow =
-    addresses.length > 0 &&
-    selectedSavedAddress &&
-    !manualShippingEntry;
   const hasDeliveryFeeReady =
     fulfillmentMode === 'pickup'
       ? true
       : deliveryFeeEstimate != null && !deliveryFeeError && !loadingDeliveryFeeEstimate;
-  /** โหมดจัดส่ง: ถ้าเลือกที่อยู่จากรายการต้องมี id; ถ้ากรอกเองระบบตรวจตอนกดส่ง */
-  const deliveryAddressReady =
-    fulfillmentMode !== 'delivery' ? true : (useSavedAddressFlow ? Boolean(selectedSavedAddress) : true);
   const canSubmitOrder =
     fulfillmentMode === 'pickup'
       ? Boolean(paymentMethod) && hasDeliveryFeeReady && !submitting && !createdOrderId
-      : Boolean(paymentMethod) && deliveryAddressReady && hasDeliveryFeeReady && !submitting && !createdOrderId;
+      : Boolean(paymentMethod) && hasDeliveryFeeReady && !submitting && !createdOrderId;
 
   return (
     <div className="checkout-page">
@@ -825,14 +710,16 @@ const Checkout = () => {
                     placeholder="ชื่อ–นามสกุล"
                     autoComplete="name"
                   />
-                  <label className="form-label">เบอร์โทรติดต่อ</label>
+                  <label className="form-label">เบอร์โทรติดต่อ (10 หลัก)</label>
                   <input
                     name="phone"
                     type="tel"
+                    inputMode="numeric"
                     className="form-input"
-                    value={shippingInfo.phone}
+                    maxLength={12}
+                    value={formatMobileTenDisplay(shippingInfo.phone)}
                     onChange={handleInputChange}
-                    placeholder="เบอร์โทร (อย่างน้อย 9 หลัก)"
+                    placeholder="0812345678"
                     autoComplete="tel"
                   />
                   <label className="form-label">หมายเหตุถึงร้าน (ไม่บังคับ)</label>
@@ -846,64 +733,81 @@ const Checkout = () => {
                   />
                 </div>
               ) : (
-                <>
-              <div className="address-book customer-form-stack">
-                <div className="address-book-header">
-                  <label className="form-label">เลือกที่อยู่ที่บันทึกไว้</label>
-                  <Link
-                    to="/customer/profile?section=addresses&from=checkout&add=1"
-                    className="btn btn-outline btn-sm"
-                  >
-                    เพิ่มที่อยู่ในโปรไฟล์
-                  </Link>
-                </div>
-                <p className="address-checkout-hint">
-                  เพิ่มที่อยู่พร้อมแผนที่ได้ที่โปรไฟล์ — หลังบันทึกจะกลับมาหน้านี้อัตโนมัติ
-                </p>
-                {addresses.length > 0 ? (
-                  <select
-                    className="form-input"
-                    value={selectedAddressId}
-                    onChange={handleSelectAddress}
-                  >
-                    <option value="">— กรุณาเลือกที่อยู่จัดส่ง —</option>
-                    {addresses.map((addr) => (
-                      <option key={addr.id} value={addr.id}>
-                        {(addr.label || 'ที่อยู่')} - {addr.address_line}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="address-empty">ยังไม่มีที่อยู่ — กด «เพิ่มที่อยู่ในโปรไฟล์» ด้านบน</p>
-                )}
-              </div>
-
-              {useSavedAddressFlow ? (
-                <div className="saved-address-summary">
-                  <p className="saved-address-summary-title">ใช้ที่อยู่ที่เลือก</p>
-                  <p><strong>ชื่อผู้รับ:</strong> {selectedSavedAddress.recipient_name || '—'}</p>
-                  <p><strong>เบอร์โทร:</strong> {selectedSavedAddress.phone_number || '—'}</p>
-                  <p><strong>ที่อยู่:</strong> {selectedSavedAddress.address_line || '—'}</p>
-                  <p>
-                    <strong>อำเภอ/จังหวัด:</strong>{' '}
-                    {[selectedSavedAddress.district, selectedSavedAddress.province].filter(Boolean).join(' ') || '—'}
+                <div className="delivery-each-order-panel customer-form-stack">
+                  <p className="muted checkout-delivery-each-order-hint" style={{ margin: '0 0 12px', fontSize: '0.92rem' }}>
+                    <strong>ที่อยู่จัดส่ง</strong> ต้องกรอกใหม่ทุกครั้งที่สั่ง — ไม่ใช้ที่อยู่ในโปรไฟล์
+                    (ที่อยู่ในโปรไฟล์เป็นที่อยู่ตามบัตร/ติดต่อเท่านั้น)
                   </p>
-                  <p><strong>รหัสไปรษณีย์:</strong> {selectedSavedAddress.postal_code || '—'}</p>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm saved-address-edit-btn"
-                    onClick={() => setManualShippingEntry(true)}
-                  >
-                    กรอกหรือแก้ไขที่อยู่เอง
-                  </button>
+
+                  <label className="form-label">ชื่อผู้รับ</label>
+                  <input
+                    name="name"
+                    type="text"
+                    className="form-input"
+                    value={shippingInfo.name}
+                    onChange={handleInputChange}
+                    placeholder="ชื่อ–นามสกุล"
+                    autoComplete="name"
+                  />
+
+                  <label className="form-label">เบอร์โทรผู้รับ (10 หลัก)</label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    className="form-input"
+                    maxLength={12}
+                    value={formatMobileTenDisplay(shippingInfo.phone)}
+                    onChange={handleInputChange}
+                    placeholder="0812345678"
+                    autoComplete="tel"
+                  />
+
+                  <label className="form-label">ที่อยู่จัดส่ง (เลขที่ ถนน ซอย)</label>
+                  <textarea
+                    name="address"
+                    className="form-textarea"
+                    rows={3}
+                    value={shippingInfo.address}
+                    onChange={handleInputChange}
+                    placeholder="ระบุที่อยู่จัดส่งครั้งนี้"
+                  />
+
+                  <label className="form-label">อำเภอ/เขต</label>
+                  <input
+                    name="district"
+                    type="text"
+                    className="form-input"
+                    value={shippingInfo.district}
+                    onChange={handleInputChange}
+                  />
+
+                  <label className="form-label">จังหวัด</label>
+                  <input
+                    name="province"
+                    type="text"
+                    className="form-input"
+                    value={shippingInfo.province}
+                    onChange={handleInputChange}
+                  />
+
+                  <label className="form-label">รหัสไปรษณีย์ 5 หลัก</label>
+                  <input
+                    name="postalCode"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input"
+                    value={shippingInfo.postalCode}
+                    onChange={handleInputChange}
+                    maxLength={5}
+                  />
+
+                  {(geocoding || geocodingError) && (
+                    <p className="muted" style={{ margin: '8px 0 0', fontSize: '0.88rem' }}>
+                      {geocoding ? 'กำลังหาพิกัดจากที่อยู่เพื่อคำนวณค่าส่ง…' : geocodingError}
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <div className="saved-address-summary">
-                  <p className="saved-address-summary-title">ยังไม่ได้เลือกที่อยู่จัดส่ง</p>
-                  <p>กรุณาเพิ่มที่อยู่ใหม่ หรือเลือกที่อยู่ที่บันทึกไว้ก่อนสั่งซื้อ</p>
-                </div>
-              )}
-                </>
               )}
             </div>
 
