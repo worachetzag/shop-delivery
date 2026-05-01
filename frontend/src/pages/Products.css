@@ -1,3 +1,5 @@
+@import '../components/CategoryChipsRow.css';
+
 /* Products Page Styles */
 .products-page {
   min-height: 100vh;
@@ -41,93 +43,39 @@
   border-radius: 10px;
 }
 
-/* Horizontal category chips (scroll) — aligned with search; snap on swipe */
-.category-chips-scroll {
-  position: relative;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: 0;
-  margin: 0 0 0.72rem;
-  padding: 0 0 8px;
+.filters-section .category-chips-scroll {
   --category-chips-fade-bg: #fff;
 }
 
-.category-chips-scroll::-webkit-scrollbar {
-  display: none;
+.products-filter-banners {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
 }
 
-/* When row overflows: spacer after last chip so last pill isn’t flush + hints “slide for more”. */
-.category-chips-scroll--overflowing .category-chips-track::after {
-  content: '';
-  flex-shrink: 0;
-  width: 20px;
+.products-on-sale-banner {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.78rem;
+  color: #0d6b39;
+  background: #effaf3;
+  border: 1px solid #c6e9d4;
+  border-radius: 10px;
 }
 
-/* Fade at right edge while more content sits off-screen (JS toggles --hint-end). */
-.category-chips-scroll--hint-end::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 8px;
-  width: 40px;
-  pointer-events: none;
-  z-index: 1;
-  background: linear-gradient(
-    270deg,
-    var(--category-chips-fade-bg) 12%,
-    rgba(255, 255, 255, 0) 100%
-  );
+.products-on-sale-banner a {
+  color: var(--brand-primary, #00a651);
+  font-weight: 700;
 }
 
-.category-chips-track {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 0.5rem;
-  min-height: 42px;
+.products-on-sale-banner--featured {
+  color: #1e3a5f;
+  background: #eef6ff;
+  border-color: #bfdbfe;
 }
 
-.category-chip {
-  flex-shrink: 0;
-  scroll-snap-align: start;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  appearance: none;
-  border: 1px solid var(--border-soft, #e8ecf2);
-  background: #fff;
-  color: #111827;
-  padding: 0.5rem 1rem;
-  min-height: 42px;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  font-family: inherit;
-  line-height: 1.2;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
-    box-shadow 0.15s ease, transform 0.1s ease;
-}
-
-.category-chip:active {
-  transform: scale(0.98);
-}
-
-.category-chip:focus-visible {
-  outline: 2px solid var(--brand-primary, #00a651);
-  outline-offset: 2px;
-}
-
-.category-chip.is-active {
-  background: var(--brand-primary, #00a651);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0, 142, 66, 0.28);
+.products-on-sale-banner--featured a {
+  color: #1d4ed8;
 }
 
 .filters {

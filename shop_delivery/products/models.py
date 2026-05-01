@@ -12,6 +12,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = "หมวดหมู่สินค้า"
         verbose_name_plural = "หมวดหมู่สินค้า"
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
@@ -38,7 +39,16 @@ class Product(models.Model):
     reserved_quantity = models.PositiveIntegerField(default=0, verbose_name="จำนวนที่ถูกจองจากคำสั่งซื้อ")
     min_stock_level = models.PositiveIntegerField(default=0, verbose_name="จุดแจ้งเตือนสต็อกต่ำ")
     is_available = models.BooleanField(default=True, verbose_name="พร้อมจำหน่าย")
-    is_special_offer = models.BooleanField(default=False, verbose_name="สินค้าโปรโมชั่น")
+    is_featured = models.BooleanField(
+        default=False,
+        verbose_name="สินค้าแนะนำ",
+        help_text="แสดงในหมวดสินค้าแนะนำบนหน้าแรก (แยกจากสินค้าที่ตั้งราคาก่อนลด)",
+    )
+    is_special_offer = models.BooleanField(
+        default=False,
+        verbose_name="ป้ายราคาพิเศษ",
+        help_text="แสดงป้ายในรายการสินค้าเมื่อไม่ได้กรอกราคาก่อนลด — ไม่ใช่หมวดแนะนำ",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -70,6 +80,38 @@ class Product(models.Model):
         if store_thr > 0 and avail <= store_thr:
             return True
         return avail <= prod_thr
+
+
+class HomePromotion(models.Model):
+    """แบนเนอร์/การ์ดโปรโมชั่นบนหน้าแรกลูกค้า — ตั้งค่าที่ Django admin"""
+
+    title = models.CharField(max_length=120, verbose_name="หัวข้อ")
+    description = models.TextField(blank=True, verbose_name="คำอธิบาย")
+    link_label = models.CharField(max_length=80, blank=True, verbose_name="ข้อความปุ่ม")
+    link_url = models.CharField(
+        max_length=400,
+        blank=True,
+        verbose_name="ลิงก์",
+        help_text="เส้นทางในเว็บ เช่น /customer/products?on_sale=true หรือ URL เต็ม (https://)",
+    )
+    icon = models.CharField(
+        max_length=12,
+        blank=True,
+        verbose_name="ไอคอน",
+        help_text="emoji เช่น 🎉",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0, verbose_name="ลำดับ")
+    is_active = models.BooleanField(default=True, verbose_name="แสดง")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "โปรโมชั่นหน้าแรก"
+        verbose_name_plural = "โปรโมชั่นหน้าแรก"
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return self.title
 
 
 class Supplier(models.Model):

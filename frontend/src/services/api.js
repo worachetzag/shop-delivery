@@ -138,6 +138,16 @@ export const productsService = {
     }
   },
 
+  /** การ์ดโปรโมชั่นหน้าแรก (ตั้งค่าใน Django admin → โปรโมชั่นหน้าแรก) */
+  getHomePromotions: async () => {
+    try {
+      const response = await api.get('/products/home-promotions/');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
   // Search products
   searchProducts: async (query, filters = {}) => {
     try {

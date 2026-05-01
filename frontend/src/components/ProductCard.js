@@ -155,10 +155,12 @@ const ProductCard = ({
           className="product-image-link"
           onClick={prepListingDetailNavigation}
         >
-          <img 
-            src={pickProductImage(product, PLACEHOLDER_IMAGES.md)} 
+          <img
+            src={pickProductImage(product, PLACEHOLDER_IMAGES.md)}
             alt={product.name}
             className="product-image"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               e.currentTarget.src = PLACEHOLDER_IMAGES.md;
             }}

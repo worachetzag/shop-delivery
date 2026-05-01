@@ -113,74 +113,6 @@
   height: 100%;
 }
 
-/* Promotions */
-.promotions {
-  padding: 1.2rem 0 2rem;
-  background: transparent;
-}
-
-.promotion-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 0.9rem;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.promotion-card {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  color: white;
-  border-radius: 14px;
-  padding: 1.2rem;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.promotion-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 100%;
-  height: 100%;
-  background: rgba(255,255,255,0.1);
-  border-radius: 50%;
-  transform: rotate(45deg);
-}
-
-.promotion-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 1;
-}
-
-.promotion-card h3 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-.promotion-card p {
-  margin-bottom: 1rem;
-  opacity: 0.9;
-  position: relative;
-  z-index: 1;
-}
-
-.promotion-code {
-  background: rgba(255,255,255,0.2);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  position: relative;
-  z-index: 1;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .hero {
@@ -202,7 +134,7 @@
   
   .quick-actions,
   .featured-products,
-  .promotions {
+  .home-promo-products {
     padding: 1rem 0 1.4rem;
   }
   
@@ -229,14 +161,6 @@
     gap: 0.65rem;
   }
   
-  .promotion-cards {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .promotion-card {
-    padding: 1.5rem;
-  }
 }
 
 @media (max-width: 480px) {
@@ -272,32 +196,146 @@
 }
 
 .featured-products,
-.promotions {
+.home-promo-products {
   padding: 0.9rem 0 1.15rem;
 }
 
-.promotion-card {
+.home-product-section .section-title {
+  margin-bottom: 0.35rem;
+}
+
+.home-section-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.45;
+  margin: 0 0 0.65rem;
+}
+
+.home-chips-panel {
+  background: #fff;
   border-radius: 12px;
-  padding: 0.9rem;
+  padding: 0.65rem 0.72rem 0.35rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid var(--border-soft, #e8ecf2);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.home-chips-panel .category-chips-scroll {
+  margin-bottom: 0;
+  --category-chips-fade-bg: #fff;
+}
+
+.home-section-footer {
+  text-align: center;
+  margin-top: 0.85rem;
+}
+
+.home-section-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1.25rem 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+}
+
+.home-section-footer--split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Quick category pills under hero */
+.home-category-quick {
+  padding: 0.65rem 0 0.15rem;
+}
+
+.home-category-quick-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 0.45rem;
+}
+
+.home-category-quick-scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+
+.home-category-quick-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.home-category-quick-pill {
+  flex-shrink: 0;
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-primary, #111827);
+  background: #fff;
+  border: 1px solid var(--border-soft, #e8ecf2);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.home-category-quick-pill:active {
+  transform: scale(0.98);
+}
+
+/* Admin-managed promo cards */
+.home-dynamic-promo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.65rem;
+}
+
+.home-dynamic-promo-card {
   background: linear-gradient(135deg, #f0faf4 0%, #e9f7ef 100%);
-  color: var(--text-primary);
   border: 1px solid #d8ebde;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  display: grid;
+  gap: 0.35rem;
 }
 
-.promotion-card h3 {
-  font-size: 1rem;
-  margin-bottom: 0.3rem;
+.home-dynamic-promo-icon {
+  font-size: 1.65rem;
+  line-height: 1;
 }
 
-.promotion-card p {
-  font-size: 0.82rem;
-  margin-bottom: 0.45rem;
+.home-dynamic-promo-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary, #111827);
 }
 
-.promotion-code {
-  background: #dff4e8;
-  color: #0d6b39;
-  font-size: 0.75rem;
-  padding: 0.3rem 0.6rem;
+.home-dynamic-promo-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-secondary, #64748b);
+}
+
+.home-dynamic-promo-cta {
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--brand-primary, #00a651);
+  text-decoration: none;
+}
+
+.home-dynamic-promo-cta:hover {
+  text-decoration: underline;
 }
 

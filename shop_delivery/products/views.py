@@ -9,9 +9,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import BasePermission
 from accounts.models import StaffAuditLog
 from accounts.staff_audit import log_staff_audit
-from .models import Category, Product, PurchaseOrder, PurchaseOrderItem, StockMovement, Supplier
+from .models import Category, HomePromotion, Product, PurchaseOrder, PurchaseOrderItem, StockMovement, Supplier
 from .serializers import (
     CategorySerializer,
+    HomePromotionAdminSerializer,
+    HomePromotionSerializer,
     ManualStockAdjustmentSerializer,
     ProductSerializer,
     PurchaseOrderSerializer,
@@ -40,7 +42,9 @@ def _admin_store_low_stock_threshold() -> int:
 
 def _admin_product_list_queryset_filtered(qs, stock_filter: str):
     """
-    stock_filter: all | low | out | promo
+    stock_filter: all | low | out | promo | featured
+    promo = มีราคาก่อนลดจริง (compare_at_price > ราคาขาย)
+    featured = สินค้าแนะนำบนหน้าแรก (คนละอย่างกับโปรลดราคา)
     """
     key = (stock_filter or 'all').strip().lower()
     if key in ('', 'all'):
@@ -53,7 +57,9 @@ def _admin_product_list_queryset_filtered(qs, stock_filter: str):
         ),
     )
     if key == 'promo':
-        return qs.filter(is_special_offer=True)
+        return qs.filter(compare_at_price__isnull=False).filter(compare_at_price__gt=F('price'))
+    if key == 'featured':
+        return qs.filter(is_featured=True)
     if key == 'out':
         return qs.filter(_avail__lte=0)
     if key == 'low':
@@ -113,7 +119,10 @@ def _audit_log_product_update(instance, old, validated_data):
         pieces.append('เปิดขาย' if instance.is_available else 'ปิดขาย')
 
     if 'is_special_offer' in validated_data:
-        pieces.append('ตั้งเป็นโปรพิเศษ' if instance.is_special_offer else 'ยกเลิกโปรพิเศษ')
+        pieces.append('ตั้งเป็นป้ายราคาพิเศษ' if instance.is_special_offer else 'ยกเลิกป้ายราคาพิเศษ')
+
+    if 'is_featured' in validated_data:
+        pieces.append('ตั้งเป็นสินค้าแนะนำ' if instance.is_featured else 'ยกเลิกสินค้าแนะนำ')
 
     if 'name' in validated_data and instance.name != old['name']:
         pieces.append(f'ชื่อ «{old["name"]}» → «{instance.name}»')
@@ -160,10 +169,23 @@ class ProductListView(generics.ListAPIView):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # Filter special offers
+        # สินค้าแนะนำ (หน้าแรก)
+        featured = self.request.query_params.get('featured')
+        if featured == 'true':
+            queryset = queryset.filter(is_featured=True)
+
+        # เดิม: กรองป้ายโปร — เก็บไว้ให้ลิงก์/API เก่า (ไม่ใช่หมวดแนะนำ)
         special_offer = self.request.query_params.get('special_offer')
         if special_offer == 'true':
             queryset = queryset.filter(is_special_offer=True)
+
+        # หน้าแรก / ลิงก์ — สินค้าลดราคา (ราคาก่อนลด) หรือติดป้ายราคาพิเศษ
+        on_sale = self.request.query_params.get('on_sale')
+        if on_sale == 'true':
+            queryset = queryset.filter(
+                Q(compare_at_price__isnull=False, compare_at_price__gt=F('price'))
+                | Q(is_special_offer=True)
+            )
 
         return queryset.annotate(available_quantity_calc=F('stock_quantity') - F('reserved_quantity'))
 
@@ -183,6 +205,17 @@ class CategoryListView(generics.ListAPIView):
     pagination_class = None
 
 
+class HomePromotionListView(generics.ListAPIView):
+    """การ์ดโปรโมชั่น/แบนเนอร์หน้าแรก (ลูกค้า — เปิดใช้เท่านั้น)"""
+
+    serializer_class = HomePromotionSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        return HomePromotion.objects.filter(is_active=True).order_by('sort_order', 'id')
+
+
 class IsStoreAdminOrSuperAdmin(BasePermission):
     """Allow only store admins/super admins."""
 
@@ -195,6 +228,25 @@ class IsStoreAdminOrSuperAdmin(BasePermission):
         if not role_obj:
             return hasattr(request.user, 'admin_profile')
         return role_obj.role in ['store_admin', 'super_admin', 'admin']
+
+
+class AdminHomePromotionListCreateView(generics.ListCreateAPIView):
+    """แอดมิน — รายการและสร้างการ์ดโปรโมชั่นหน้าแรก"""
+
+    serializer_class = HomePromotionAdminSerializer
+    permission_classes = [IsStoreAdminOrSuperAdmin]
+    pagination_class = None
+
+    def get_queryset(self):
+        return HomePromotion.objects.all().order_by('sort_order', 'id')
+
+
+class AdminHomePromotionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """แอดมิน — ดู / แก้ / ลบการ์ดโปรโมชั่นหน้าแรก"""
+
+    queryset = HomePromotion.objects.all()
+    serializer_class = HomePromotionAdminSerializer
+    permission_classes = [IsStoreAdminOrSuperAdmin]
 
 
 class AdminProductListCreateView(generics.ListCreateAPIView):
@@ -236,6 +288,7 @@ class AdminProductDetailView(generics.RetrieveUpdateDestroyAPIView):
             'stock_quantity': old_inst.stock_quantity,
             'price': old_inst.price,
             'is_available': old_inst.is_available,
+            'is_featured': old_inst.is_featured,
             'is_special_offer': old_inst.is_special_offer,
             'category_id': old_inst.category_id,
         }

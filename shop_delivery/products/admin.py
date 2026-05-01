@@ -13,13 +13,23 @@ class CategoryAdmin(admin.ModelAdmin):
 # Product Admin
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'compare_at_price', 'stock_quantity', 'is_available', 'is_special_offer', 'created_at')
-    list_filter = ('category', 'is_available', 'is_special_offer', 'created_at')
+    list_display = (
+        'name',
+        'category',
+        'price',
+        'compare_at_price',
+        'stock_quantity',
+        'is_available',
+        'is_featured',
+        'is_special_offer',
+        'created_at',
+    )
+    list_filter = ('category', 'is_available', 'is_featured', 'is_special_offer', 'created_at')
     search_fields = ('name', 'description')
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
     # ห้ามแก้ stock_quantity ตรงนี้ เพื่อไม่ข้าม flow StockMovement
-    list_editable = ('price', 'compare_at_price', 'is_available', 'is_special_offer')
+    list_editable = ('price', 'compare_at_price', 'is_available', 'is_featured', 'is_special_offer')
 
 
 @admin.register(Supplier)

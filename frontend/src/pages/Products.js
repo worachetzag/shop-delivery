@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
+import CategoryChipsRow from '../components/CategoryChipsRow';
 import ApiPaginationBar from '../components/ApiPaginationBar';
 import { productsService, cartService } from '../services/api';
 import './Products.css';
@@ -12,6 +13,10 @@ const SKELETON_CARD_COUNT = 8;
 
 const Products = () => {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const onSaleOnly = searchParams.get('on_sale') === 'true';
+  const featuredOnly = searchParams.get('featured') === 'true';
+  const categoryIdFromUrl = searchParams.get('category_id') || '';
   useRestoreCustomerListingScroll(location);
   const popup = usePopup();
   const readCartCache = () => {
@@ -29,7 +34,6 @@ const Products = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -38,20 +42,6 @@ const Products = () => {
   const [cartLineItems, setCartLineItems] = useState([]);
   const [showCartSummary, setShowCartSummary] = useState(false);
   const [listReady, setListReady] = useState(false);
-  const categoryChipsScrollRef = useRef(null);
-  const [categoryChipsOverflow, setCategoryChipsOverflow] = useState(false);
-  const [categoryChipsHintEnd, setCategoryChipsHintEnd] = useState(false);
-
-  const syncCategoryChipsScrollUi = useCallback(() => {
-    const el = categoryChipsScrollRef.current;
-    if (!el) return;
-    const overflowing = el.scrollWidth > el.clientWidth + 2;
-    const atEnd =
-      !overflowing || el.scrollLeft + el.clientWidth >= el.scrollWidth - 3;
-    setCategoryChipsOverflow(overflowing);
-    setCategoryChipsHintEnd(overflowing && !atEnd);
-  }, []);
-
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 400);
     return () => clearTimeout(t);
@@ -59,7 +49,22 @@ const Products = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedCategory, debouncedSearch, sortBy]);
+  }, [categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly]);
+
+  const handleCategoryChange = useCallback(
+    (cid) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (cid) next.set('category_id', cid);
+          else next.delete('category_id');
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -88,8 +93,10 @@ const Products = () => {
         const ordering =
           sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : 'name';
         const params = { page, page_size: PAGE_SIZE, ordering };
-        if (selectedCategory) params.category_id = selectedCategory;
+        if (categoryIdFromUrl) params.category_id = categoryIdFromUrl;
         if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+        if (onSaleOnly) params.on_sale = 'true';
+        if (featuredOnly) params.featured = 'true';
 
         const productsResponse = await productsService.getProducts(params);
         if (cancelled) return;
@@ -119,29 +126,7 @@ const Products = () => {
     return () => {
       cancelled = true;
     };
-  }, [page, selectedCategory, debouncedSearch, sortBy]);
-
-  useEffect(() => {
-    const el = categoryChipsScrollRef.current;
-    if (!el) return undefined;
-
-    const run = () => {
-      syncCategoryChipsScrollUi();
-      requestAnimationFrame(syncCategoryChipsScrollUi);
-    };
-
-    run();
-    const ro = new ResizeObserver(run);
-    ro.observe(el);
-    el.addEventListener('scroll', syncCategoryChipsScrollUi, { passive: true });
-    window.addEventListener('resize', run);
-
-    return () => {
-      ro.disconnect();
-      el.removeEventListener('scroll', syncCategoryChipsScrollUi);
-      window.removeEventListener('resize', run);
-    };
-  }, [categories, listReady, syncCategoryChipsScrollUi]);
+  }, [page, categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly]);
 
   const syncCartQuantities = async () => {
     try {
@@ -267,31 +252,29 @@ const Products = () => {
             />
           </div>
 
-          <div
-            ref={categoryChipsScrollRef}
-            className={`category-chips-scroll${categoryChipsOverflow ? ' category-chips-scroll--overflowing' : ''}${categoryChipsHintEnd ? ' category-chips-scroll--hint-end' : ''}`}
-            role="tablist"
-            aria-label="หมวดหมู่สินค้า"
-          >
-            <div className="category-chips-track">
-              {[{ id: '', name: 'ทั้งหมด' }, ...categories].map((category) => {
-                const cid = category.id === '' || category.id == null ? '' : String(category.id);
-                const active = selectedCategory === cid;
-                return (
-                  <button
-                    key={cid === '' ? 'category-all' : `category-${cid}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    className={`category-chip${active ? ' is-active' : ''}`}
-                    onClick={() => setSelectedCategory(cid)}
-                  >
-                    {category.name}
-                  </button>
-                );
-              })}
+          <CategoryChipsRow
+            categories={categories}
+            value={categoryIdFromUrl}
+            onChange={handleCategoryChange}
+            ariaLabel="หมวดหมู่สินค้า"
+          />
+
+          {(featuredOnly || onSaleOnly) && (
+            <div className="products-filter-banners">
+              {featuredOnly && (
+                <p className="products-on-sale-banner products-on-sale-banner--featured">
+                  แสดงเฉพาะสินค้าแนะนำ ·{' '}
+                  <Link to="/customer/products">ดูสินค้าทั้งหมด</Link>
+                </p>
+              )}
+              {onSaleOnly && (
+                <p className="products-on-sale-banner">
+                  แสดงเฉพาะสินค้าราคาพิเศษและลดราคา ·{' '}
+                  <Link to="/customer/products">ดูสินค้าทั้งหมด</Link>
+                </p>
+              )}
             </div>
-          </div>
+          )}
 
           <div className="filters filters-sort-only">
             <div className="filter-group">

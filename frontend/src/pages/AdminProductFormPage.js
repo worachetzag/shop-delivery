@@ -22,6 +22,7 @@ const getDefaultCreateForm = () => ({
   category: '',
   stock_quantity: '',
   is_available: true,
+  is_featured: false,
   is_special_offer: false,
 });
 
@@ -88,6 +89,7 @@ const AdminProductFormPage = () => {
             category: String(product.category ?? ''),
             stock_quantity: String(product.stock_quantity ?? 0),
             is_available: Boolean(product.is_available),
+            is_featured: Boolean(product.is_featured),
             is_special_offer: Boolean(product.is_special_offer),
           });
         }
@@ -163,6 +165,7 @@ const AdminProductFormPage = () => {
       formData.append('category', String(parseInt(form.category, 10)));
       formData.append('stock_quantity', String(parseInt(form.stock_quantity, 10)));
       formData.append('is_available', form.is_available ? 'true' : 'false');
+      formData.append('is_featured', form.is_featured ? 'true' : 'false');
       formData.append('is_special_offer', form.is_special_offer ? 'true' : 'false');
       if (imageFile) formData.append('image', imageFile);
 
@@ -192,6 +195,7 @@ const AdminProductFormPage = () => {
           custom_unit_label: prev.custom_unit_label,
           unit_detail_unit: prev.unit_detail_unit,
           is_available: prev.is_available,
+          is_featured: prev.is_featured,
           is_special_offer: prev.is_special_offer,
         }));
         setImageFile(null);
@@ -287,8 +291,12 @@ const AdminProductFormPage = () => {
               พร้อมขาย
             </label>
             <label>
+              <input type="checkbox" name="is_featured" checked={form.is_featured} onChange={handleInputChange} />
+              แสดงในหมวดสินค้าแนะนำ (หน้าแรก)
+            </label>
+            <label>
               <input type="checkbox" name="is_special_offer" checked={form.is_special_offer} onChange={handleInputChange} />
-              สินค้าโปรโมชั่น
+              แสดงป้ายราคาพิเศษ (เมื่อไม่ได้กรอกราคาก่อนลด)
             </label>
           </div>
 

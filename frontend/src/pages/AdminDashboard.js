@@ -42,7 +42,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const [products, setProducts] = useState([]);
   const [productsPage, setProductsPage] = useState(1);
   const [productsTotalCount, setProductsTotalCount] = useState(0);
-  /** all | low | out | promo — กรองรายการสินค้าแอดมิน */
+  /** all | low | out | promo (ลดราคา) | featured (แนะนำ) — กรองรายการสินค้าแอดมิน */
   const [productsStockFilter, setProductsStockFilter] = useState('all');
   const [categories, setCategories] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -75,6 +75,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     category: '',
     stock_quantity: '',
     is_available: true,
+    is_featured: false,
     is_special_offer: false,
   });
   const [categoryForm, setCategoryForm] = useState({
@@ -98,6 +99,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     image: '',
     stock_quantity: '',
     is_available: true,
+    is_featured: false,
     is_special_offer: false,
   });
   const [stats, setStats] = useState({
@@ -232,7 +234,12 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         page: String(productsPage),
         page_size: String(ADMIN_PRODUCTS_PAGE_SIZE),
       });
-      if (productsStockFilter === 'low' || productsStockFilter === 'out' || productsStockFilter === 'promo') {
+      if (
+        productsStockFilter === 'low' ||
+        productsStockFilter === 'out' ||
+        productsStockFilter === 'promo' ||
+        productsStockFilter === 'featured'
+      ) {
         params.set('stock_filter', productsStockFilter);
       }
       const response = await fetch(`${config.API_BASE_URL}products/admin/?${params.toString()}`, {
@@ -497,6 +504,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       formData.append('category', String(parseInt(productForm.category, 10)));
       formData.append('stock_quantity', String(parseInt(productForm.stock_quantity, 10)));
       formData.append('is_available', productForm.is_available ? 'true' : 'false');
+      formData.append('is_featured', productForm.is_featured ? 'true' : 'false');
       formData.append('is_special_offer', productForm.is_special_offer ? 'true' : 'false');
       if (productImageFile) {
         formData.append('image', productImageFile);
@@ -530,6 +538,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         category: '',
         stock_quantity: '',
         is_available: true,
+        is_featured: false,
         is_special_offer: false,
       });
       setProductImageFile(null);
@@ -600,6 +609,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       image: product.image || '',
       stock_quantity: String(product.stock_quantity ?? 0),
       is_available: Boolean(product.is_available),
+      is_featured: Boolean(product.is_featured),
       is_special_offer: Boolean(product.is_special_offer),
     });
     setProductEditImageFile(null);
@@ -627,6 +637,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       formData.append('unit_detail', productEditForm.unit_detail.trim());
       formData.append('stock_quantity', String(parseInt(productEditForm.stock_quantity, 10)));
       formData.append('is_available', productEditForm.is_available ? 'true' : 'false');
+      formData.append('is_featured', productEditForm.is_featured ? 'true' : 'false');
       formData.append('is_special_offer', productEditForm.is_special_offer ? 'true' : 'false');
       if (productEditImageFile) {
         formData.append('image', productEditImageFile);
@@ -660,6 +671,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         image: '',
         stock_quantity: '',
         is_available: true,
+        is_featured: false,
         is_special_offer: false,
       });
       setProductEditImageFile(null);
@@ -1272,8 +1284,20 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                     setProductsStockFilter('promo');
                     setProductsPage(1);
                   }}
+                  title="สินค้าที่มีราคาก่อนลดสูงกว่าราคาขายจริง"
                 >
-                  สินค้าโปรโมชั่น
+                  สินค้าลดราคา
+                </button>
+                <button
+                  type="button"
+                  className={`admin-fulfillment-chip ${productsStockFilter === 'featured' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setProductsStockFilter('featured');
+                    setProductsPage(1);
+                  }}
+                  title="สินค้าที่ตั้งให้แสดงในหมวดแนะนำบนหน้าแรก"
+                >
+                  สินค้าแนะนำ
                 </button>
               </div>
               {products.length === 0 ? (

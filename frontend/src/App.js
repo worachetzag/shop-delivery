@@ -20,6 +20,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
+import AdminHomePromotionsPage from './pages/AdminHomePromotionsPage';
 import AdminCustomersPage from './pages/AdminCustomersPage';
 import AdminCustomerDetailPage from './pages/AdminCustomerDetailPage';
 import AdminPersonnelStaffPage from './pages/AdminPersonnelStaffPage';
@@ -330,6 +331,14 @@ function AppContent() {
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
                 <AdminCategoriesPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/home-promotions"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminHomePromotionsPage />
               </ProtectedRoute>
             )}
           />

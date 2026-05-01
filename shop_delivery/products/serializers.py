@@ -13,6 +13,7 @@ def _store_low_stock_alert_quantity():
 
 from .models import (
     Category,
+    HomePromotion,
     Product,
     PurchaseOrder,
     PurchaseOrderItem,
@@ -46,6 +47,32 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at']
 
 
+class HomePromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomePromotion
+        fields = ['id', 'title', 'description', 'link_label', 'link_url', 'icon', 'sort_order']
+
+
+class HomePromotionAdminSerializer(serializers.ModelSerializer):
+    """CRUD โปรโมชั่นหน้าแรกผ่านแอปแอดมิน"""
+
+    class Meta:
+        model = HomePromotion
+        fields = [
+            'id',
+            'title',
+            'description',
+            'link_label',
+            'link_url',
+            'icon',
+            'sort_order',
+            'is_active',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     available_quantity = serializers.SerializerMethodField()
@@ -64,7 +91,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'description', 'price', 'compare_at_price', 'unit_label', 'unit_detail', 'category', 'category_name',
                  'image', 'stock_quantity', 'reserved_quantity', 'available_quantity', 'min_stock_level',
-                 'is_low_stock', 'is_available', 'is_special_offer',
+                 'is_low_stock', 'is_available', 'is_featured', 'is_special_offer',
                  'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at', 'reserved_quantity', 'available_quantity', 'is_low_stock']
 

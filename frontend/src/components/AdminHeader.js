@@ -29,6 +29,9 @@ function AdminNavSections({
       <Link to="/admin/categories" className={navLinkClass(isActivePath('/admin/categories'))}>
         หมวดหมู่
       </Link>
+      <Link to="/admin/home-promotions" className={navLinkClass(isActivePath('/admin/home-promotions'))}>
+        โปรหน้าแรก
+      </Link>
       <Link to="/admin/customers" className={navLinkClass(isActivePath('/admin/customers'))}>
         ลูกค้า
       </Link>
