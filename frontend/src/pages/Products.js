@@ -7,6 +7,8 @@ import { productsService, cartService } from '../services/api';
 import './Products.css';
 import { usePopup } from '../components/PopupProvider';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
+import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
+import { PRODUCT_SORT_OPTIONS_STANDARD, apiOrderingForSortKey } from '../utils/productSort';
 
 const PAGE_SIZE = 12;
 const SKELETON_CARD_COUNT = 8;
@@ -37,7 +39,7 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState('name-asc');
   const [cartQuantities, setCartQuantities] = useState(readCartCache);
   const [cartLineItems, setCartLineItems] = useState([]);
   const [showCartSummary, setShowCartSummary] = useState(false);
@@ -86,8 +88,7 @@ const Products = () => {
     (async () => {
       setLoading(true);
       try {
-        const ordering =
-          sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : 'name';
+        const ordering = apiOrderingForSortKey(sortBy);
         const params = { page, page_size: PAGE_SIZE, ordering };
         if (categoryIdFromUrl) params.category_id = categoryIdFromUrl;
         if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
@@ -267,18 +268,11 @@ const Products = () => {
           )}
 
           <div className="filters filters-sort-only">
-            <div className="filter-group">
-              <label className="form-label">เรียงตาม:</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="form-input"
-              >
-                <option value="name">ชื่อสินค้า</option>
-                <option value="price-low">ราคาต่ำ-สูง</option>
-                <option value="price-high">ราคาสูง-ต่ำ</option>
-              </select>
-            </div>
+            <CustomerProductSortDropdown
+              options={PRODUCT_SORT_OPTIONS_STANDARD}
+              value={sortBy}
+              onChange={setSortBy}
+            />
           </div>
         </div>
 

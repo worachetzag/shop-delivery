@@ -2,17 +2,28 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import CategoryChipsRow from '../components/CategoryChipsRow';
+import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
 import CustomerCategoryStrip from '../components/CustomerCategoryStrip';
 import config from '../config';
 import { productsService } from '../services/api';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import { resolveMediaUrl } from '../utils/media';
+import {
+  PRODUCT_SORT_OPTIONS_STANDARD,
+  PRODUCT_SORT_OPTION_CREATED_DESC,
+  PRODUCT_SORT_OPTION_DISCOUNT_DESC,
+  apiOrderingForSortKey,
+  isDiscountDescSort,
+} from '../utils/productSort';
 import './Home.css';
 
 /** จำนวนสินค้าที่แสดงต่อหมวดในหน้าแรก — ให้ลูกค้ากดดูทั้งหมดในหน้ารายการสินค้า */
 const HOME_SECTION_PREVIEW_COUNT = 4;
 /** โหลดชุดใหญ่พอสำหรับเรียงลดราคาในฝั่งลูกค้า แล้วค่อยตัดเหลือ HOME_SECTION_PREVIEW_COUNT */
 const PROMO_SORT_POOL_PAGE_SIZE = 24;
+
+const HOME_FEATURED_SORT_OPTIONS = [PRODUCT_SORT_OPTION_CREATED_DESC, ...PRODUCT_SORT_OPTIONS_STANDARD];
+const HOME_PROMO_SORT_OPTIONS = [PRODUCT_SORT_OPTION_DISCOUNT_DESC, ...PRODUCT_SORT_OPTIONS_STANDARD];
 const SKELETON_CARD_COUNT = HOME_SECTION_PREVIEW_COUNT;
 /** โปรโมชั่นหน้าแรก: หน่วงก่อนเลื่อนไปสไลด์ถัดไป */
 const HOME_PROMO_AUTO_ADVANCE_MS = 5500;
@@ -121,6 +132,8 @@ const Home = () => {
   const [homePromotions, setHomePromotions] = useState([]);
   const [featuredCategory, setFeaturedCategory] = useState('');
   const [promoCategory, setPromoCategory] = useState('');
+  const [featuredSort, setFeaturedSort] = useState('created-desc');
+  const [promoSort, setPromoSort] = useState('discount-desc');
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [promoProducts, setPromoProducts] = useState([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
@@ -281,10 +294,11 @@ const Home = () => {
       setFeaturedLoading(true);
       setPageError(null);
       try {
+        const ordering = apiOrderingForSortKey(featuredSort);
         const params = {
           featured: 'true',
           page_size: HOME_SECTION_PREVIEW_COUNT,
-          ordering: '-created_at',
+          ordering,
         };
         if (featuredCategory) params.category_id = featuredCategory;
 
@@ -297,7 +311,7 @@ const Home = () => {
         if (!featuredCategory && products.length === 0) {
           const fallbackResponse = await productsService.getProducts({
             page_size: HOME_SECTION_PREVIEW_COUNT,
-            ordering: '-created_at',
+            ordering,
           });
           if (cancelled) return;
           const fallbackList = fallbackResponse.results || fallbackResponse || [];
@@ -318,17 +332,18 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [featuredCategory]);
+  }, [featuredCategory, featuredSort]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setPromoLoading(true);
       try {
+        const ordering = apiOrderingForSortKey(promoSort);
         const params = {
           on_sale: 'true',
           page_size: PROMO_SORT_POOL_PAGE_SIZE,
-          ordering: '-created_at',
+          ordering,
         };
         if (promoCategory) params.category_id = promoCategory;
 
@@ -337,7 +352,10 @@ const Home = () => {
 
         let products = res.results || res || [];
         products = Array.isArray(products) ? products : [];
-        setPromoProducts(sortPromoProducts(products).slice(0, HOME_SECTION_PREVIEW_COUNT));
+        const sliced = isDiscountDescSort(promoSort)
+          ? sortPromoProducts(products).slice(0, HOME_SECTION_PREVIEW_COUNT)
+          : products.slice(0, HOME_SECTION_PREVIEW_COUNT);
+        setPromoProducts(sliced);
       } catch (error) {
         console.error('Error fetching promo products:', error);
         if (!cancelled) setPromoProducts([]);
@@ -348,7 +366,7 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [promoCategory]);
+  }, [promoCategory, promoSort]);
 
   const renderSkeleton = (keyPrefix) => (
     <div className="products-grid">
@@ -475,13 +493,21 @@ const Home = () => {
       <section className="featured-products home-product-section">
         <div className="container">
           <h2 className="section-title">สินค้าแนะนำ</h2>
-          <div className="home-chips-panel">
-            <CategoryChipsRow
-              categories={categories}
-              value={featuredCategory}
-              onChange={setFeaturedCategory}
-              ariaLabel="หมวดหมู่ — สินค้าแนะนำ"
-              fadeBg="#ffffff"
+          <div className="home-section-toolbar">
+            <div className="home-chips-panel">
+              <CategoryChipsRow
+                categories={categories}
+                value={featuredCategory}
+                onChange={setFeaturedCategory}
+                ariaLabel="หมวดหมู่ — สินค้าแนะนำ"
+                fadeBg="#ffffff"
+              />
+            </div>
+            <CustomerProductSortDropdown
+              className="customer-sort-dropdown-wrap--compact"
+              options={HOME_FEATURED_SORT_OPTIONS}
+              value={featuredSort}
+              onChange={setFeaturedSort}
             />
           </div>
           {featuredLoading ? (
@@ -511,13 +537,21 @@ const Home = () => {
       <section className="home-promo-products home-product-section">
         <div className="container">
           <h2 className="section-title">ราคาพิเศษ &amp; ลดราคา</h2>
-          <div className="home-chips-panel">
-            <CategoryChipsRow
-              categories={categories}
-              value={promoCategory}
-              onChange={setPromoCategory}
-              ariaLabel="หมวดหมู่ — ราคาพิเศษและลดราคา"
-              fadeBg="#ffffff"
+          <div className="home-section-toolbar">
+            <div className="home-chips-panel">
+              <CategoryChipsRow
+                categories={categories}
+                value={promoCategory}
+                onChange={setPromoCategory}
+                ariaLabel="หมวดหมู่ — ราคาพิเศษและลดราคา"
+                fadeBg="#ffffff"
+              />
+            </div>
+            <CustomerProductSortDropdown
+              className="customer-sort-dropdown-wrap--compact"
+              options={HOME_PROMO_SORT_OPTIONS}
+              value={promoSort}
+              onChange={setPromoSort}
             />
           </div>
           {promoLoading ? (

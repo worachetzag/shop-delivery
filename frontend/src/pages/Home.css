@@ -211,6 +211,26 @@
   margin: 0 0 0.65rem;
 }
 
+.home-section-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.65rem 0.85rem;
+  margin-bottom: 0.55rem;
+}
+
+.home-section-toolbar .home-chips-panel {
+  flex: 1 1 min(100%, 220px);
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.home-section-toolbar .customer-sort-dropdown-wrap {
+  flex: 0 1 11.5rem;
+  min-width: min(100%, 10.5rem);
+}
+
 .home-chips-panel {
   background: transparent;
   border-radius: 0;
