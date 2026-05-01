@@ -531,7 +531,8 @@ class AdminDriverListCreateView(generics.GenericAPIView):
         data = []
         for driver in drivers:
             active_jobs = DriverAssignment.objects.filter(
-                driver=driver.user
+                driver=driver.user,
+                order__order_type='delivery',
             ).exclude(status__in=['delivered', 'cancelled'])
             has_active_assignment = active_jobs.exists()
             effective_available = bool(driver.is_available) and not has_active_assignment

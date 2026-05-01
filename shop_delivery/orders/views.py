@@ -292,7 +292,8 @@ def _sync_driver_availability(driver_user):
     if not driver_profile:
         return
     has_active_jobs = DriverAssignment.objects.filter(
-        driver=driver_user
+        driver=driver_user,
+        order__order_type='delivery',
     ).exclude(status__in=['delivered', 'cancelled']).exists()
     next_available = not has_active_jobs
     if driver_profile.is_available != next_available:
@@ -784,6 +785,11 @@ class AdminAssignDriverView(APIView):
             return Response({'error': 'กรุณาเลือกคนขับ'}, status=status.HTTP_400_BAD_REQUEST)
 
         order = get_object_or_404(Order, id=order_id)
+        if order.order_type == 'pickup':
+            return Response(
+                {'error': 'ออเดอร์มารับที่ร้านไม่ต้องมอบหมายคนขับ'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if order.payment_method == 'promptpay' and order.payment_slip_status != 'verified':
             return Response(
                 {'error': 'คำสั่งซื้อ PromptPay ต้องยืนยันสลิปก่อนมอบหมายคนขับ'},
@@ -793,7 +799,8 @@ class AdminAssignDriverView(APIView):
 
         # Prevent assigning a driver who is already on another active job.
         active_assignment_exists = DriverAssignment.objects.filter(
-            driver=driver_user
+            driver=driver_user,
+            order__order_type='delivery',
         ).exclude(order=order).exclude(status__in=['delivered', 'cancelled']).exists()
         if active_assignment_exists:
             return Response(
@@ -846,7 +853,7 @@ class DriverAssignmentListView(generics.ListAPIView):
 
     def get_queryset(self):
         return (
-            DriverAssignment.objects.filter(driver=self.request.user)
+            DriverAssignment.objects.filter(driver=self.request.user, order__order_type='delivery')
             .select_related(
                 'order',
                 'order__customer',
@@ -866,7 +873,10 @@ class DriverAssignmentDetailView(generics.RetrieveAPIView):
     lookup_url_kwarg = 'assignment_id'
 
     def get_queryset(self):
-        return DriverAssignment.objects.filter(driver=self.request.user).select_related(
+        return DriverAssignment.objects.filter(
+            driver=self.request.user,
+            order__order_type='delivery',
+        ).select_related(
             'order',
             'order__customer',
             'order__customer__user',
@@ -887,6 +897,11 @@ class DriverAssignmentStatusUpdateView(APIView):
             id=assignment_id,
             driver=request.user,
         )
+        if assignment.order.order_type == 'pickup':
+            return Response(
+                {'error': 'ออเดอร์มารับที่ร้านไม่ใช้งานคนขับ — ให้แอดมินปิดออเดอร์จากหน้าแอดมิน'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         next_status = request.data.get('status')
         valid_statuses = ['accepted', 'picked_up', 'on_the_way', 'delivered', 'cancelled']
         if next_status not in valid_statuses:

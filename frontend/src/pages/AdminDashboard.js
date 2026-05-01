@@ -1162,14 +1162,20 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                         </span>
                       </td>
                       <td>
-                        <div className="slip-cell">
-                          <span className="muted">
-                            {order?.driver_assignment?.driver_name || 'ยังไม่มอบหมาย'}
+                        {order.order_type === 'pickup' ? (
+                          <span className="muted" style={{ fontSize: '0.78rem' }}>
+                            ไม่ใช้ขนส่ง
                           </span>
-                          {order?.driver_assignment?.status_display && (
-                            <span className="status status-delivering">{order.driver_assignment.status_display}</span>
-                          )}
-                        </div>
+                        ) : (
+                          <div className="slip-cell">
+                            <span className="muted">
+                              {order?.driver_assignment?.driver_name || 'ยังไม่มอบหมาย'}
+                            </span>
+                            {order?.driver_assignment?.status_display && (
+                              <span className="status status-delivering">{order.driver_assignment.status_display}</span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td>
                         {order.payment_method === 'promptpay' ? (

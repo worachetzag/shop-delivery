@@ -93,6 +93,8 @@ class OrderSerializer(serializers.ModelSerializer):
         return obj.payment_slip.url
 
     def get_driver_assignment(self, obj):
+        if getattr(obj, 'order_type', None) == 'pickup':
+            return None
         assignment = getattr(obj, 'driver_assignment', None)
         if not assignment:
             return None
