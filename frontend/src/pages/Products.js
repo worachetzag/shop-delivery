@@ -210,7 +210,6 @@ const Products = () => {
         <div className="container">
           <div className="page-header">
             <h1 className="page-title">สินค้าทั้งหมด</h1>
-            <p className="page-subtitle">เลือกสินค้าที่คุณต้องการ</p>
           </div>
           <div className="results-section">
             <div className="results-header">
@@ -238,7 +237,6 @@ const Products = () => {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">สินค้าทั้งหมด</h1>
-          <p className="page-subtitle">เลือกสินค้าที่คุณต้องการ</p>
         </div>
 
         <div className="filters-section">
@@ -261,18 +259,9 @@ const Products = () => {
 
           {(featuredOnly || onSaleOnly) && (
             <div className="products-filter-banners">
-              {featuredOnly && (
-                <p className="products-on-sale-banner products-on-sale-banner--featured">
-                  แสดงเฉพาะสินค้าแนะนำ ·{' '}
-                  <Link to="/customer/products">ดูสินค้าทั้งหมด</Link>
-                </p>
-              )}
-              {onSaleOnly && (
-                <p className="products-on-sale-banner">
-                  แสดงเฉพาะสินค้าราคาพิเศษและลดราคา ·{' '}
-                  <Link to="/customer/products">ดูสินค้าทั้งหมด</Link>
-                </p>
-              )}
+              <Link to="/customer/products" className="products-filter-clear-link">
+                ดูสินค้าทั้งหมด
+              </Link>
             </div>
           )}
 

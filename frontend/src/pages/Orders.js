@@ -190,7 +190,6 @@ const Orders = () => {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">คำสั่งซื้อของฉัน</h1>
-          <p className="page-subtitle">ติดตามสถานะคำสั่งซื้อของคุณ · ทั้งหมดในหมวดนี้ {totalCount} รายการ</p>
         </div>
 
         <div className="filter-tabs">

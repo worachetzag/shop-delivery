@@ -101,7 +101,6 @@ const Cart = () => {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">ตะกร้าสินค้า</h1>
-          <p className="page-subtitle">ตรวจสอบสินค้าในตะกร้าของคุณ</p>
         </div>
 
         <div className="cart-content">
@@ -185,11 +184,6 @@ const Cart = () => {
                 <span className="total-amount">{formatPrice(calculateSubtotal())}</span>
               </div>
 
-              <p className="cart-shipping-hint">
-                ค่าจัดส่งคิดตาม<strong>ระยะทาง</strong>จากร้านไปที่อยู่จัดส่ง (ตารางค่าส่งของร้าน)
-                — จะแสดงยอดชัดเจนหลัง<strong>เลือกหรือเพิ่มที่อยู่</strong>ที่หน้าชำระเงิน
-              </p>
-              
               <div className="checkout-actions">
                 <Link to="/customer/checkout" className="btn btn-primary btn-full">
                   ดำเนินการสั่งซื้อ

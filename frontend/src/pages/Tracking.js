@@ -236,7 +236,6 @@ const Tracking = () => {
         )}
         <div className="page-header">
           <h1 className="page-title">ติดตามการจัดส่ง</h1>
-          <p className="page-subtitle">คำสั่งซื้อ {trackingInfo.trackingNumber}</p>
         </div>
 
         <div className="tracking-content">

@@ -481,12 +481,9 @@ const Profile = () => {
         <div className="container">
           <div className="page-header">
             <h1 className="page-title">ยืนยันข้อมูลส่วนตัว</h1>
-            <p className="page-subtitle">
-              กรุณากรอกครั้งแรกให้ครบ — ชื่อ นามสกุล เลขบัตรประชาชน วันเกิด (พ.ศ.) ที่อยู่ตามบัตร/ติดต่อ และเบอร์โทร (ที่อยู่จัดส่งกรอกตอนชำระเงินทุกครั้ง)
-            </p>
             {forceCompleteHint && (
               <p className="page-subtitle" style={{ color: '#d97706', marginTop: '8px' }}>
-                จำเป็นต้องกรอกให้ครบก่อนใช้ตะกร้าและสั่งซื้อ
+                กรอกให้ครบก่อนสั่งซื้อ
               </p>
             )}
           </div>
@@ -566,9 +563,6 @@ const Profile = () => {
               </fieldset>
 
               <label className="form-label">ที่อยู่ตามบัตรประชาชน / ติดต่อ</label>
-              <p className="muted" style={{ margin: '0 0 8px', fontSize: '0.88rem' }}>
-                ไม่ใช่ที่อยู่จัดส่ง — การจัดส่งให้กรอกในหน้าชำระเงินทุกครั้ง
-              </p>
               <textarea
                 className="form-textarea"
                 rows={4}
@@ -607,7 +601,6 @@ const Profile = () => {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">โปรไฟล์ของฉัน</h1>
-          <p className="page-subtitle">ข้อมูลบัญชี และที่อยู่อ้างอิง (ที่อยู่จัดส่งกรอกตอนชำระเงินทุกครั้ง)</p>
           {fromCheckout && (
             <div
               style={{
@@ -619,12 +612,9 @@ const Profile = () => {
                 textAlign: 'left',
               }}
             >
-              <strong style={{ display: 'block', marginBottom: '6px' }}>กรอกข้อมูลก่อนยืนยันคำสั่งซื้อ</strong>
-              <p style={{ margin: '0 0 12px', fontSize: '0.95rem', color: '#374151' }}>
-                ตรวจชื่อและเบอร์ในโปรไฟล์ถ้าต้องการ — <strong>ที่อยู่จัดส่ง</strong> กรอกในหน้าชำระเงินใหม่ทุกครั้ง (ไม่ดึงจากโปรไฟล์)
-              </p>
+              <strong style={{ display: 'block', marginBottom: '10px' }}>กลับไปยืนยันคำสั่งซื้อ</strong>
               <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/customer/checkout')}>
-                กลับไปยืนยันคำสั่งซื้อ
+                ไปหน้าชำระเงิน
               </button>
             </div>
           )}
@@ -636,21 +626,18 @@ const Profile = () => {
               <button className="profile-menu-item" type="button" onClick={() => goSection('personal')}>
                 <div>
                   <p className="profile-menu-title">ข้อมูลส่วนตัว</p>
-                  <p className="profile-menu-subtitle">ชื่อ บัตรประชาชน วันเกิด ที่อยู่ตามบัตร เบอร์โทร</p>
                 </div>
                 <span>›</span>
               </button>
               <button className="profile-menu-item" type="button" onClick={() => goSection('addresses')}>
                 <div>
-                  <p className="profile-menu-title">ที่อยู่อ้างอิง (ไม่บังคับ)</p>
-                  <p className="profile-menu-subtitle">ไม่ใช้ในหน้าชำระเงิน — เก็บไว้อ้างอิงได้เท่านั้น</p>
+                  <p className="profile-menu-title">ที่อยู่อ้างอิง</p>
                 </div>
                 <span>›</span>
               </button>
               <button className="profile-menu-item" type="button" onClick={() => goSection('account')}>
                 <div>
                   <p className="profile-menu-title">การจัดการบัญชี</p>
-                  <p className="profile-menu-subtitle">ส่งออกข้อมูล และลบบัญชี</p>
                 </div>
                 <span>›</span>
               </button>
@@ -844,16 +831,10 @@ const Profile = () => {
                   </button>
                 )}
               </div>
-              <p className="muted" style={{ margin: '0 0 14px', fontSize: '0.9rem', lineHeight: 1.45 }}>
-                ส่วนนี้ไม่ถูกนำไปใช้ตอนชำระเงิน — เวลาจัดส่งให้กรอกที่อยู่ใหม่ทุกครั้งในหน้าชำระเงิน
-              </p>
 
               {showAddAddress && (
                 <div className="add-address-form customer-form-stack">
                   <h4>{editingAddressId ? 'แก้ไขที่อยู่' : 'เพิ่มที่อยู่ใหม่'}</h4>
-                  <p className="form-hint" style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#666' }}>
-                    กด «ยกเลิก» เพื่อกลับไปดูรายการที่อยู่
-                  </p>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">ชื่อที่อยู่</label>
@@ -869,9 +850,6 @@ const Profile = () => {
 
                     <div className="form-group">
                       <label className="form-label">เลือกตำแหน่งบนแผนที่</label>
-                      <p className="form-hint" style={{ margin: '0 0 10px', fontSize: '0.9rem', color: '#666' }}>
-                        คลิกบนแผนที่ ใช้ปุ่ม 📍 ตำแหน่งปัจจุบัน หรือค้นหาที่อยู่
-                      </p>
                       <div style={{ marginBottom: '20px' }}>
                         <AddressPicker
                           onLocationSelect={handleLocationSelect}

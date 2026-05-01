@@ -225,14 +225,6 @@ const ProductCard = ({
               formatPrice(product.price)
             )}
           </div>
-          {listingOnly && (
-            <p className="product-browse-hint">
-              จำนวนสินค้ามีการเปลี่ยนแปลง ตามจำนวนคงเหลือของร้าน
-              {product.is_low_stock && availableQty > 0 ? (
-                <span className="product-browse-low-stock"> · สินค้าใกล้หมด</span>
-              ) : null}
-            </p>
-          )}
           {!listingOnly && (
             <div className={`product-stock ${isOutOfStock ? 'out' : ''}`}>
               {isOutOfStock

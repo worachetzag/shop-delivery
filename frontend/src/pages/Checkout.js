@@ -616,7 +616,6 @@ const Checkout = () => {
         <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">ยืนยันคำสั่งซื้อ</h1>
-          <p className="page-subtitle">ตรวจสอบข้อมูลการสั่งซื้อ</p>
         </div>
 
         <form onSubmit={handleSubmit} className="checkout-form" noValidate>
@@ -639,9 +638,6 @@ const Checkout = () => {
                   รับที่ร้าน
                 </button>
               </div>
-              <p className="checkout-fulfillment-hint">
-                เลือก <strong>รับที่ร้าน</strong> ถ้ามารับสินค้าเอง — ไม่มีค่าจัดส่ง (คิดเฉพาะยอดสินค้า)
-              </p>
             </div>
 
             {/* Order Summary */}
@@ -718,14 +714,9 @@ const Checkout = () => {
                     {storeListing.address ? (
                       <p className="pickup-store-address">{storeListing.address}</p>
                     ) : (
-                      <p className="muted pickup-store-address">
-                        ยังไม่มีที่อยู่ร้านในระบบ — แอดมินตั้งได้ที่การตั้งค่าร้าน / พิกัดร้าน
-                      </p>
+                      <p className="muted pickup-store-address">ยังไม่มีที่อยู่ร้านในระบบ</p>
                     )}
                   </div>
-                  <p className="muted" style={{ margin: 0 }}>
-                    เมื่อสั่งแล้วรอแอดมินจัดเตรียมและแจ้งให้มารับตามเวลาทำการของร้าน
-                  </p>
                   <label className="form-label">ชื่อผู้มารับ</label>
                   <input
                     name="name"
@@ -760,11 +751,6 @@ const Checkout = () => {
                 </div>
               ) : (
                 <div className="delivery-each-order-panel customer-form-stack">
-                  <p className="muted checkout-delivery-each-order-hint" style={{ margin: '0 0 12px', fontSize: '0.92rem' }}>
-                    <strong>ที่อยู่จัดส่ง</strong> ต้องกรอกใหม่ทุกครั้งที่สั่ง — ไม่ใช้ที่อยู่ในโปรไฟล์
-                    (ที่อยู่ในโปรไฟล์เป็นที่อยู่ตามบัตร/ติดต่อเท่านั้น)
-                  </p>
-
                   <label className="form-label">ชื่อผู้รับ</label>
                   <input
                     name="name"
@@ -790,9 +776,6 @@ const Checkout = () => {
                   />
 
                   <label className="form-label">ปักหมุดจุดจัดส่ง</label>
-                  <p className="muted checkout-map-hint" style={{ margin: '0 0 10px', fontSize: '0.9rem', lineHeight: 1.45 }}>
-                    คลิกบนแผนที่ ใช้ปุ่ม 📍 ตำแหน่งปัจจุบัน หรือค้นหาที่อยู่ — พิกัดใช้คำนวณค่าส่ง และระบบจะช่วยเติมช่องด้านล่าง (โปรดตรวจก่อนส่ง)
-                  </p>
                   <div className="checkout-delivery-map-wrap">
                     <AddressPicker
                       onLocationSelect={handleDeliveryMapLocation}
@@ -875,7 +858,6 @@ const Checkout = () => {
                     <div className="payment-icon">📱</div>
                     <div>
                       <h4>QR Code</h4>
-                      <p>ชำระผ่านการสแกน QR</p>
                     </div>
                   </div>
                 </label>
@@ -892,11 +874,6 @@ const Checkout = () => {
                     <div className="payment-icon">💳</div>
                     <div>
                       <h4>ชำระปลายทาง</h4>
-                      <p>
-                        {fulfillmentMode === 'pickup'
-                          ? 'ชำระเมื่อมารับสินค้าที่ร้าน'
-                          : 'ชำระเงินเมื่อได้รับสินค้า'}
-                      </p>
                     </div>
                   </div>
                 </label>

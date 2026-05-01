@@ -50,6 +50,9 @@ function HomePromotionCta({ url, label, className }) {
   );
 }
 
+/** ถ้ามีสไลด์มากกว่านี้ ใช้ตัวเลขแทนจุดด้านล่าง — กันแถบจุดยาวเกิน */
+const PROMO_MAX_DOT_INDICATORS = 4;
+
 /** คลิกที่แบนเนอร์แล้วไปตามลิงก์ที่แอดมินตั้ง (ภายในแอปหรือภายนอก) */
 function HomePromotionBannerLink({ url, className, children }) {
   const u = (url || '').trim();
@@ -75,7 +78,7 @@ function HomePromotionSlide({ promotion: p }) {
   const hasBanner = Boolean(p.banner_image);
   return (
     <article
-      className={`home-dynamic-promo-card${hasBanner ? ' home-dynamic-promo-card--banner' : ''}`}
+      className={`home-dynamic-promo-card${hasBanner ? ' home-dynamic-promo-card--banner' : ' home-dynamic-promo-card--no-banner'}`}
     >
       {hasBanner ? (
         <>
@@ -95,12 +98,12 @@ function HomePromotionSlide({ promotion: p }) {
           ) : null}
         </>
       ) : (
-        <>
+        <div className="home-dynamic-promo-text-panel">
           {p.icon ? <div className="home-dynamic-promo-icon" aria-hidden>{p.icon}</div> : null}
           <h3 className="home-dynamic-promo-title">{p.title}</h3>
           {p.description ? <p className="home-dynamic-promo-desc">{p.description}</p> : null}
           <HomePromotionCta url={p.link_url} label={p.link_label} className="home-dynamic-promo-cta" />
-        </>
+        </div>
       )}
     </article>
   );
@@ -386,9 +389,6 @@ const Home = () => {
             <h1 className="hero-title">
               ยินดีต้อนรับสู่ร้าน{config.BRANDING.storeName}
             </h1>
-            <p className="hero-subtitle">
-              สั่งซื้อสินค้าผ่าน LINE ได้สะดวก พร้อมบริการจัดส่งถึงบ้าน
-            </p>
             <div className="hero-actions">
               <Link to="/customer/products" className="btn btn-primary">
                 ดูสินค้าทั้งหมด
@@ -402,9 +402,8 @@ const Home = () => {
       </section>
 
       {quickCategories.length > 0 && (
-        <section className="home-category-quick" aria-label="เลือกหมวดยอดนิยม">
+        <section className="home-category-quick" aria-label="หมวดยอดนิยม">
           <div className="container">
-            <p className="home-category-quick-label">เลือกหมวดยอดนิยม</p>
             <div className="home-category-quick-scroll">
               {quickCategories.map((cat) => (
                 <Link
@@ -429,9 +428,6 @@ const Home = () => {
         >
           <div className="container">
             <h2 className="section-title">โปรโมชั่น &amp; ข่าวสาร</h2>
-            <p className="home-section-hint">
-              ประกาศและโปรโมชั่นจากร้าน — เลื่อนซ้ายขวาด้วยนิ้วได้ มีรูปแบนเนอร์แล้วแตะที่รูปเพื่อไปหน้าที่ตั้งไว้ เลื่อนอัตโนมัติเมื่อปล่อยนิ้วสักครู่ (ชี้เมาส์หรือโฟกัสที่บล็อกนี้จะหยุด autoplay)
-            </p>
             <div
               className="home-dynamic-promo-carousel"
               onMouseEnter={() => setPromoHoverPaused(true)}
@@ -463,27 +459,33 @@ const Home = () => {
                       ))}
                     </div>
                   </div>
-                  <div className="home-dynamic-promo-dots" role="tablist" aria-label="เลือกโปรโมชั่น">
-                    {homePromotions.map((p, i) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={i === promoSlideIndex}
-                        aria-label={`โปรโมชั่น ${i + 1} จาก ${homePromotions.length}`}
-                        className={`home-dynamic-promo-dot${i === promoSlideIndex ? ' is-active' : ''}`}
-                        onClick={() => {
-                          if (promoSwipeIdleTimerRef.current) {
-                            window.clearTimeout(promoSwipeIdleTimerRef.current);
-                            promoSwipeIdleTimerRef.current = null;
-                          }
-                          setPromoSwipePaused(false);
-                          promoApplyScrollRef.current = true;
-                          setPromoSlideIndex(i);
-                        }}
-                      />
-                    ))}
-                  </div>
+                  {homePromotions.length <= PROMO_MAX_DOT_INDICATORS ? (
+                    <div className="home-dynamic-promo-dots" role="tablist" aria-label="เลือกโปรโมชั่น">
+                      {homePromotions.map((p, i) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={i === promoSlideIndex}
+                          aria-label={`โปรโมชั่น ${i + 1} จาก ${homePromotions.length}`}
+                          className={`home-dynamic-promo-dot${i === promoSlideIndex ? ' is-active' : ''}`}
+                          onClick={() => {
+                            if (promoSwipeIdleTimerRef.current) {
+                              window.clearTimeout(promoSwipeIdleTimerRef.current);
+                              promoSwipeIdleTimerRef.current = null;
+                            }
+                            setPromoSwipePaused(false);
+                            promoApplyScrollRef.current = true;
+                            setPromoSlideIndex(i);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="home-dynamic-promo-slide-counter" aria-live="polite">
+                      {promoSlideIndex + 1} / {homePromotions.length}
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -494,9 +496,6 @@ const Home = () => {
       <section className="featured-products home-product-section">
         <div className="container">
           <h2 className="section-title">สินค้าแนะนำ</h2>
-          <p className="home-section-hint">
-            แสดงเฉพาะสินค้าที่ติ๊ก «สินค้าแนะนำ» ในแบบฟอร์มสินค้า — เลือกหมวดด้านล่างเพื่อดูเฉพาะกลุ่มนั้น (คนละเรื่องกับสินค้าลดราคา)
-          </p>
           <div className="home-chips-panel">
             <CategoryChipsRow
               categories={categories}
@@ -533,9 +532,6 @@ const Home = () => {
       <section className="home-promo-products home-product-section">
         <div className="container">
           <h2 className="section-title">ราคาพิเศษ &amp; ลดราคา</h2>
-          <p className="home-section-hint">
-            เฉพาะสินค้าที่ตั้งราคาก่อนลดสูงกว่าราคาขาย — เรียงตามส่วนลด % สูงก่อน (ไม่ต้องติ๊กแนะนำหรือป้ายอื่น)
-          </p>
           <div className="home-chips-panel">
             <CategoryChipsRow
               categories={categories}

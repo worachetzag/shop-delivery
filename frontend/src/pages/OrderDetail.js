@@ -268,7 +268,6 @@ const OrderDetail = () => {
         <CustomerInlineBack />
         <div className="page-header">
           <h1 className="page-title">คำสั่งซื้อ {order.order_number || `#${order.id}`}</h1>
-          <p className="page-subtitle">สถานะ: {order.status_display || order.status}</p>
         </div>
 
         <div className="order-card">
@@ -296,7 +295,6 @@ const OrderDetail = () => {
           {canUploadSlip && (
             <div className="slip-upload-box">
               <p><strong>อัปโหลดสลิปย้อนหลัง</strong></p>
-              <p className="upload-hint">กรณีชำระพร้อมเพย์แล้วแต่ยังไม่ส่งสลิป สามารถอัปโหลดได้ที่นี่</p>
               <input
                 type="file"
                 accept="image/*"
@@ -317,13 +315,12 @@ const OrderDetail = () => {
           {canShowPromptPayQr && (
             <div className="slip-upload-box">
               <p><strong>QR พร้อมเพย์สำหรับชำระเงิน</strong></p>
-              <p className="upload-hint">กรณีลืมบันทึก QR จากหน้าสรุปคำสั่งซื้อ สามารถสแกนจากหน้านี้ได้</p>
               {loadingPromptPayQr ? (
                 <p className="upload-hint">กำลังโหลด QR...</p>
               ) : promptPayInfo?.qr_image ? (
                 <>
-                  <p className="upload-hint">พร้อมเพย์: {promptPayInfo.promptpay_number || '-'}</p>
-                  <p className="upload-hint">ยอดชำระ: {formatPrice(Number(promptPayInfo.amount || order?.total_amount || 0))}</p>
+                  <p><strong>พร้อมเพย์:</strong> {promptPayInfo.promptpay_number || '-'}</p>
+                  <p><strong>ยอดชำระ:</strong> {formatPrice(Number(promptPayInfo.amount || order?.total_amount || 0))}</p>
                   <img
                     src={promptPayInfo.qr_image}
                     alt="promptpay-qr"
@@ -410,11 +407,7 @@ const OrderDetail = () => {
           </div>
 
           {!receiptReady ? (
-            <p className="upload-hint">
-              {order.payment_method === 'promptpay'
-                ? 'ใบเสร็จจะพร้อมหลังแอดมินยืนยันสลิปโอนเงิน'
-                : 'ใบเสร็จจะพร้อมหลังจัดส่งสำเร็จ'}
-            </p>
+            null
           ) : (
             <div className="receipt-content">
               <div className="receipt-row"><span>เลขที่ใบเสร็จ:</span><strong>{receiptNo}</strong></div>

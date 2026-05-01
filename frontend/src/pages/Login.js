@@ -77,14 +77,6 @@ const Login = () => {
       <div className="container">
         <div className="login-card">
           <h2>เข้าสู่ระบบ</h2>
-          <p className="login-subtitle">
-            ใช้บัญชี LINE เพื่อเข้าใช้งานแอปลูกค้า (ไม่ใช่รหัสผ่านของเว็บร้าน)
-          </p>
-          <p className="login-browser-hint">
-            ถ้าเปิดจาก Safari หรือ Chrome แล้วเห็นหน้าอีเมลของ LINE — นั่นคือการเข้าบัญชี LINE ในเบราว์เซอร์
-            แนะนำให้แตะ <strong>เข้าสู่ระบบด้วยแอป LINE</strong> ด้านล่างของหน้านั้น
-            หรือเปิดลิงก์ร้านจากแชทใน LINE เพื่อให้เข้าผ่านแอป LINE โดยตรง
-          </p>
           <div className="login-action">
             <LineLoginButton lineLoginNext={lineLoginNext} />
           </div>

@@ -48,9 +48,22 @@
 }
 
 .products-filter-banners {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.45rem;
   margin-bottom: 0.65rem;
+}
+
+.products-filter-clear-link {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--brand-primary, #00a651);
+  text-decoration: none;
+}
+
+.products-filter-clear-link:hover {
+  text-decoration: underline;
 }
 
 .products-on-sale-banner {

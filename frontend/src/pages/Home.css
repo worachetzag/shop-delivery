@@ -292,7 +292,11 @@
   transform: scale(0.98);
 }
 
-/* Admin-managed promo cards / banners */
+/* Admin-managed promo cards / banners — ความสูงพื้นที่รูป/พาเนลข้อความให้ตรงกัน */
+.home-dynamic-promotions {
+  --home-promo-visual-h: clamp(120px, 32vw, 220px);
+}
+
 .home-dynamic-promo-carousel {
   width: 100%;
 }
@@ -364,6 +368,16 @@
   transform: scale(1.2);
 }
 
+.home-dynamic-promo-slide-counter {
+  margin-top: 12px;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-secondary, #64748b);
+  letter-spacing: 0.04em;
+}
+
 .home-dynamic-promo-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -381,6 +395,43 @@
   padding: 0.85rem 0.95rem;
   display: grid;
   gap: 0.35rem;
+}
+
+.home-dynamic-promo-card--no-banner {
+  padding: 0;
+  background: transparent;
+  border: none;
+  gap: 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.home-dynamic-promo-text-panel {
+  box-sizing: border-box;
+  min-height: var(--home-promo-visual-h, clamp(120px, 32vw, 220px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft, #e8ecf2);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  background: linear-gradient(155deg, #ffffff 0%, #f5fbf8 42%, #eaf6ef 100%);
+}
+
+.home-dynamic-promo-card--no-banner .home-dynamic-promo-title {
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.home-dynamic-promo-card--no-banner .home-dynamic-promo-desc {
+  line-height: 1.5;
+}
+
+.home-dynamic-promo-card--no-banner .home-dynamic-promo-cta {
+  margin-top: 0.15rem;
 }
 
 .home-dynamic-promo-card--banner {
@@ -416,7 +467,7 @@
 .home-dynamic-promo-banner-img {
   display: block;
   width: 100%;
-  height: clamp(120px, 32vw, 220px);
+  height: var(--home-promo-visual-h, clamp(120px, 32vw, 220px));
   object-fit: cover;
   vertical-align: middle;
 }
