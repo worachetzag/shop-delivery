@@ -37,6 +37,8 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const [ordersTotalCount, setOrdersTotalCount] = useState(0);
   const [ordersSearchDraft, setOrdersSearchDraft] = useState('');
   const [ordersSearch, setOrdersSearch] = useState('');
+  /** all | delivery | pickup — แยกจัดส่ง vs มารับที่ร้าน */
+  const [ordersFulfillmentFilter, setOrdersFulfillmentFilter] = useState('all');
   const [products, setProducts] = useState([]);
   const [productsPage, setProductsPage] = useState(1);
   const [productsTotalCount, setProductsTotalCount] = useState(0);
@@ -153,11 +155,11 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     if (activeTab === 'orders') {
       loadOrders();
     }
-  }, [activeTab, ordersPage, ordersSearch, ordersCustomerIdFilter]);
+  }, [activeTab, ordersPage, ordersSearch, ordersCustomerIdFilter, ordersFulfillmentFilter]);
 
   useEffect(() => {
     setOrdersPage(1);
-  }, [ordersSearch, ordersCustomerIdFilter]);
+  }, [ordersSearch, ordersCustomerIdFilter, ordersFulfillmentFilter]);
 
   useEffect(() => {
     if (activeTab === 'products') {
@@ -196,6 +198,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       }
       if (ordersCustomerIdFilter) {
         params.set('customer_id', ordersCustomerIdFilter);
+      }
+      if (ordersFulfillmentFilter === 'delivery' || ordersFulfillmentFilter === 'pickup') {
+        params.set('order_type', ordersFulfillmentFilter);
       }
       const response = await fetch(`${config.API_BASE_URL}orders/list/?${params.toString()}`, {
         headers: {
@@ -1042,13 +1047,17 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
               >
                 ค้นหา
               </button>
-              {(ordersSearch || ordersSearchDraft || ordersCustomerIdFilter) && (
+              {(ordersSearch ||
+                ordersSearchDraft ||
+                ordersCustomerIdFilter ||
+                ordersFulfillmentFilter !== 'all') && (
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={() => {
                     setOrdersSearchDraft('');
                     setOrdersSearch('');
+                    setOrdersFulfillmentFilter('all');
                     if (ordersCustomerIdFilter) {
                       navigate('/admin/orders');
                     }
@@ -1058,10 +1067,42 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 </button>
               )}
             </div>
+            <div
+              className="admin-order-fulfillment-filters"
+              role="group"
+              aria-label="กรองประเภทการรับสินค้า"
+              style={{ padding: '0 12px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+            >
+              <span className="muted" style={{ fontSize: '0.82rem', marginRight: 4 }}>
+                แสดงเฉพาะ:
+              </span>
+              <button
+                type="button"
+                className={`admin-fulfillment-chip ${ordersFulfillmentFilter === 'all' ? 'is-active' : ''}`}
+                onClick={() => setOrdersFulfillmentFilter('all')}
+              >
+                ทั้งหมด
+              </button>
+              <button
+                type="button"
+                className={`admin-fulfillment-chip admin-fulfillment-chip--delivery ${ordersFulfillmentFilter === 'delivery' ? 'is-active' : ''}`}
+                onClick={() => setOrdersFulfillmentFilter('delivery')}
+              >
+                ไปส่ง (จัดส่ง)
+              </button>
+              <button
+                type="button"
+                className={`admin-fulfillment-chip admin-fulfillment-chip--pickup ${ordersFulfillmentFilter === 'pickup' ? 'is-active' : ''}`}
+                onClick={() => setOrdersFulfillmentFilter('pickup')}
+              >
+                มารับที่ร้าน
+              </button>
+            </div>
             <table>
               <thead>
                 <tr>
                   <th>หมายเลขคำสั่งซื้อ</th>
+                  <th>การรับสินค้า</th>
                   <th>ลูกค้า</th>
                   <th>สินค้า</th>
                   <th>จำนวนเงิน</th>
@@ -1074,10 +1115,11 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 {orders.length > 0 ? (
                   orders.map((order) => {
                     const customerId = order.customer || order.customer_id || null;
+                    const isPickup = order.order_type === 'pickup';
                     return (
                     <tr
                       key={order.id}
-                      className="order-row-clickable"
+                      className={`order-row-clickable ${isPickup ? 'admin-order-row-pickup' : 'admin-order-row-delivery'}`}
                       onClick={() => navigate(`/admin/orders/${order.id}`)}
                     >
                       <td>
@@ -1089,6 +1131,14 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                         >
                           {order.order_number || `#${order.id}`}
                         </Link>
+                      </td>
+                      <td>
+                        <span
+                          className={`fulfillment-badge ${isPickup ? 'fulfillment-badge--pickup' : 'fulfillment-badge--delivery'}`}
+                          title={order.order_type_display || ''}
+                        >
+                          {isPickup ? 'มารับที่ร้าน' : 'ไปส่ง'}
+                        </span>
                       </td>
                       <td>
                         {customerId ? (
@@ -1138,7 +1188,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
                       ยังไม่มีคำสั่งซื้อ
                     </td>
                   </tr>

@@ -428,6 +428,9 @@ class OrderListView(generics.ListAPIView):
                 qs = qs.filter(customer_id=int(raw_customer_id))
             except (TypeError, ValueError):
                 pass
+        ot = (self.request.query_params.get('order_type') or '').strip().lower()
+        if ot in ('pickup', 'delivery'):
+            qs = qs.filter(order_type=ot)
         return qs
 
 
