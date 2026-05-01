@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getCategoryAccentHue, getCategoryEmoji } from '../utils/categoryVisual';
+import CategoryIllustration from './CategoryIllustration';
+import { getCategoryAccentHue, getCategoryIllustrationVariant } from '../utils/categoryVisual';
 import './CustomerCategoryStrip.css';
 
 const ALL_TILE_HUE = 162;
-const ALL_TILE_EMOJI = '🛒';
 
 function defaultResolveHref(categoryId) {
   if (!categoryId) return '/customer/products';
@@ -73,7 +73,9 @@ function CustomerCategoryStrip({
               style={{ backgroundColor: `hsl(${ALL_TILE_HUE}, 38%, 92%)` }}
               aria-hidden
             >
-              <span className="customer-category-strip-icon">{ALL_TILE_EMOJI}</span>
+              <span className="customer-category-strip-icon">
+                <CategoryIllustration variant="all" />
+              </span>
             </span>
             <span className="customer-category-strip-label">ทั้งหมด</span>
           </Link>
@@ -94,7 +96,9 @@ function CustomerCategoryStrip({
                 }}
                 aria-hidden
               >
-                <span className="customer-category-strip-icon">{getCategoryEmoji(cat.name, cat.id)}</span>
+                <span className="customer-category-strip-icon">
+                  <CategoryIllustration variant={getCategoryIllustrationVariant(cat.name, cat.id)} />
+                </span>
               </span>
               <span className="customer-category-strip-label">{cat.name}</span>
             </Link>
