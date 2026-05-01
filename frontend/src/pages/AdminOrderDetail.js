@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { usePopup } from '../components/PopupProvider';
+import { AdminBackLink } from '../components/AdminBackButton';
 import './AdminOrderDetail.css';
 
 const AdminOrderDetail = () => {
@@ -233,7 +234,7 @@ const AdminOrderDetail = () => {
       <div className="admin-dashboard">
         <div className="admin-content">
           <p>ไม่พบคำสั่งซื้อ</p>
-          <Link to="/admin/orders" className="btn btn-secondary">กลับหน้าคำสั่งซื้อ</Link>
+          <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
         </div>
       </div>
     );
@@ -268,7 +269,12 @@ const AdminOrderDetail = () => {
   return (
     <div className="admin-dashboard">
       <div className="admin-content">
-        <h2>รายละเอียดคำสั่งซื้อ {order.order_number || `#${order.id}`}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
+          <h2 style={{ margin: 0 }}>
+            รายละเอียดคำสั่งซื้อ {order.order_number || `#${order.id}`}
+          </h2>
+        </div>
         <p>
           <strong>ลูกค้า:</strong>{' '}
           {customerId ? (
@@ -477,7 +483,7 @@ const AdminOrderDetail = () => {
               ติดตามคนขับ
             </Link>
           )}
-          <Link to="/admin/orders" className="btn btn-secondary">กลับหน้าคำสั่งซื้อ</Link>
+          <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import CustomerInlineBack from '../components/CustomerInlineBack';
+import { AdminBackLink } from '../components/AdminBackButton';
 import './Tracking.css';
 
 const Tracking = () => {
@@ -193,7 +194,16 @@ const Tracking = () => {
     return (
       <div className="tracking-page">
         <div className="container">
-          {!isAdminTracking && <CustomerInlineBack />}
+          {isAdminTracking ? (
+            <div style={{ marginBottom: 12 }}>
+              <AdminBackLink
+                to={orderId ? `/admin/orders/${orderId}` : '/admin/orders'}
+                ariaLabel="รายละเอียดคำสั่งซื้อ"
+              />
+            </div>
+          ) : (
+            <CustomerInlineBack />
+          )}
           <div className="error-state">
             <div className="error-icon">❌</div>
             <h3>ไม่พบข้อมูลการติดตาม</h3>
@@ -214,7 +224,16 @@ const Tracking = () => {
   return (
     <div className={`tracking-page ${isAdminTracking ? 'admin-tracking-page' : ''}`}>
       <div className="container">
-        {!isAdminTracking && <CustomerInlineBack />}
+        {isAdminTracking ? (
+          <div style={{ marginBottom: 12 }}>
+            <AdminBackLink
+              to={orderId ? `/admin/orders/${orderId}` : '/admin/orders'}
+              ariaLabel="รายละเอียดคำสั่งซื้อ"
+            />
+          </div>
+        ) : (
+          <CustomerInlineBack />
+        )}
         <div className="page-header">
           <h1 className="page-title">ติดตามการจัดส่ง</h1>
           <p className="page-subtitle">คำสั่งซื้อ {trackingInfo.trackingNumber}</p>

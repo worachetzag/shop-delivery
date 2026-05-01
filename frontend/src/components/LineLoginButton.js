@@ -1,9 +1,16 @@
 import React from 'react';
 import config from '../config';
 
-/** OAuth ไป Django เพื่อแลก Token ของร้าน (หลัง LINE ยืนยันตัวตนแล้ว) */
-export function redirectToShopLineOAuth() {
-  window.location.href = `${config.LIFF_ENDPOINT_URL}/accounts/line/login/`;
+/** OAuth ไป Django เพื่อแลก Token ของร้าน — next = path หลังล็อกอิน (เช่น /customer/orders/12) */
+export function redirectToShopLineOAuth(nextPath) {
+  const raw =
+    typeof nextPath === 'string' && nextPath.trim()
+      ? nextPath.trim().startsWith('/')
+        ? nextPath.trim()
+        : `/${nextPath.trim()}`
+      : '/customer';
+  const q = encodeURIComponent(raw);
+  window.location.href = `${config.LIFF_ENDPOINT_URL}/accounts/line/login/?next=${q}`;
 }
 
 function getGlobalLiff() {
@@ -11,7 +18,21 @@ function getGlobalLiff() {
   return window.liff || null;
 }
 
-const LineLoginButton = () => {
+function normalizeShopPath(pathish) {
+  if (typeof pathish !== 'string' || !pathish.trim()) return '/customer';
+  const t = pathish.trim();
+  return t.startsWith('/') ? t : `/${t}`;
+}
+
+const LineLoginButton = ({ lineLoginNext }) => {
+  const resolveRedirectUri = () => {
+    const path =
+      typeof lineLoginNext === 'string' && lineLoginNext.trim()
+        ? normalizeShopPath(lineLoginNext)
+        : `${window.location.pathname}${window.location.search}`;
+    return `${window.location.origin}${path}`;
+  };
+
   const handleLineLogin = async () => {
     try {
       const liff = getGlobalLiff();
@@ -19,14 +40,13 @@ const LineLoginButton = () => {
       await liff.init({ liffId: config.LIFF_ID });
       // ใน LINE WebView: ให้ LIFF login ก่อน — มักไม่โผล่หน้าอีเมล/รหัสผ่านเหมือนเปิดใน Safari
       if (liff.isInClient() && !liff.isLoggedIn()) {
-        const uri = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-        liff.login({ redirectUri: uri });
+        liff.login({ redirectUri: resolveRedirectUri() });
         return;
       }
     } catch {
       /* เปิดนอก LINE หรือยังไม่ได้ตั้ง LIFF_ID — ไป OAuth แบบเดิม */
     }
-    redirectToShopLineOAuth();
+    redirectToShopLineOAuth(lineLoginNext ? normalizeShopPath(lineLoginNext) : '/customer');
   };
 
   return (

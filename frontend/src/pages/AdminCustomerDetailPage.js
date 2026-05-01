@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { AdminBackButton } from '../components/AdminBackButton';
 import { formatCitizenThirteenDisplay, formatMobileTenDisplay } from '../utils/thaiFormInputs';
 import './AdminDashboard.css';
 
@@ -90,9 +91,11 @@ const AdminCustomerDetailPage = () => {
     return (
       <div className="admin-dashboard" style={{ padding: 16 }}>
         <div className="empty-state">ไม่พบลูกค้า</div>
-        <button type="button" className="btn-secondary" style={{ marginTop: 12 }} onClick={() => navigate('/admin/customers')}>
-          กลับรายการลูกค้า
-        </button>
+        <AdminBackButton
+          ariaLabel="รายการลูกค้า"
+          onClick={() => navigate('/admin/customers')}
+          style={{ marginTop: 12 }}
+        />
       </div>
     );
   }
@@ -105,9 +108,7 @@ const AdminCustomerDetailPage = () => {
   return (
     <div className="admin-dashboard" style={{ padding: 16 }}>
       <div style={{ marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-        <button type="button" className="btn-secondary" onClick={() => navigate('/admin/customers')}>
-          ← รายการลูกค้า
-        </button>
+        <AdminBackButton ariaLabel="รายการลูกค้า" onClick={() => navigate('/admin/customers')} />
         <Link className="btn-primary" style={{ textDecoration: 'none' }} to={`/admin/orders?customer_id=${customer.id}`}>
           ดูออเดอร์ทั้งหมดของลูกค้านี้
         </Link>

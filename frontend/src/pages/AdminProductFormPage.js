@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { AdminBackLink } from '../components/AdminBackButton';
 import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
 
@@ -212,7 +213,10 @@ const AdminProductFormPage = () => {
   return (
     <div className="admin-dashboard">
       <div className="admin-content">
-        <h2>{pageTitle}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+          <AdminBackLink to="/admin/products" ariaLabel="รายการสินค้า" />
+          <h2 style={{ margin: 0 }}>{pageTitle}</h2>
+        </div>
         <form className="product-form" onSubmit={handleSubmit}>
           {isEditMode && form.image && (
             <div style={{ marginBottom: '10px' }}>
@@ -301,7 +305,7 @@ const AdminProductFormPage = () => {
                   disabled={saving}
                   onClick={() => setPendingSaveAction('back')}
                 >
-                  {saving ? 'กำลังบันทึก...' : 'บันทึกและกลับ'}
+                  {saving ? 'กำลังบันทึก...' : 'บันทึกและปิด'}
                 </button>
                 <button
                   type="submit"
@@ -313,7 +317,7 @@ const AdminProductFormPage = () => {
                 </button>
               </>
             )}
-            <Link to="/admin/products" className="btn btn-secondary">กลับหน้าสินค้า</Link>
+            <AdminBackLink to="/admin/products" ariaLabel="รายการสินค้า" />
           </div>
         </form>
       </div>

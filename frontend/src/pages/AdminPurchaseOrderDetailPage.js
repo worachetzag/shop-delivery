@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { AdminBackLink } from '../components/AdminBackButton';
 
 const AdminPurchaseOrderDetailPage = () => {
   const popup = usePopup();
@@ -84,20 +85,20 @@ const AdminPurchaseOrderDetailPage = () => {
       <div className="admin-dashboard" style={{ padding: 16 }}>
         <h1>รายละเอียดใบสั่งซื้อ</h1>
         <p>ไม่พบข้อมูลใบสั่งซื้อ</p>
-        <Link to="/admin/inventory" className="btn btn-secondary">กลับหน้าสต็อก</Link>
+        <AdminBackLink to="/admin/inventory" ariaLabel="สต็อกและคลัง" />
       </div>
     );
   }
 
   return (
     <div className="admin-dashboard" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <h1 style={{ margin: 0 }}>รายละเอียดใบสั่งซื้อ {purchaseOrder.reference}</h1>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+        <AdminBackLink to="/admin/inventory" ariaLabel="สต็อกและคลัง" />
+        <h1 style={{ margin: 0, flex: '1 1 200px' }}>รายละเอียดใบสั่งซื้อ {purchaseOrder.reference}</h1>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
           <button type="button" className="btn btn-primary" onClick={receiveAll} disabled={receiving}>
             {receiving ? 'กำลังรับเข้า...' : 'รับเข้าคงค้างทั้งหมด'}
           </button>
-          <Link to="/admin/inventory" className="btn btn-secondary">กลับหน้าสต็อก</Link>
         </div>
       </div>
 

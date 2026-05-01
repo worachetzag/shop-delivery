@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LineLoginButton, { redirectToShopLineOAuth } from '../components/LineLoginButton';
 import config from '../config';
 import './Login.css';
@@ -11,6 +11,15 @@ function getGlobalLiff() {
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const lineLoginNext = useMemo(() => {
+    const from = location.state?.from;
+    const p = from?.pathname;
+    if (!p || typeof p !== 'string') return undefined;
+    if (p.startsWith('/customer/login')) return undefined;
+    return `${p}${from.search || ''}`;
+  }, [location.state]);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,10 +42,15 @@ const Login = () => {
               navigate('/customer/profile?section=personal&complete=required', { replace: true });
               return;
             }
-            navigate('/customer', { replace: true });
+            const from = location.state?.from;
+            const fp = from?.pathname;
+            const dest =
+              fp && typeof fp === 'string' && !fp.startsWith('/customer/login')
+                ? `${fp}${from.search || ''}`
+                : '/customer';
+            navigate(dest, { replace: true });
             return;
           }
-          // token ค้าง/หมดอายุ: ล้างเพื่อไม่ให้ติดลูปเข้า-ออกหน้า login
           localStorage.removeItem('auth_token');
           localStorage.removeItem('username');
           localStorage.removeItem('user_role');
@@ -46,8 +60,8 @@ const Login = () => {
         if (!liff) throw new Error('LIFF SDK not loaded');
         await liff.init({ liffId: config.LIFF_ID });
         if (cancelled) return;
-        if (liff.isInClient() && liff.isLoggedIn()) {
-          redirectToShopLineOAuth();
+        if (liff.isInClient() && !liff.isLoggedIn()) {
+          redirectToShopLineOAuth(lineLoginNext || '/customer');
         }
       } catch {
         /* ไม่ได้อยู่ใน LINE / LIFF ไม่พร้อม — แสดงปุ่มตามปกติ */
@@ -56,7 +70,7 @@ const Login = () => {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, [navigate, location.state, lineLoginNext]);
 
   return (
     <div className="login-page">
@@ -72,7 +86,7 @@ const Login = () => {
             หรือเปิดลิงก์ร้านจากแชทใน LINE เพื่อให้เข้าผ่านแอป LINE โดยตรง
           </p>
           <div className="login-action">
-            <LineLoginButton />
+            <LineLoginButton lineLoginNext={lineLoginNext} />
           </div>
         </div>
       </div>
@@ -81,6 +95,3 @@ const Login = () => {
 };
 
 export default Login;
-
-
-

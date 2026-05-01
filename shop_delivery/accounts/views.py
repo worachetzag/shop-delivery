@@ -19,10 +19,43 @@ from django.db.models.functions import Coalesce
 import requests
 import logging
 import secrets
-from urllib.parse import quote_plus
-from urllib.parse import urlencode
+from urllib.parse import quote_plus, unquote, urlencode
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_line_oauth_next(raw_next) -> str:
+    """
+    จำกัด path หลังล็อกอิน LINE ให้อยู่ใต้ /customer เท่านั้น (กัน open redirect)
+    ใช้ส่งผู้ใช้กลับไปหน้ารายละเอียดออเดอร์จากลิงก์ในแชท เช่น /customer/orders/123
+    """
+    default = '/customer'
+    if raw_next is None:
+        return default
+    try:
+        full = unquote(str(raw_next).strip())
+    except Exception:
+        return default
+    if not full:
+        return default
+    if not full.startswith('/'):
+        full = '/' + full
+    lower = full.lower()
+    if lower.startswith(('http://', 'https://', '//')):
+        return default
+    base, _, query = full.partition('?')
+    base = base.split('#', 1)[0]
+    if '..' in base:
+        return default
+    if base == '/customer':
+        out = base
+    elif base.startswith('/customer/') and not base.startswith('/customer/login'):
+        out = base
+    else:
+        return default
+    if query:
+        return f'{out}?{query[:800]}'
+    return out
 
 
 def _normalize_contact_email(raw):
@@ -1042,6 +1075,7 @@ def line_login_start(request):
     """Start LINE OAuth flow without allauth dependency."""
     state = secrets.token_urlsafe(24)
     request.session['line_oauth_state'] = state
+    request.session['line_oauth_next'] = _sanitize_line_oauth_next(request.GET.get('next'))
 
     redirect_uri = _line_callback_url(request)
     logger.info(f"LINE OAuth start redirect_uri={redirect_uri}")
@@ -1215,13 +1249,13 @@ def line_login_callback(request):
         from django.contrib.auth import login
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         
-        # Redirect กลับไปที่ frontend พร้อม token
+        # Redirect กลับไปที่ frontend พร้อม token (เก็บ path จาก ?next= ตอนเริ่ม OAuth)
         logger.info(f"Redirecting to frontend with token for user: {user.username}")
-        next_path = (
-            '/customer/profile?section=personal&complete=required'
-            if not getattr(customer, 'profile_completed', False)
-            else '/customer'
-        )
+        stored_next = request.session.pop('line_oauth_next', None)
+        if not getattr(customer, 'profile_completed', False):
+            next_path = '/customer/profile?section=personal&complete=required'
+        else:
+            next_path = _sanitize_line_oauth_next(stored_next)
         query_sep = '&' if '?' in next_path else '?'
         role = getattr(getattr(user, 'user_role', None), 'role', None) or 'customer'
         auth_q = urlencode(
@@ -1232,7 +1266,7 @@ def line_login_callback(request):
                 'user_role': role,
             }
         )
-        return HttpResponseRedirect(f"{frontend_url}{next_path}{query_sep}{auth_q}")
+        return HttpResponseRedirect(f"{frontend_url.rstrip('/')}{next_path}{query_sep}{auth_q}")
         
     except Exception as e:
         logger.exception("LINE Login Error")
