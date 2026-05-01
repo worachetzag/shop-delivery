@@ -303,27 +303,36 @@
   border-radius: 14px;
 }
 
-.home-dynamic-promo-track {
+.home-dynamic-promo-carousel-viewport--scroll {
+  overflow: visible;
+  border-radius: 14px;
+}
+
+.home-dynamic-promo-scroll {
   display: flex;
-  transition: transform 0.52s cubic-bezier(0.33, 1, 0.68, 1);
-  will-change: transform;
+  gap: 10px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  padding-bottom: 4px;
 }
 
-.home-dynamic-promo-slide-shell {
+.home-dynamic-promo-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.home-dynamic-promo-scroll-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  max-width: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: normal;
   box-sizing: border-box;
-  padding: 0 4px;
-}
-
-.home-dynamic-promo-slide-shell:first-child {
-  padding-left: 0;
-}
-
-.home-dynamic-promo-slide-shell:last-child {
-  padding-right: 0;
-}
-
-.home-dynamic-promo-slide-shell[aria-hidden='true'] {
-  pointer-events: none;
 }
 
 .home-dynamic-promo-dots {
@@ -455,8 +464,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-dynamic-promo-track {
-    transition: none;
+  .home-dynamic-promo-scroll {
+    scroll-behavior: auto;
   }
 
   .home-dynamic-promo-dot {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import CategoryChipsRow from '../components/CategoryChipsRow';
@@ -87,11 +87,12 @@ function HomePromotionSlide({ promotion: p }) {
               loading="lazy"
             />
           </HomePromotionBannerLink>
-          <div className="home-dynamic-promo-banner-meta">
-            <h3 className="home-dynamic-promo-banner-heading">{p.title}</h3>
-            {p.description ? <p className="home-dynamic-promo-desc">{p.description}</p> : null}
-            <HomePromotionCta url={p.link_url} label={p.link_label} className="home-dynamic-promo-cta" />
-          </div>
+          {(p.title || p.description) ? (
+            <div className="home-dynamic-promo-banner-meta">
+              {p.title ? <h3 className="home-dynamic-promo-banner-heading">{p.title}</h3> : null}
+              {p.description ? <p className="home-dynamic-promo-desc">{p.description}</p> : null}
+            </div>
+          ) : null}
         </>
       ) : (
         <>
@@ -119,8 +120,17 @@ const Home = () => {
   const [promoLoading, setPromoLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [promoSlideIndex, setPromoSlideIndex] = useState(0);
-  const [promoCarouselPaused, setPromoCarouselPaused] = useState(false);
+  /** หยุด autoplay ช่วงโฟกัส/เมาส์บนพื้นที่โปร */
+  const [promoHoverPaused, setPromoHoverPaused] = useState(false);
+  /** หยุด autoplay ช่วงผู้ใช้เลื่อนด้วยนิ้ว/ล้อ — เลิกเลื่อนแล้วจะปิดอัตโนมัติหลัง idle */
+  const [promoSwipePaused, setPromoSwipePaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  const promoScrollRef = useRef(null);
+  const skipPromoScrollSyncRef = useRef(false);
+  /** true = ครั้งถัดไปที่โปรโมชั่นเปลี่ยนสไลด์ให้เลื่อนโดยโปรแกรม (autoplay / จุด / โหลดรายการใหม่) — ไม่ใช้เมื่อผู้ใช้เลื่อนมือ */
+  const promoApplyScrollRef = useRef(false);
+  const promoSwipeIdleTimerRef = useRef(null);
 
   const promoIdsKey = useMemo(() => homePromotions.map((p) => p.id).join(','), [homePromotions]);
 
@@ -134,16 +144,92 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    promoApplyScrollRef.current = true;
     setPromoSlideIndex(0);
   }, [promoIdsKey]);
 
   useEffect(() => {
-    if (homePromotions.length <= 1 || promoCarouselPaused || prefersReducedMotion) return undefined;
+    return () => {
+      if (promoSwipeIdleTimerRef.current) window.clearTimeout(promoSwipeIdleTimerRef.current);
+    };
+  }, []);
+
+  const syncPromoSlideIndexFromScroll = useCallback(() => {
+    const root = promoScrollRef.current;
+    if (!root || skipPromoScrollSyncRef.current) return;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < root.children.length; i++) {
+      const el = root.children[i];
+      const d = Math.abs(el.offsetLeft - root.scrollLeft);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    setPromoSlideIndex((prev) => (prev === best ? prev : best));
+  }, []);
+
+  const schedulePromoSwipeIdleResume = useCallback(() => {
+    if (promoSwipeIdleTimerRef.current) window.clearTimeout(promoSwipeIdleTimerRef.current);
+    promoSwipeIdleTimerRef.current = window.setTimeout(() => {
+      promoSwipeIdleTimerRef.current = null;
+      setPromoSwipePaused(false);
+    }, 780);
+  }, []);
+
+  const handlePromoScroll = useCallback(() => {
+    if (skipPromoScrollSyncRef.current) return;
+    setPromoSwipePaused(true);
+    schedulePromoSwipeIdleResume();
+    window.requestAnimationFrame(syncPromoSlideIndexFromScroll);
+  }, [schedulePromoSwipeIdleResume, syncPromoSlideIndexFromScroll]);
+
+  const handlePromoTouchStart = useCallback(() => {
+    setPromoSwipePaused(true);
+    if (promoSwipeIdleTimerRef.current) {
+      window.clearTimeout(promoSwipeIdleTimerRef.current);
+      promoSwipeIdleTimerRef.current = null;
+    }
+  }, []);
+
+  const handlePromoWheelHorizontal = useCallback(
+    (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      handlePromoTouchStart();
+    },
+    [handlePromoTouchStart],
+  );
+
+  useEffect(() => {
+    const root = promoScrollRef.current;
+    if (!root || homePromotions.length <= 1) return undefined;
+    if (!promoApplyScrollRef.current) return undefined;
+    promoApplyScrollRef.current = false;
+    const child = root.children[promoSlideIndex];
+    if (!child) return undefined;
+    skipPromoScrollSyncRef.current = true;
+    root.scrollTo({
+      left: child.offsetLeft,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+    const ms = prefersReducedMotion ? 80 : 520;
+    const tid = window.setTimeout(() => {
+      skipPromoScrollSyncRef.current = false;
+    }, ms);
+    return () => window.clearTimeout(tid);
+  }, [promoSlideIndex, homePromotions.length, prefersReducedMotion, promoIdsKey]);
+
+  useEffect(() => {
+    if (homePromotions.length <= 1 || promoHoverPaused || promoSwipePaused || prefersReducedMotion) {
+      return undefined;
+    }
     const t = window.setInterval(() => {
+      promoApplyScrollRef.current = true;
       setPromoSlideIndex((i) => (i + 1) % homePromotions.length);
     }, HOME_PROMO_AUTO_ADVANCE_MS);
     return () => window.clearInterval(t);
-  }, [homePromotions.length, promoCarouselPaused, prefersReducedMotion, promoIdsKey]);
+  }, [homePromotions.length, promoHoverPaused, promoSwipePaused, prefersReducedMotion, promoIdsKey]);
 
   const quickCategories = useMemo(
     () =>
@@ -344,15 +430,15 @@ const Home = () => {
           <div className="container">
             <h2 className="section-title">โปรโมชั่น &amp; ข่าวสาร</h2>
             <p className="home-section-hint">
-              ประกาศและโปรโมชั่นจากร้าน — เลื่อนอัตโนมัติและวนกลับสไลด์แรก (ชี้เมาส์หรือโฟกัสที่บล็อกนี้จะหยุดชั่วคราว)
+              ประกาศและโปรโมชั่นจากร้าน — เลื่อนซ้ายขวาด้วยนิ้วได้ มีรูปแบนเนอร์แล้วแตะที่รูปเพื่อไปหน้าที่ตั้งไว้ เลื่อนอัตโนมัติเมื่อปล่อยนิ้วสักครู่ (ชี้เมาส์หรือโฟกัสที่บล็อกนี้จะหยุด autoplay)
             </p>
             <div
               className="home-dynamic-promo-carousel"
-              onMouseEnter={() => setPromoCarouselPaused(true)}
-              onMouseLeave={() => setPromoCarouselPaused(false)}
-              onFocusCapture={() => setPromoCarouselPaused(true)}
+              onMouseEnter={() => setPromoHoverPaused(true)}
+              onMouseLeave={() => setPromoHoverPaused(false)}
+              onFocusCapture={() => setPromoHoverPaused(true)}
               onBlurCapture={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) setPromoCarouselPaused(false);
+                if (!e.currentTarget.contains(e.relatedTarget)) setPromoHoverPaused(false);
               }}
             >
               {homePromotions.length === 1 ? (
@@ -361,21 +447,17 @@ const Home = () => {
                 </div>
               ) : (
                 <>
-                  <div className="home-dynamic-promo-carousel-viewport">
+                  <div className="home-dynamic-promo-carousel-viewport home-dynamic-promo-carousel-viewport--scroll">
                     <div
-                      className="home-dynamic-promo-track"
-                      style={{
-                        width: `${homePromotions.length * 100}%`,
-                        transform: `translateX(-${(promoSlideIndex * 100) / homePromotions.length}%)`,
-                      }}
+                      ref={promoScrollRef}
+                      className="home-dynamic-promo-scroll"
+                      onScroll={handlePromoScroll}
+                      onTouchStart={handlePromoTouchStart}
+                      onWheel={handlePromoWheelHorizontal}
+                      role="presentation"
                     >
-                      {homePromotions.map((p, slideIdx) => (
-                        <div
-                          key={p.id}
-                          className="home-dynamic-promo-slide-shell"
-                          style={{ flex: `0 0 ${100 / homePromotions.length}%` }}
-                          aria-hidden={slideIdx !== promoSlideIndex}
-                        >
+                      {homePromotions.map((p) => (
+                        <div key={p.id} className="home-dynamic-promo-scroll-slide">
                           <HomePromotionSlide promotion={p} />
                         </div>
                       ))}
@@ -390,7 +472,15 @@ const Home = () => {
                         aria-selected={i === promoSlideIndex}
                         aria-label={`โปรโมชั่น ${i + 1} จาก ${homePromotions.length}`}
                         className={`home-dynamic-promo-dot${i === promoSlideIndex ? ' is-active' : ''}`}
-                        onClick={() => setPromoSlideIndex(i)}
+                        onClick={() => {
+                          if (promoSwipeIdleTimerRef.current) {
+                            window.clearTimeout(promoSwipeIdleTimerRef.current);
+                            promoSwipeIdleTimerRef.current = null;
+                          }
+                          setPromoSwipePaused(false);
+                          promoApplyScrollRef.current = true;
+                          setPromoSlideIndex(i);
+                        }}
                       />
                     ))}
                   </div>
