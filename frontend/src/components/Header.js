@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import config from '../config';
+import {
+  BottomNavWatermarkCart,
+  BottomNavWatermarkHome,
+  BottomNavWatermarkLogin,
+  BottomNavWatermarkOrders,
+  BottomNavWatermarkProducts,
+  BottomNavWatermarkProfile,
+} from './CustomerBottomNavWatermarkIcons';
 import './Header.css';
 
 const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
@@ -179,19 +187,37 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
           ) : (
             <>
               <Link to="/customer" className={isCustomerHomeActive ? 'active' : ''}>
-                <span>หน้าแรก</span>
+                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                  <BottomNavWatermarkHome />
+                </span>
+                <span className="liff-bottom-nav-customer-label">หน้าแรก</span>
               </Link>
               <Link to="/customer/products" className={isCustomerProductsActive ? 'active' : ''}>
-                <span>สินค้า</span>
+                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                  <BottomNavWatermarkProducts />
+                </span>
+                <span className="liff-bottom-nav-customer-label">สินค้า</span>
               </Link>
               <Link to="/customer/cart" className={isActive('/customer/cart') ? 'active' : ''}>
-                <span>ตะกร้า</span>
+                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                  <BottomNavWatermarkCart />
+                </span>
+                <span className="liff-bottom-nav-customer-label">ตะกร้า</span>
               </Link>
               <Link to="/customer/orders" className={isActiveGroup(['/customer/orders', '/customer/tracking']) ? 'active' : ''}>
-                <span>ออเดอร์</span>
+                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                  <BottomNavWatermarkOrders />
+                </span>
+                <span className="liff-bottom-nav-customer-label">ออเดอร์</span>
               </Link>
-              <Link to={isLoggedIn ? '/customer/profile' : '/customer/login'} className={isActiveGroup(['/customer/profile', '/customer/login']) ? 'active' : ''}>
-                <span>{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</span>
+              <Link
+                to={isLoggedIn ? '/customer/profile' : '/customer/login'}
+                className={isActiveGroup(['/customer/profile', '/customer/login']) ? 'active' : ''}
+              >
+                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                  {isLoggedIn ? <BottomNavWatermarkProfile /> : <BottomNavWatermarkLogin />}
+                </span>
+                <span className="liff-bottom-nav-customer-label">{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</span>
               </Link>
             </>
           )}
