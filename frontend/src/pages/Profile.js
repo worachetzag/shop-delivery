@@ -114,19 +114,9 @@ const Profile = () => {
     longitude: null,
     isDefault: false,
   });
-  const section = queryParams.get('section') || 'menu';
+  const sectionFocus = queryParams.get('section');
 
   const displayNameOneLine = recipientDisplayName(personal) || 'ผู้ใช้';
-
-  const goSection = (nextSection) => {
-    const params = new URLSearchParams(location.search);
-    if (nextSection === 'menu') {
-      params.delete('section');
-    } else {
-      params.set('section', nextSection);
-    }
-    navigate({ pathname: '/customer/profile', search: params.toString() ? `?${params.toString()}` : '' });
-  };
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -213,6 +203,24 @@ const Profile = () => {
       });
     }
   }, [location.search]);
+
+  useEffect(() => {
+    if (loading || !profileCompleted) return;
+    if (!sectionFocus || sectionFocus === 'menu') return;
+    const id =
+      sectionFocus === 'personal'
+        ? 'profile-section-personal'
+        : sectionFocus === 'addresses'
+          ? 'profile-section-addresses'
+          : sectionFocus === 'account'
+            ? 'profile-section-account'
+            : null;
+    if (!id) return;
+    const tid = window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return () => window.clearTimeout(tid);
+  }, [loading, profileCompleted, sectionFocus]);
 
   const handlePersonalChange = (name, value) => {
     setPersonal((prev) => ({ ...prev, [name]: value }));
@@ -500,23 +508,28 @@ const Profile = () => {
                 )}
               </div>
 
-              <label className="form-label">ชื่อ</label>
-              <input
-                type="text"
-                className="form-input"
-                value={personal.firstName}
-                onChange={(e) => handlePersonalChange('firstName', e.target.value)}
-                autoComplete="given-name"
-              />
-
-              <label className="form-label">นามสกุล</label>
-              <input
-                type="text"
-                className="form-input"
-                value={personal.lastName}
-                onChange={(e) => handlePersonalChange('lastName', e.target.value)}
-                autoComplete="family-name"
-              />
+              <div className="profile-name-fields">
+                <div className="form-group">
+                  <label className="form-label">ชื่อ</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={personal.firstName}
+                    onChange={(e) => handlePersonalChange('firstName', e.target.value)}
+                    autoComplete="given-name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">นามสกุล</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={personal.lastName}
+                    onChange={(e) => handlePersonalChange('lastName', e.target.value)}
+                    autoComplete="family-name"
+                  />
+                </div>
+              </div>
 
               <label className="form-label">เลขบัตรประชาชน (13 หลัก)</label>
               <input
@@ -620,37 +633,8 @@ const Profile = () => {
           )}
         </div>
 
-        <div className="profile-content">
-          {section === 'menu' && (
-            <div className="profile-section profile-menu-list">
-              <button className="profile-menu-item" type="button" onClick={() => goSection('personal')}>
-                <div>
-                  <p className="profile-menu-title">ข้อมูลส่วนตัว</p>
-                </div>
-                <span>›</span>
-              </button>
-              <button className="profile-menu-item" type="button" onClick={() => goSection('addresses')}>
-                <div>
-                  <p className="profile-menu-title">ที่อยู่อ้างอิง</p>
-                </div>
-                <span>›</span>
-              </button>
-              <button className="profile-menu-item" type="button" onClick={() => goSection('account')}>
-                <div>
-                  <p className="profile-menu-title">การจัดการบัญชี</p>
-                </div>
-                <span>›</span>
-              </button>
-            </div>
-          )}
-
-          {section === 'personal' && (
-            <div className="profile-section profile-section-personal">
-              <div className="profile-subpage-head">
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
-                  ← กลับ
-                </button>
-              </div>
+        <div className="profile-content profile-content--flat">
+          <section id="profile-section-personal" className="profile-section profile-section-personal">
               <div className="section-header">
                 <h3 className="section-title">ข้อมูลส่วนตัว</h3>
                 <button
@@ -680,14 +664,9 @@ const Profile = () => {
                 {!editing ? (
                   <div className="profile-display">
                     <p>
-                      <strong>ชื่อ</strong>
+                      <strong>ชื่อ–นามสกุล</strong>
                       <br />
-                      {personal.firstName || '—'}
-                    </p>
-                    <p>
-                      <strong>นามสกุล</strong>
-                      <br />
-                      {personal.lastName || '—'}
+                      {recipientDisplayName(personal) || '—'}
                     </p>
                     <p>
                       <strong>เลขบัตรประชาชน</strong>
@@ -714,23 +693,27 @@ const Profile = () => {
                   </div>
                 ) : (
                   <div className="profile-form customer-form-stack">
-                    <div className="form-group">
-                      <label className="form-label">ชื่อ</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={personal.firstName}
-                        onChange={(e) => handlePersonalChange('firstName', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">นามสกุล</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={personal.lastName}
-                        onChange={(e) => handlePersonalChange('lastName', e.target.value)}
-                      />
+                    <div className="profile-name-fields">
+                      <div className="form-group">
+                        <label className="form-label">ชื่อ</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={personal.firstName}
+                          onChange={(e) => handlePersonalChange('firstName', e.target.value)}
+                          autoComplete="given-name"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">นามสกุล</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={personal.lastName}
+                          onChange={(e) => handlePersonalChange('lastName', e.target.value)}
+                          autoComplete="family-name"
+                        />
+                      </div>
                     </div>
                     <div className="form-group">
                       <label className="form-label">เลขบัตรประชาชน (13 หลัก)</label>
@@ -806,16 +789,9 @@ const Profile = () => {
                   </div>
                 )}
               </div>
-            </div>
-          )}
+          </section>
 
-          {section === 'addresses' && (
-            <div className="addresses-section">
-              <div className="profile-subpage-head">
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
-                  ← กลับ
-                </button>
-              </div>
+          <section id="profile-section-addresses" className="profile-section addresses-section">
               <div className="section-header">
                 <h3 className="section-title">ที่อยู่อ้างอิง</h3>
                 {!showAddAddress && (
@@ -924,7 +900,7 @@ const Profile = () => {
                         setEditingAddressId(null);
                       }}
                     >
-                      ยกเลิก · กลับไปรายการที่อยู่
+                      ยกเลิก
                     </button>
                   </div>
                 </div>
@@ -932,7 +908,10 @@ const Profile = () => {
 
               {!showAddAddress && (
                 <div className="addresses-list">
-                  {addresses.map((address) => (
+                  {addresses.length === 0 ? (
+                    <p className="profile-addresses-empty">ยังไม่มีที่อยู่จัดส่ง — กด «เพิ่มที่อยู่»</p>
+                  ) : (
+                  addresses.map((address) => (
                     <div key={address.id} className="address-card">
                       <div className="address-header">
                         <h4 className="address-name">
@@ -958,19 +937,13 @@ const Profile = () => {
                         <p>{address.district} {address.province} {address.postalCode}</p>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  )}
                 </div>
               )}
-            </div>
-          )}
+          </section>
 
-          {section === 'account' && (
-            <div className="account-actions-section">
-              <div className="profile-subpage-head">
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => goSection('menu')}>
-                  ← กลับ
-                </button>
-              </div>
+          <section id="profile-section-account" className="profile-section account-actions-section">
               <h3 className="section-title">การจัดการบัญชี</h3>
 
               <div className="action-cards">
@@ -996,8 +969,7 @@ const Profile = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+          </section>
         </div>
       </div>
     </div>
