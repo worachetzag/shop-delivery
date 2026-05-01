@@ -1,5 +1,7 @@
 from django.db import transaction
-from django.db.models import F, Q, Sum
+from django.db.models import F, IntegerField, Q, Sum, Value
+from django.db.models import ExpressionWrapper
+from django.db.models.functions import Greatest
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
@@ -21,6 +23,46 @@ from .stock import apply_stock_movement
 
 def _product_unit_label(product):
     return (product.unit_label or '').strip() or 'หน่วย'
+
+
+def _admin_store_low_stock_threshold() -> int:
+    """ค่าเตือนใกล้หมดระดับร้าน — ให้สอดคล้องกับ Product.is_low_stock"""
+    try:
+        from orders.models import StoreLocation
+
+        loc = StoreLocation.objects.order_by('id').first()
+        if loc is not None:
+            return int(loc.low_stock_alert_quantity)
+    except Exception:
+        pass
+    return 5
+
+
+def _admin_product_list_queryset_filtered(qs, stock_filter: str):
+    """
+    stock_filter: all | low | out | promo
+    """
+    key = (stock_filter or 'all').strip().lower()
+    if key in ('', 'all'):
+        return qs
+
+    qs = qs.annotate(
+        _avail=Greatest(
+            Value(0),
+            ExpressionWrapper(F('stock_quantity') - F('reserved_quantity'), output_field=IntegerField()),
+        ),
+    )
+    if key == 'promo':
+        return qs.filter(is_special_offer=True)
+    if key == 'out':
+        return qs.filter(_avail__lte=0)
+    if key == 'low':
+        store_thr = _admin_store_low_stock_threshold()
+        low_cond = Q(_avail__lte=F('min_stock_level'))
+        if store_thr > 0:
+            low_cond |= Q(_avail__lte=store_thr)
+        return qs.filter(low_cond).exclude(_avail__lte=0)
+    return qs
 
 
 def _audit_log_product_create(instance):
@@ -160,6 +202,13 @@ class AdminProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.all().select_related('category').order_by('-id')
     serializer_class = ProductSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
+
+    def get_queryset(self):
+        qs = Product.objects.all().select_related('category').order_by('-id')
+        if self.request.method != 'GET':
+            return qs
+        stock_filter = self.request.query_params.get('stock_filter', 'all')
+        return _admin_product_list_queryset_filtered(qs, stock_filter)
 
     def perform_create(self, serializer):
         instance = serializer.save()

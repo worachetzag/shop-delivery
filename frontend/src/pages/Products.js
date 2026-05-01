@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ApiPaginationBar from '../components/ApiPaginationBar';
@@ -38,6 +38,19 @@ const Products = () => {
   const [cartLineItems, setCartLineItems] = useState([]);
   const [showCartSummary, setShowCartSummary] = useState(false);
   const [listReady, setListReady] = useState(false);
+  const categoryChipsScrollRef = useRef(null);
+  const [categoryChipsOverflow, setCategoryChipsOverflow] = useState(false);
+  const [categoryChipsHintEnd, setCategoryChipsHintEnd] = useState(false);
+
+  const syncCategoryChipsScrollUi = useCallback(() => {
+    const el = categoryChipsScrollRef.current;
+    if (!el) return;
+    const overflowing = el.scrollWidth > el.clientWidth + 2;
+    const atEnd =
+      !overflowing || el.scrollLeft + el.clientWidth >= el.scrollWidth - 3;
+    setCategoryChipsOverflow(overflowing);
+    setCategoryChipsHintEnd(overflowing && !atEnd);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 400);
@@ -56,10 +69,10 @@ const Products = () => {
         if (cancelled) return;
         const raw = categoriesResponse?.results ?? categoriesResponse;
         const list = Array.isArray(raw) ? raw : [];
-        setCategories([{ id: '', name: 'ทั้งหมด' }, ...list]);
+        setCategories(list);
       } catch (error) {
         console.error('Error fetching categories:', error);
-        if (!cancelled) setCategories([{ id: '', name: 'ทั้งหมด' }]);
+        if (!cancelled) setCategories([]);
       }
     })();
     return () => {
@@ -107,6 +120,28 @@ const Products = () => {
       cancelled = true;
     };
   }, [page, selectedCategory, debouncedSearch, sortBy]);
+
+  useEffect(() => {
+    const el = categoryChipsScrollRef.current;
+    if (!el) return undefined;
+
+    const run = () => {
+      syncCategoryChipsScrollUi();
+      requestAnimationFrame(syncCategoryChipsScrollUi);
+    };
+
+    run();
+    const ro = new ResizeObserver(run);
+    ro.observe(el);
+    el.addEventListener('scroll', syncCategoryChipsScrollUi, { passive: true });
+    window.addEventListener('resize', run);
+
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', syncCategoryChipsScrollUi);
+      window.removeEventListener('resize', run);
+    };
+  }, [categories, listReady, syncCategoryChipsScrollUi]);
 
   const syncCartQuantities = async () => {
     try {
@@ -232,23 +267,33 @@ const Products = () => {
             />
           </div>
 
-          <div className="filters">
-            <div className="filter-group">
-              <label className="form-label">หมวดหมู่:</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="form-input"
-              >
-                {Array.isArray(categories) &&
-                  categories.map((category) => (
-                    <option key={category.id === '' ? 'all' : category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-              </select>
+          <div
+            ref={categoryChipsScrollRef}
+            className={`category-chips-scroll${categoryChipsOverflow ? ' category-chips-scroll--overflowing' : ''}${categoryChipsHintEnd ? ' category-chips-scroll--hint-end' : ''}`}
+            role="tablist"
+            aria-label="หมวดหมู่สินค้า"
+          >
+            <div className="category-chips-track">
+              {[{ id: '', name: 'ทั้งหมด' }, ...categories].map((category) => {
+                const cid = category.id === '' || category.id == null ? '' : String(category.id);
+                const active = selectedCategory === cid;
+                return (
+                  <button
+                    key={cid === '' ? 'category-all' : `category-${cid}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={`category-chip${active ? ' is-active' : ''}`}
+                    onClick={() => setSelectedCategory(cid)}
+                  >
+                    {category.name}
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
+          <div className="filters filters-sort-only">
             <div className="filter-group">
               <label className="form-label">เรียงตาม:</label>
               <select

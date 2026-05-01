@@ -42,6 +42,8 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const [products, setProducts] = useState([]);
   const [productsPage, setProductsPage] = useState(1);
   const [productsTotalCount, setProductsTotalCount] = useState(0);
+  /** all | low | out | promo — กรองรายการสินค้าแอดมิน */
+  const [productsStockFilter, setProductsStockFilter] = useState('all');
   const [categories, setCategories] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -165,7 +167,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     if (activeTab === 'products') {
       loadProducts();
     }
-  }, [activeTab, productsPage]);
+  }, [activeTab, productsPage, productsStockFilter]);
 
   useEffect(() => {
     if (activeTab === 'products' || activeTab === 'categories') {
@@ -230,6 +232,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         page: String(productsPage),
         page_size: String(ADMIN_PRODUCTS_PAGE_SIZE),
       });
+      if (productsStockFilter === 'low' || productsStockFilter === 'out' || productsStockFilter === 'promo') {
+        params.set('stock_filter', productsStockFilter);
+      }
       const response = await fetch(`${config.API_BASE_URL}products/admin/?${params.toString()}`, {
         headers: {
           Authorization: `Token ${token}`,
@@ -1223,9 +1228,57 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
               <p className="products-row-click-hint" style={{ margin: '0 0 12px', color: '#666', fontSize: '14px' }}>
                 คลิกที่แถวสินค้า (ยกเว้นช่องสต็อก) เพื่อเปิดหน้าแก้ไข
               </p>
+              <div
+                className="admin-product-stock-filters"
+                role="group"
+                aria-label="กรองสต็อกสินค้า"
+                style={{ marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+              >
+                <button
+                  type="button"
+                  className={`admin-fulfillment-chip ${productsStockFilter === 'all' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setProductsStockFilter('all');
+                    setProductsPage(1);
+                  }}
+                >
+                  สินค้าทั้งหมด
+                </button>
+                <button
+                  type="button"
+                  className={`admin-fulfillment-chip admin-fulfillment-chip--pickup ${productsStockFilter === 'low' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setProductsStockFilter('low');
+                    setProductsPage(1);
+                  }}
+                >
+                  ใกล้หมด
+                </button>
+                <button
+                  type="button"
+                  className={`admin-fulfillment-chip ${productsStockFilter === 'out' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setProductsStockFilter('out');
+                    setProductsPage(1);
+                  }}
+                  style={{ borderColor: '#fecaca' }}
+                >
+                  สินค้าหมด
+                </button>
+                <button
+                  type="button"
+                  className={`admin-fulfillment-chip admin-fulfillment-chip--delivery ${productsStockFilter === 'promo' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setProductsStockFilter('promo');
+                    setProductsPage(1);
+                  }}
+                >
+                  สินค้าโปรโมชั่น
+                </button>
+              </div>
               {products.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '24px' }}>
-                  ยังไม่มีสินค้า
+                  {productsStockFilter === 'all' ? 'ยังไม่มีสินค้า' : 'ไม่พบสินค้าตามตัวกรองนี้'}
                 </div>
               ) : (
                 <table>
