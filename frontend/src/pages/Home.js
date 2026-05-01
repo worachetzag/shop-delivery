@@ -8,8 +8,11 @@ import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import { resolveMediaUrl } from '../utils/media';
 import './Home.css';
 
-const SKELETON_CARD_COUNT = 6;
-const SECTION_PAGE_SIZE = 24;
+/** จำนวนสินค้าที่แสดงต่อหมวดในหน้าแรก — ให้ลูกค้ากดดูทั้งหมดในหน้ารายการสินค้า */
+const HOME_SECTION_PREVIEW_COUNT = 4;
+/** โหลดชุดใหญ่พอสำหรับเรียงลดราคาในฝั่งลูกค้า แล้วค่อยตัดเหลือ HOME_SECTION_PREVIEW_COUNT */
+const PROMO_SORT_POOL_PAGE_SIZE = 24;
+const SKELETON_CARD_COUNT = HOME_SECTION_PREVIEW_COUNT;
 /** โปรโมชั่นหน้าแรก: หน่วงก่อนเลื่อนไปสไลด์ถัดไป */
 const HOME_PROMO_AUTO_ADVANCE_MS = 5500;
 
@@ -288,7 +291,7 @@ const Home = () => {
       try {
         const params = {
           featured: 'true',
-          page_size: SECTION_PAGE_SIZE,
+          page_size: HOME_SECTION_PREVIEW_COUNT,
           ordering: '-created_at',
         };
         if (featuredCategory) params.category_id = featuredCategory;
@@ -301,7 +304,7 @@ const Home = () => {
 
         if (!featuredCategory && products.length === 0) {
           const fallbackResponse = await productsService.getProducts({
-            page_size: 12,
+            page_size: HOME_SECTION_PREVIEW_COUNT,
             ordering: '-created_at',
           });
           if (cancelled) return;
@@ -309,7 +312,7 @@ const Home = () => {
           products = Array.isArray(fallbackList) ? fallbackList : [];
         }
 
-        setFeaturedProducts(products);
+        setFeaturedProducts(products.slice(0, HOME_SECTION_PREVIEW_COUNT));
       } catch (error) {
         console.error('Error fetching featured products:', error);
         if (!cancelled) {
@@ -332,7 +335,7 @@ const Home = () => {
       try {
         const params = {
           on_sale: 'true',
-          page_size: SECTION_PAGE_SIZE,
+          page_size: PROMO_SORT_POOL_PAGE_SIZE,
           ordering: '-created_at',
         };
         if (promoCategory) params.category_id = promoCategory;
@@ -342,7 +345,7 @@ const Home = () => {
 
         let products = res.results || res || [];
         products = Array.isArray(products) ? products : [];
-        setPromoProducts(sortPromoProducts(products));
+        setPromoProducts(sortPromoProducts(products).slice(0, HOME_SECTION_PREVIEW_COUNT));
       } catch (error) {
         console.error('Error fetching promo products:', error);
         if (!cancelled) setPromoProducts([]);
