@@ -1,10 +1,35 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import Lottie from 'lottie-react';
 import { getCategoryAccentHue, getCategoryEmoji } from '../utils/categoryVisual';
+import { resolveMediaUrl } from '../utils/media';
+import fastFoodLottie from '../assets/lottie/fast-food.json';
 import './CustomerCategoryStrip.css';
 
 const ALL_TILE_HUE = 162;
 const ALL_TILE_EMOJI = '🛒';
+
+function pickCategoryIconUrl(category) {
+  if (!category || typeof category !== 'object') return '';
+  const candidates = [
+    category.icon_image,
+    category.icon_url,
+    category.image,
+    category.image_url,
+    category.thumbnail,
+  ];
+  const hit = candidates.find((value) => {
+    if (!value) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    return typeof value === 'object' && typeof value.url === 'string' && value.url.trim().length > 0;
+  });
+  if (!hit) return '';
+  return resolveMediaUrl(hit, '');
+}
+
+function isSnackCategoryName(name) {
+  return /ขนม|snack|candy/i.test(String(name || ''));
+}
 
 function defaultResolveHref(categoryId) {
   if (!categoryId) return '/customer/products';
@@ -80,6 +105,8 @@ function CustomerCategoryStrip({
         ) : null}
         {sorted.map((cat) => {
           const cid = String(cat.id);
+          const iconUrl = pickCategoryIconUrl(cat);
+          const showSnackLottie = isSnackCategoryName(cat.name);
           return (
             <Link
               role="listitem"
@@ -88,13 +115,27 @@ function CustomerCategoryStrip({
               className={`customer-category-strip-item${sel !== '' && sel === cid ? ' is-active' : ''}`}
             >
               <span
-                className="customer-category-strip-icon-wrap"
+                className={`customer-category-strip-icon-wrap${iconUrl ? ' has-image' : ''}`}
                 style={{
                   '--category-accent-hue': getCategoryAccentHue(cat.id),
                 }}
                 aria-hidden
               >
-                <span className="customer-category-strip-icon">{getCategoryEmoji(cat.name, cat.id)}</span>
+                <span className="customer-category-strip-icon">
+                  {showSnackLottie ? (
+                    <Lottie
+                      animationData={fastFoodLottie}
+                      loop
+                      autoplay
+                      className="customer-category-strip-lottie"
+                      aria-hidden
+                    />
+                  ) : iconUrl ? (
+                    <img src={iconUrl} alt="" className="customer-category-strip-icon-image" loading="lazy" />
+                  ) : (
+                    getCategoryEmoji(cat.name, cat.id)
+                  )}
+                </span>
               </span>
               <span className="customer-category-strip-label">{cat.name}</span>
             </Link>
