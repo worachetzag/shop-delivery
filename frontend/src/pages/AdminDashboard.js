@@ -15,7 +15,16 @@ function getProductAvailableQty(product) {
   return Math.max(0, Number(product.stock_quantity || 0) - Number(product.reserved_quantity || 0));
 }
 
-/** สถานะสต็อกแสดงในคอลัมน์สินค้าแอดมิน — แยกปิดขาย / หมด / ใกล้หมด / ปกติ (ปกติไม่ใช้พื้นหลังสี) */
+/** ลดราคา = ราคาก่อนลดสูงกว่าราคาขาย (สอดคล้อง API on_sale) */
+function isAdminProductOnSale(product) {
+  const cmp = product.compare_at_price;
+  if (cmp == null || cmp === '') return false;
+  const price = Number(product.price || 0);
+  const compare = Number(cmp);
+  return compare > price;
+}
+
+/** สถานะสต็อกแสดงในคอลัมน์สินค้าแอดมิน — แยกปิดขาย / หมด / ใกล้หมด / ปกติ (ปกติไม่ใช้พื้นหลังสีที่ป้าย) */
 function getAdminProductStockStatus(product) {
   const avail = getProductAvailableQty(product);
   if (!product.is_available) {
@@ -28,6 +37,20 @@ function getAdminProductStockStatus(product) {
     return { key: 'low', label: 'ใกล้หมด', badgeClass: 'admin-product-status admin-product-status--low' };
   }
   return { key: 'ok', label: 'ปกติ', badgeClass: null };
+}
+
+/** คลาสย้อมทั้งแถว — สต็อกมีความสำคัญก่อน; ถ้าปกติค่อยใช้สีลดราคา/แนะนำ */
+function getAdminProductRowClassName(product) {
+  const stock = getAdminProductStockStatus(product);
+  if (stock.key === 'inactive') return 'admin-product-row admin-product-row--stock-inactive';
+  if (stock.key === 'out') return 'admin-product-row admin-product-row--stock-out';
+  if (stock.key === 'low') return 'admin-product-row admin-product-row--stock-low';
+  const featured = !!product.is_featured;
+  const promo = isAdminProductOnSale(product);
+  if (featured && promo) return 'admin-product-row admin-product-row--featured-promo';
+  if (featured) return 'admin-product-row admin-product-row--featured';
+  if (promo) return 'admin-product-row admin-product-row--promo';
+  return 'admin-product-row';
 }
 
 const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
@@ -1342,7 +1365,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       return (
                       <tr
                         key={product.id}
-                        className="admin-product-row"
+                        className={getAdminProductRowClassName(product)}
                         onClick={() => navigate(`/admin/products/${product.id}/edit`)}
                         title="คลิกเพื่อแก้ไขสินค้า"
                       >

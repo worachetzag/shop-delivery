@@ -83,22 +83,61 @@ class Product(models.Model):
 
 
 class HomePromotion(models.Model):
-    """แบนเนอร์/การ์ดโปรโมชั่นบนหน้าแรกลูกค้า — ตั้งค่าที่ Django admin"""
+    """แบนเนอร์/การ์ดโปรโมชั่นบนหน้าแรกลูกค้า — แอดมิน React หรือ Django"""
+
+    class LinkTarget(models.TextChoices):
+        NONE = 'none', 'ไม่มีลิงก์'
+        SHOP = 'shop', 'หน้ารวมสินค้า'
+        FEATURED = 'featured', 'สินค้าแนะนำ'
+        ON_SALE = 'on_sale', 'สินค้าลดราคา'
+        CATEGORY = 'category', 'หมวดหมู่ที่เลือก'
+        PRODUCT = 'product', 'สินค้ารายการเดียว'
+        CUSTOM = 'custom', 'ลิงก์กำหนดเอง'
 
     title = models.CharField(max_length=120, verbose_name="หัวข้อ")
     description = models.TextField(blank=True, verbose_name="คำอธิบาย")
+    banner_image = models.ImageField(
+        upload_to='home_promotions/',
+        blank=True,
+        null=True,
+        verbose_name="รูปแบนเนอร์",
+        help_text="แนะนำแนวนอน — คลิกแล้วไปตามเป้าหมายลิงก์",
+    )
+    link_target = models.CharField(
+        max_length=20,
+        choices=LinkTarget.choices,
+        default=LinkTarget.CUSTOM,
+        verbose_name="เป้าหมายลิงก์",
+        help_text="เลือกให้พนักงานไม่ต้องพิมพ์ URL — ใช้ลิงก์กำหนดเองเมื่อจำเป็น",
+    )
+    link_category = models.ForeignKey(
+        Category,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name="หมวดลิงก์",
+    )
+    link_product = models.ForeignKey(
+        'Product',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name="สินค้าลิงก์",
+    )
     link_label = models.CharField(max_length=80, blank=True, verbose_name="ข้อความปุ่ม")
     link_url = models.CharField(
         max_length=400,
         blank=True,
-        verbose_name="ลิงก์",
-        help_text="เส้นทางในเว็บ เช่น /customer/products?on_sale=true หรือ URL เต็ม (https://)",
+        verbose_name="ลิงก์กำหนดเอง",
+        help_text="ใช้เมื่อเลือก «ลิงก์กำหนดเอง» เท่านั้น เช่น /customer/products หรือ https://…",
     )
     icon = models.CharField(
         max_length=12,
         blank=True,
         verbose_name="ไอคอน",
-        help_text="emoji เช่น 🎉",
+        help_text="ใช้เมื่อไม่มีรูปแบนเนอร์ — emoji เช่น 🎉",
     )
     sort_order = models.PositiveSmallIntegerField(default=0, verbose_name="ลำดับ")
     is_active = models.BooleanField(default=True, verbose_name="แสดง")
@@ -112,6 +151,27 @@ class HomePromotion(models.Model):
 
     def __str__(self):
         return self.title
+
+    def resolve_link_url(self) -> str:
+        """ลิงก์ภายในแอปสำหรับหน้าลูกค้า (ไม่มี = ไม่ให้คลิกไปไหน)"""
+        t = self.link_target or self.LinkTarget.CUSTOM
+        if t == self.LinkTarget.NONE:
+            return ''
+        if t == self.LinkTarget.SHOP:
+            return '/customer/products'
+        if t == self.LinkTarget.FEATURED:
+            return '/customer/products?featured=true'
+        if t == self.LinkTarget.ON_SALE:
+            return '/customer/products?on_sale=true'
+        if t == self.LinkTarget.CATEGORY:
+            if self.link_category_id:
+                return f'/customer/products?category_id={self.link_category_id}'
+            return ''
+        if t == self.LinkTarget.PRODUCT:
+            if self.link_product_id:
+                return f'/customer/products/{self.link_product_id}'
+            return ''
+        return (self.link_url or '').strip()
 
 
 class Supplier(models.Model):

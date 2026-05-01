@@ -292,11 +292,77 @@
   transform: scale(0.98);
 }
 
-/* Admin-managed promo cards */
+/* Admin-managed promo cards / banners */
+.home-dynamic-promo-carousel {
+  width: 100%;
+}
+
+.home-dynamic-promo-carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+  border-radius: 14px;
+}
+
+.home-dynamic-promo-track {
+  display: flex;
+  transition: transform 0.52s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform;
+}
+
+.home-dynamic-promo-slide-shell {
+  box-sizing: border-box;
+  padding: 0 4px;
+}
+
+.home-dynamic-promo-slide-shell:first-child {
+  padding-left: 0;
+}
+
+.home-dynamic-promo-slide-shell:last-child {
+  padding-right: 0;
+}
+
+.home-dynamic-promo-slide-shell[aria-hidden='true'] {
+  pointer-events: none;
+}
+
+.home-dynamic-promo-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.home-dynamic-promo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.home-dynamic-promo-dot:focus-visible {
+  outline: 2px solid var(--brand-primary, #16a34a);
+  outline-offset: 2px;
+}
+
+.home-dynamic-promo-dot.is-active {
+  background: var(--brand-primary, #16a34a);
+  transform: scale(1.2);
+}
+
 .home-dynamic-promo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.65rem;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.home-dynamic-promo-grid--single {
+  display: block;
 }
 
 .home-dynamic-promo-card {
@@ -306,6 +372,55 @@
   padding: 0.85rem 0.95rem;
   display: grid;
   gap: 0.35rem;
+}
+
+.home-dynamic-promo-card--banner {
+  padding: 0;
+  background: transparent;
+  border: none;
+  gap: 0.45rem;
+}
+
+.home-dynamic-promo-banner-link {
+  display: block;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft, #e8ecf2);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-dynamic-promo-banner-link:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+}
+
+.home-dynamic-promo-banner-link--static {
+  cursor: default;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.home-dynamic-promo-banner-link--static:hover {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.home-dynamic-promo-banner-img {
+  display: block;
+  width: 100%;
+  height: clamp(120px, 32vw, 220px);
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+.home-dynamic-promo-banner-meta {
+  padding: 0 0.15rem;
+}
+
+.home-dynamic-promo-banner-heading {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary, #111827);
 }
 
 .home-dynamic-promo-icon {
@@ -337,5 +452,15 @@
 
 .home-dynamic-promo-cta:hover {
   text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-dynamic-promo-track {
+    transition: none;
+  }
+
+  .home-dynamic-promo-dot {
+    transition: none;
+  }
 }
 

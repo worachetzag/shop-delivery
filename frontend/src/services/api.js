@@ -138,7 +138,7 @@ export const productsService = {
     }
   },
 
-  /** การ์ดโปรโมชั่นหน้าแรก (ตั้งค่าใน Django admin → โปรโมชั่นหน้าแรก) */
+  /** การ์ด/แบนเนอร์โปรโมชั่นหน้าแรก (แอดมิน React → /admin/home-promotions) */
   getHomePromotions: async () => {
     try {
       const response = await api.get('/products/home-promotions/');

@@ -387,10 +387,49 @@
 
 .admin-product-row {
   cursor: pointer;
+  --admin-row-bg: transparent;
+  --admin-row-hover-bg: rgba(102, 126, 234, 0.08);
 }
 
-.admin-product-row:hover {
-  background: rgba(102, 126, 234, 0.08);
+.admin-product-row td {
+  background-color: var(--admin-row-bg);
+  transition: background-color 0.12s ease;
+}
+
+.admin-product-row:hover td {
+  background-color: var(--admin-row-hover-bg);
+}
+
+/* ย้อมทั้งแถวตามสถานะสต็อก */
+.admin-product-row--stock-inactive {
+  --admin-row-bg: #f1f5f9;
+  --admin-row-hover-bg: #e2e8f0;
+}
+
+.admin-product-row--stock-out {
+  --admin-row-bg: #fef2f2;
+  --admin-row-hover-bg: #fee2e2;
+}
+
+.admin-product-row--stock-low {
+  --admin-row-bg: #fffbeb;
+  --admin-row-hover-bg: #fef3c7;
+}
+
+/* สต็อกปกติ — ลดราคา / แนะนำ / ทั้งคู่ */
+.admin-product-row--promo {
+  --admin-row-bg: #f5f3ff;
+  --admin-row-hover-bg: #ede9fe;
+}
+
+.admin-product-row--featured {
+  --admin-row-bg: #eff6ff;
+  --admin-row-hover-bg: #dbeafe;
+}
+
+.admin-product-row--featured-promo {
+  --admin-row-bg: #eef2ff;
+  --admin-row-hover-bg: #e0e7ff;
 }
 
 .products-manage-table .admin-product-compare-price {

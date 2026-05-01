@@ -48,13 +48,38 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class HomePromotionSerializer(serializers.ModelSerializer):
+    """ลูกค้า — link_url และ banner_image เป็นค่าที่ใช้ได้ทันที"""
+
+    link_url = serializers.SerializerMethodField()
+    banner_image = serializers.SerializerMethodField()
+
     class Meta:
         model = HomePromotion
-        fields = ['id', 'title', 'description', 'link_label', 'link_url', 'icon', 'sort_order']
+        fields = ['id', 'title', 'description', 'link_label', 'link_url', 'banner_image', 'icon', 'sort_order']
+
+    def get_link_url(self, obj):
+        return obj.resolve_link_url()
+
+    def get_banner_image(self, obj):
+        if not obj.banner_image:
+            return None
+        request = self.context.get('request')
+        url = obj.banner_image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 class HomePromotionAdminSerializer(serializers.ModelSerializer):
     """CRUD โปรโมชั่นหน้าแรกผ่านแอปแอดมิน"""
+
+    link_category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), allow_null=True, required=False
+    )
+    link_product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), allow_null=True, required=False
+    )
+    remove_banner_image = serializers.BooleanField(write_only=True, required=False, default=False)
 
     class Meta:
         model = HomePromotion
@@ -62,6 +87,11 @@ class HomePromotionAdminSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'description',
+            'banner_image',
+            'remove_banner_image',
+            'link_target',
+            'link_category',
+            'link_product',
             'link_label',
             'link_url',
             'icon',
@@ -71,6 +101,64 @@ class HomePromotionAdminSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['created_at', 'updated_at']
+
+    def validate(self, attrs):
+        instance = getattr(self, 'instance', None)
+        target = attrs.get('link_target')
+        if target is None:
+            target = instance.link_target if instance else HomePromotion.LinkTarget.CUSTOM
+
+        if target == HomePromotion.LinkTarget.CATEGORY:
+            cat = attrs.get('link_category')
+            if cat is None and instance:
+                cat = instance.link_category
+            if cat is None:
+                raise serializers.ValidationError({'link_category': 'เลือกหมวดหมู่เมื่อเป้าหมายเป็นหมวด'})
+
+        if target == HomePromotion.LinkTarget.PRODUCT:
+            prod = attrs.get('link_product')
+            if prod is None and instance:
+                prod = instance.link_product
+            if prod is None:
+                raise serializers.ValidationError({'link_product': 'เลือกสินค้าเมื่อเป้าหมายเป็นสินค้าเดียว'})
+
+        if target == HomePromotion.LinkTarget.CUSTOM:
+            url = attrs.get('link_url')
+            if url is None and instance:
+                url = instance.link_url
+            if not (url or '').strip():
+                raise serializers.ValidationError({'link_url': 'กรอกลิงก์เมื่อเลือกโหมดลิงก์กำหนดเอง'})
+
+        return attrs
+
+    def _normalize_link_storage(self, validated_data, instance=None):
+        base_inst = instance or getattr(self, 'instance', None)
+        target = validated_data.get('link_target')
+        if target is None and base_inst:
+            target = base_inst.link_target
+        if target is None:
+            target = HomePromotion.LinkTarget.CUSTOM
+
+        if target != HomePromotion.LinkTarget.CATEGORY:
+            validated_data['link_category'] = None
+        if target != HomePromotion.LinkTarget.PRODUCT:
+            validated_data['link_product'] = None
+        if target != HomePromotion.LinkTarget.CUSTOM:
+            validated_data['link_url'] = ''
+
+    def create(self, validated_data):
+        validated_data.pop('remove_banner_image', None)
+        self._normalize_link_storage(validated_data, instance=None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        remove = validated_data.pop('remove_banner_image', False)
+        if remove:
+            if instance.banner_image:
+                instance.banner_image.delete(save=False)
+            validated_data['banner_image'] = None
+        self._normalize_link_storage(validated_data, instance=instance)
+        return super().update(instance, validated_data)
 
 
 class ProductSerializer(serializers.ModelSerializer):

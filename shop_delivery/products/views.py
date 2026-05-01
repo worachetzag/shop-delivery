@@ -4,6 +4,7 @@ from django.db.models import ExpressionWrapper
 from django.db.models.functions import Greatest
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission
@@ -236,6 +237,7 @@ class AdminHomePromotionListCreateView(generics.ListCreateAPIView):
     serializer_class = HomePromotionAdminSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
     pagination_class = None
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
         return HomePromotion.objects.all().order_by('sort_order', 'id')
@@ -247,6 +249,7 @@ class AdminHomePromotionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = HomePromotion.objects.all()
     serializer_class = HomePromotionAdminSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
 
 class AdminProductListCreateView(generics.ListCreateAPIView):

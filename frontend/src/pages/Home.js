@@ -5,10 +5,13 @@ import CategoryChipsRow from '../components/CategoryChipsRow';
 import config from '../config';
 import { productsService } from '../services/api';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
+import { resolveMediaUrl } from '../utils/media';
 import './Home.css';
 
 const SKELETON_CARD_COUNT = 6;
 const SECTION_PAGE_SIZE = 24;
+/** โปรโมชั่นหน้าแรก: หน่วงก่อนเลื่อนไปสไลด์ถัดไป */
+const HOME_PROMO_AUTO_ADVANCE_MS = 5500;
 
 /** เรียงสินค้าลดราคา: % ส่วนลดจากราคาก่อนลดสูงก่อน แล้วตามราคาขาย */
 function discountSortWeight(product) {
@@ -47,6 +50,61 @@ function HomePromotionCta({ url, label, className }) {
   );
 }
 
+/** คลิกที่แบนเนอร์แล้วไปตามลิงก์ที่แอดมินตั้ง (ภายในแอปหรือภายนอก) */
+function HomePromotionBannerLink({ url, className, children }) {
+  const u = (url || '').trim();
+  if (!u) {
+    return <div className={`${className || ''} home-dynamic-promo-banner-link--static`.trim()}>{children}</div>;
+  }
+  const internal = u.startsWith('/') && !u.startsWith('//');
+  if (internal) {
+    return (
+      <Link to={u} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a href={u} className={className} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  );
+}
+
+function HomePromotionSlide({ promotion: p }) {
+  const hasBanner = Boolean(p.banner_image);
+  return (
+    <article
+      className={`home-dynamic-promo-card${hasBanner ? ' home-dynamic-promo-card--banner' : ''}`}
+    >
+      {hasBanner ? (
+        <>
+          <HomePromotionBannerLink url={p.link_url} className="home-dynamic-promo-banner-link">
+            <img
+              src={resolveMediaUrl(p.banner_image)}
+              alt={p.title || 'โปรโมชั่น'}
+              className="home-dynamic-promo-banner-img"
+              loading="lazy"
+            />
+          </HomePromotionBannerLink>
+          <div className="home-dynamic-promo-banner-meta">
+            <h3 className="home-dynamic-promo-banner-heading">{p.title}</h3>
+            {p.description ? <p className="home-dynamic-promo-desc">{p.description}</p> : null}
+            <HomePromotionCta url={p.link_url} label={p.link_label} className="home-dynamic-promo-cta" />
+          </div>
+        </>
+      ) : (
+        <>
+          {p.icon ? <div className="home-dynamic-promo-icon" aria-hidden>{p.icon}</div> : null}
+          <h3 className="home-dynamic-promo-title">{p.title}</h3>
+          {p.description ? <p className="home-dynamic-promo-desc">{p.description}</p> : null}
+          <HomePromotionCta url={p.link_url} label={p.link_label} className="home-dynamic-promo-cta" />
+        </>
+      )}
+    </article>
+  );
+}
+
 const Home = () => {
   const location = useLocation();
   useRestoreCustomerListingScroll(location);
@@ -60,6 +118,32 @@ const Home = () => {
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [promoLoading, setPromoLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
+  const [promoSlideIndex, setPromoSlideIndex] = useState(0);
+  const [promoCarouselPaused, setPromoCarouselPaused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  const promoIdsKey = useMemo(() => homePromotions.map((p) => p.id).join(','), [homePromotions]);
+
+  useEffect(() => {
+    const mq = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    if (!mq) return undefined;
+    setPrefersReducedMotion(mq.matches);
+    const fn = () => setPrefersReducedMotion(mq.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+
+  useEffect(() => {
+    setPromoSlideIndex(0);
+  }, [promoIdsKey]);
+
+  useEffect(() => {
+    if (homePromotions.length <= 1 || promoCarouselPaused || prefersReducedMotion) return undefined;
+    const t = window.setInterval(() => {
+      setPromoSlideIndex((i) => (i + 1) % homePromotions.length);
+    }, HOME_PROMO_AUTO_ADVANCE_MS);
+    return () => window.clearInterval(t);
+  }, [homePromotions.length, promoCarouselPaused, prefersReducedMotion, promoIdsKey]);
 
   const quickCategories = useMemo(
     () =>
@@ -251,23 +335,67 @@ const Home = () => {
       )}
 
       {homePromotions.length > 0 && (
-        <section className="home-dynamic-promotions home-product-section">
+        <section
+          className="home-dynamic-promotions home-product-section"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="โปรโมชั่นและข่าวสาร"
+        >
           <div className="container">
             <h2 className="section-title">โปรโมชั่น &amp; ข่าวสาร</h2>
-            <p className="home-section-hint">ประกาศ โปรโมชั่น และข่าวสารจากทางร้าน</p>
-            <div className="home-dynamic-promo-grid">
-              {homePromotions.map((p) => (
-                <article key={p.id} className="home-dynamic-promo-card">
-                  {p.icon ? <div className="home-dynamic-promo-icon" aria-hidden>{p.icon}</div> : null}
-                  <h3 className="home-dynamic-promo-title">{p.title}</h3>
-                  {p.description ? <p className="home-dynamic-promo-desc">{p.description}</p> : null}
-                  <HomePromotionCta
-                    url={p.link_url}
-                    label={p.link_label}
-                    className="home-dynamic-promo-cta"
-                  />
-                </article>
-              ))}
+            <p className="home-section-hint">
+              ประกาศและโปรโมชั่นจากร้าน — เลื่อนอัตโนมัติและวนกลับสไลด์แรก (ชี้เมาส์หรือโฟกัสที่บล็อกนี้จะหยุดชั่วคราว)
+            </p>
+            <div
+              className="home-dynamic-promo-carousel"
+              onMouseEnter={() => setPromoCarouselPaused(true)}
+              onMouseLeave={() => setPromoCarouselPaused(false)}
+              onFocusCapture={() => setPromoCarouselPaused(true)}
+              onBlurCapture={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) setPromoCarouselPaused(false);
+              }}
+            >
+              {homePromotions.length === 1 ? (
+                <div className="home-dynamic-promo-grid home-dynamic-promo-grid--single">
+                  <HomePromotionSlide promotion={homePromotions[0]} />
+                </div>
+              ) : (
+                <>
+                  <div className="home-dynamic-promo-carousel-viewport">
+                    <div
+                      className="home-dynamic-promo-track"
+                      style={{
+                        width: `${homePromotions.length * 100}%`,
+                        transform: `translateX(-${(promoSlideIndex * 100) / homePromotions.length}%)`,
+                      }}
+                    >
+                      {homePromotions.map((p, slideIdx) => (
+                        <div
+                          key={p.id}
+                          className="home-dynamic-promo-slide-shell"
+                          style={{ flex: `0 0 ${100 / homePromotions.length}%` }}
+                          aria-hidden={slideIdx !== promoSlideIndex}
+                        >
+                          <HomePromotionSlide promotion={p} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="home-dynamic-promo-dots" role="tablist" aria-label="เลือกโปรโมชั่น">
+                    {homePromotions.map((p, i) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={i === promoSlideIndex}
+                        aria-label={`โปรโมชั่น ${i + 1} จาก ${homePromotions.length}`}
+                        className={`home-dynamic-promo-dot${i === promoSlideIndex ? ' is-active' : ''}`}
+                        onClick={() => setPromoSlideIndex(i)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
