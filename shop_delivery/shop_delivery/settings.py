@@ -222,7 +222,12 @@ if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ถ้าใช้ Render Persistent Disk ให้ mount แล้วตั้ง MEDIA_ROOT เป็น path เต็ม (ไฟล์จะไม่หายเมื่อ redeploy)
+_media_root_override = config('MEDIA_ROOT', default='').strip()
+if _media_root_override:
+    MEDIA_ROOT = Path(_media_root_override).expanduser().resolve()
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

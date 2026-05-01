@@ -63,6 +63,45 @@ cd shop_delivery && python manage.py createsuperuser
 
 ถ้าไม่มี Shell ฟรี ให้รัน migrate/createsuperuser ผ่าน **SSH** หรือเพิ่มขั้นตอนใน CI — อย่างน้อย migration จะรันอัตโนมัติจาก `Dockerfile` CMD อยู่แล้ว
 
+### รูปสินค้าโหลดไม่ขึ้น / 404 หลัง deploy (ข้อมูลในฐานยังอยู่)
+
+บน Render **ดิสก์ของ container ไม่ถาวร** — โฟลเดอร์ `media/` (รูปที่อัปโหลดหรือที่คำสั่ง seed โหลดมา) **จะหายเมื่อ redeploy หรือ restart** แต่ฟิลด์ `image` ใน DB ยังชี้ path เดิม จึงเห็นรูปพัง
+
+**อย่ารัน seed บนเครื่องตัวเองถ้า `DATABASE_URL` ชี้ production:** คำสั่งจะเขียนไฟล์ลง **โฟลเดอร์ `media/` บนเครื่องคุณ** และอัปเดตแถวใน Neon — พอเปิด URL บน Render ไฟล์ไม่ได้อยู่บน container เลยได้ **404** แม้รัน seed “สำเร็จ” แล้ว  
+
+#### ถ้าไม่มี Render Shell / Shell เสียเงิน — ใช้วิธีนี้ได้บนฟรี (ไม่ต้องเปิด Shell)
+
+รันโหลดรูปบน **ตัว container เดียวกับที่รันเว็บ** โดยให้คำสั่งใน `Dockerfile` ทำงานตอน **เริ่ม service**:
+
+1. ใน Dashboard → Environment ให้ **`RESET_DB_ON_START=0`** (สำคัญ — อย่าปล่อยเป็น `1`)
+2. ตั้ง **`SEED_DEMO_ON_START=1`** ชั่วคราว
+3. กด **Manual Deploy** / redeploy **หนึ่งรอบ** — ระหว่าง boot จะรัน `seed_grocery_demo` (โหลดรูปลงดิสก์ของ container บน Render)
+4. พอเว็บขึ้นปกติและรูปโหลดได้แล้ว ให้ตั้ง **`SEED_DEMO_ON_START=0`** กลับทันที — อย่าปล่อย `1` ค้าง (ทุก restart จะ seed ใหม่และช้ามาก)
+
+ไม่มีค่า Shell แยก — จ่ายแค่แผน Web Service ตามที่ใช้อยู่ (ฟรีทียังอยู่ในขีดจำกัดฟรี)
+
+#### ถ้ามี Shell (หรือ SSH เข้า container ได้)
+
+โหลดรูปอย่างเดียวโดยไม่ต้อง redeploy:
+
+```bash
+cd shop_delivery && python manage.py seed_grocery_demo --no-input --refresh-images
+```
+
+ตรวจว่าไฟล์อยู่จริงบนดิสก์:
+
+```bash
+cd shop_delivery && python manage.py check_product_media --limit 500
+```
+
+#### ถาวร — Persistent Disk + `MEDIA_ROOT`
+
+Mount disk ใน Render แล้วตั้ง env **`MEDIA_ROOT`** เป็น path ที่ mount — `settings.py` อ่านจาก env ได้แล้ว (รูปไม่หายทุก redeploy)
+
+#### ถาวร (แนะนำถ้าขายจริง)
+
+เก็บไฟล์บน object storage (S3 / Cloudflare R2) ผ่าน `django-storages` — ไม่ผูกกับดิสก์ ephemeral ของ Render
+
 ---
 
 ## 3) Deploy Frontend บน Cloudflare Pages
