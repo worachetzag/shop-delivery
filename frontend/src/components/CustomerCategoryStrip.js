@@ -70,7 +70,7 @@ function CustomerCategoryStrip({
           >
             <span
               className="customer-category-strip-icon-wrap"
-              style={{ backgroundColor: `hsl(${ALL_TILE_HUE}, 38%, 92%)` }}
+              style={{ '--category-accent-hue': ALL_TILE_HUE }}
               aria-hidden
             >
               <span className="customer-category-strip-icon">
@@ -92,7 +92,7 @@ function CustomerCategoryStrip({
               <span
                 className="customer-category-strip-icon-wrap"
                 style={{
-                  backgroundColor: `hsl(${getCategoryAccentHue(cat.id)}, 52%, 92%)`,
+                  '--category-accent-hue': getCategoryAccentHue(cat.id),
                 }}
                 aria-hidden
               >
