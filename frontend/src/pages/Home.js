@@ -6,6 +6,7 @@ import config from '../config';
 import { productsService } from '../services/api';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import { resolveMediaUrl } from '../utils/media';
+import { getCategoryAccentHue, getCategoryEmoji } from '../utils/categoryVisual';
 import './Home.css';
 
 /** จำนวนสินค้าที่แสดงต่อหมวดในหน้าแรก — ให้ลูกค้ากดดูทั้งหมดในหน้ารายการสินค้า */
@@ -237,12 +238,11 @@ const Home = () => {
     return () => window.clearInterval(t);
   }, [homePromotions.length, promoHoverPaused, promoSwipePaused, prefersReducedMotion, promoIdsKey]);
 
-  const quickCategories = useMemo(
+  const sortedCategoriesStrip = useMemo(
     () =>
       [...categories]
         .filter((c) => c && c.id != null)
-        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'th'))
-        .slice(0, 8),
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'th')),
     [categories],
   );
 
@@ -404,17 +404,37 @@ const Home = () => {
         </div>
       </section>
 
-      {quickCategories.length > 0 && (
-        <section className="home-category-quick" aria-label="หมวดยอดนิยม">
+      {sortedCategoriesStrip.length > 0 && (
+        <section className="home-category-strip" aria-labelledby="home-category-strip-heading">
           <div className="container">
-            <div className="home-category-quick-scroll">
-              {quickCategories.map((cat) => (
+            <header className="home-category-strip-head">
+              <h2 id="home-category-strip-heading" className="home-category-strip-title">
+                หมวดหมู่สินค้า
+              </h2>
+              <Link to="/customer/products" className="home-category-strip-see-all">
+                ดูทั้งหมด
+                <span className="home-category-strip-chevron" aria-hidden>
+                  ›
+                </span>
+              </Link>
+            </header>
+            <div className="home-category-strip-scroll">
+              {sortedCategoriesStrip.map((cat) => (
                 <Link
                   key={cat.id}
                   to={`/customer/products?category_id=${encodeURIComponent(String(cat.id))}`}
-                  className="home-category-quick-pill"
+                  className="home-category-strip-item"
                 >
-                  {cat.name}
+                  <span
+                    className="home-category-strip-icon-wrap"
+                    style={{
+                      backgroundColor: `hsl(${getCategoryAccentHue(cat.id)}, 52%, 92%)`,
+                    }}
+                    aria-hidden
+                  >
+                    <span className="home-category-strip-icon">{getCategoryEmoji(cat.name, cat.id)}</span>
+                  </span>
+                  <span className="home-category-strip-label">{cat.name}</span>
                 </Link>
               ))}
             </div>
