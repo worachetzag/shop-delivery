@@ -8,6 +8,28 @@ import './AdminDashboard.css';
 const ADMIN_ORDERS_PAGE_SIZE = 15;
 const ADMIN_PRODUCTS_PAGE_SIZE = 20;
 
+function getProductAvailableQty(product) {
+  if (product.available_quantity != null && product.available_quantity !== '') {
+    return Math.max(0, Number(product.available_quantity));
+  }
+  return Math.max(0, Number(product.stock_quantity || 0) - Number(product.reserved_quantity || 0));
+}
+
+/** สถานะสต็อกแสดงในคอลัมน์สินค้าแอดมิน — แยกปิดขาย / หมด / ใกล้หมด / ปกติ (ปกติไม่ใช้พื้นหลังสี) */
+function getAdminProductStockStatus(product) {
+  const avail = getProductAvailableQty(product);
+  if (!product.is_available) {
+    return { key: 'inactive', label: 'ปิดขาย', badgeClass: 'admin-product-status admin-product-status--inactive' };
+  }
+  if (avail <= 0) {
+    return { key: 'out', label: 'สินค้าหมด', badgeClass: 'admin-product-status admin-product-status--out' };
+  }
+  if (product.is_low_stock) {
+    return { key: 'low', label: 'ใกล้หมด', badgeClass: 'admin-product-status admin-product-status--low' };
+  }
+  return { key: 'ok', label: 'ปกติ', badgeClass: null };
+}
+
 const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const popup = usePopup();
   const UNIT_OPTIONS = ['ชิ้น', 'แพ็ค', 'ขวด', 'กิโลกรัม', 'กรัม', 'มิลลิลิตร', 'ลิตร', 'อื่นๆ'];
@@ -1308,17 +1330,19 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       <th>หน่วย</th>
                       <th>ราคาขาย</th>
                       <th>ราคาก่อนลด</th>
-                      <th>พร้อมขาย</th>
+                      <th>คงเหลือ</th>
                       <th>จอง</th>
                       <th>สต็อก</th>
                       <th>สถานะ</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((product) => (
+                    {products.map((product) => {
+                      const stockStatus = getAdminProductStockStatus(product);
+                      return (
                       <tr
                         key={product.id}
-                        className={`admin-product-row${product.is_low_stock ? ' admin-product-row--low-stock' : ''}`}
+                        className="admin-product-row"
                         onClick={() => navigate(`/admin/products/${product.id}/edit`)}
                         title="คลิกเพื่อแก้ไขสินค้า"
                       >
@@ -1331,7 +1355,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                             ? `฿${Number(product.compare_at_price).toLocaleString()}`
                             : '—'}
                         </td>
-                        <td>{Number(product.available_quantity ?? ((product.stock_quantity || 0) - (product.reserved_quantity || 0)))}</td>
+                        <td>{getProductAvailableQty(product)}</td>
                         <td>{Number(product.reserved_quantity || 0)}</td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="stock-editor">
@@ -1352,11 +1376,15 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                           </div>
                         </td>
                         <td>
-                          {product.is_available ? 'พร้อมขาย' : 'ปิดขาย'}
-                          {product.is_low_stock ? ' · ใกล้หมด' : ''}
+                          {stockStatus.badgeClass ? (
+                            <span className={stockStatus.badgeClass}>{stockStatus.label}</span>
+                          ) : (
+                            <span className="admin-product-status-text">{stockStatus.label}</span>
+                          )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               )}

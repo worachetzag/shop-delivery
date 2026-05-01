@@ -398,13 +398,36 @@
   white-space: nowrap;
 }
 
-.admin-product-row.admin-product-row--low-stock td {
-  background: #fef2f2;
-  color: #7f1d1d;
+/* ป้ายสถานะสต็อกในตารางสินค้าแอดมิน — ปกติใช้ .admin-product-status-text (ไม่มีพื้นหลังสี) */
+.admin-product-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
 }
 
-.admin-product-row.admin-product-row--low-stock:hover td {
+.admin-product-status-text {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.admin-product-status--inactive {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.admin-product-status--out {
   background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-product-status--low {
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .products-manage-table th {
