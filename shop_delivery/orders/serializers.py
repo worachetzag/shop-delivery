@@ -146,6 +146,13 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order_type = data.get('order_type')
         if order_type == 'pickup':
             data['delivery_distance'] = None
+            phone = (data.get('delivery_phone') or '').strip()
+            digits = ''.join(ch for ch in phone if ch.isdigit())
+            if len(digits) < 9:
+                raise serializers.ValidationError({
+                    'delivery_phone': 'กรุณากรอกเบอร์โทรติดต่ออย่างน้อย 9 หลักสำหรับการรับที่ร้าน',
+                })
+            data['delivery_phone'] = phone
             return data
 
         ca_id = data.get('customer_address_id')

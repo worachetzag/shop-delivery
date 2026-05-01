@@ -32,6 +32,16 @@ function checkoutShippingIssues(shippingInfo, paymentMethod) {
   return issues;
 }
 
+/** ตรวจเมื่อเลือกรับที่ร้าน — ไม่ต้องมีที่อยู่จัดส่ง */
+function checkoutPickupIssues(shippingInfo, paymentMethod) {
+  const issues = [];
+  if (!(shippingInfo.name || '').trim()) issues.push('ชื่อผู้มารับ');
+  const digits = (shippingInfo.phone || '').replace(/\D/g, '');
+  if (digits.length < 9) issues.push('เบอร์โทรติดต่อ (อย่างน้อย 9 หลัก)');
+  if (!paymentMethod) issues.push('วิธีชำระเงิน');
+  return issues;
+}
+
 /** ตรวจที่อยู่ที่บันทึกไว้ (ใช้เมื่อส่งออเดอร์ด้วย customer_address_id) */
 function savedAddressIssues(addr) {
   const issues = [];
@@ -119,6 +129,7 @@ const Checkout = () => {
   };
 
   const [storeOrigin, setStoreOrigin] = useState({ latitude: null, longitude: null });
+  const [storeListing, setStoreListing] = useState({ name: '', address: '' });
 
   const geocodeAddressForCheckout = async (addr) => {
     const token = localStorage.getItem('auth_token');
@@ -162,8 +173,13 @@ const Checkout = () => {
           latitude: toFiniteNumberOrNull(payload.latitude),
           longitude: toFiniteNumberOrNull(payload.longitude),
         });
+        setStoreListing({
+          name: (payload.name || '').trim(),
+          address: (payload.address || '').trim(),
+        });
       } catch (e) {
         setStoreOrigin({ latitude: null, longitude: null });
+        setStoreListing({ name: '', address: '' });
       }
     };
     loadStoreLocation();
@@ -171,7 +187,7 @@ const Checkout = () => {
 
   // กรณี "กรอกที่อยู่เอง" ให้หาพิกัด (lat/lng) อัตโนมัติเพื่อคำนวณค่าส่งตามระยะทาง
   useEffect(() => {
-    if (!manualShippingEntry) return;
+    if (fulfillmentMode !== 'delivery' || !manualShippingEntry) return;
 
     if (shippingInfo?.latitude != null && shippingInfo?.longitude != null) return;
 
@@ -215,6 +231,7 @@ const Checkout = () => {
       clearTimeout(t);
     };
   }, [
+    fulfillmentMode,
     manualShippingEntry,
     shippingInfo?.address,
     shippingInfo?.district,
@@ -322,6 +339,14 @@ const Checkout = () => {
   };
 
   useEffect(() => {
+    if (fulfillmentMode === 'pickup') {
+      setDeliveryFeeEstimate(0);
+      setDeliveryDistanceEstimateKm(null);
+      setDeliveryFeeError(null);
+      setLoadingDeliveryFeeEstimate(false);
+      return undefined;
+    }
+
     const originLat = toFiniteNumberOrNull(storeOrigin?.latitude);
     const originLng = toFiniteNumberOrNull(storeOrigin?.longitude);
     const destinationLat = toFiniteNumberOrNull(shippingInfo?.latitude);
@@ -392,6 +417,7 @@ const Checkout = () => {
       cancelled = true;
     };
   }, [
+    fulfillmentMode,
     storeOrigin?.latitude,
     storeOrigin?.longitude,
     shippingInfo?.latitude,
@@ -440,29 +466,26 @@ const Checkout = () => {
       selectedSavedAddress &&
       !manualShippingEntry;
 
-    let issues;
-    if (!selectedSavedAddress) {
-      issues = ['กรุณาเลือกที่อยู่จัดส่งก่อนยืนยันคำสั่งซื้อ'];
+    let issues = [];
+    if (fulfillmentMode === 'pickup') {
+      issues = [...checkoutPickupIssues(shippingInfo, paymentMethod)];
+    } else if (useSavedAddressFlow) {
+      issues = [...savedAddressIssues(selectedSavedAddress)];
+      if (!paymentMethod) issues.push('วิธีชำระเงิน');
     } else {
-      issues = [];
+      issues = [...checkoutShippingIssues(shippingInfo, paymentMethod)];
     }
-    if (useSavedAddressFlow) {
-      issues = [...issues, ...savedAddressIssues(selectedSavedAddress)];
-      if (!paymentMethod) issues = [...issues, 'วิธีชำระเงิน'];
-    } else {
-      issues = [...issues, ...checkoutShippingIssues(shippingInfo, paymentMethod)];
-    }
-    if (deliveryFeeEstimate == null) {
-      issues = [
-        ...issues,
-        deliveryFeeError || 'รอให้ระบบคำนวณค่าส่งให้เสร็จก่อน',
-      ];
+
+    if (fulfillmentMode === 'delivery' && deliveryFeeEstimate == null) {
+      issues.push(deliveryFeeError || 'รอให้ระบบคำนวณค่าส่งให้เสร็จก่อน');
     }
 
     if (issues.length) {
       popup.error(`ข้อมูลยังไม่ครบ: ${issues.join(' · ')}`);
       const goProfile = await popup.confirm(
-        'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อ เบอร์โทร และที่อยู่จัดส่งหรือไม่?',
+        fulfillmentMode === 'pickup'
+          ? 'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อและเบอร์โทรหรือไม่?'
+          : 'ต้องการไปหน้าโปรไฟล์เพื่อกรอกชื่อ เบอร์โทร และที่อยู่จัดส่งหรือไม่?',
         {
           title: 'ยืนยันคำสั่งซื้อ',
           confirmText: 'ไปหน้าโปรไฟล์',
@@ -492,7 +515,23 @@ const Checkout = () => {
         !manualShippingEntry;
 
       let orderData;
-      if (useSaved) {
+      if (fulfillmentMode === 'pickup') {
+        const storeLine = ['รับที่ร้าน', storeListing.name, storeListing.address].filter(Boolean).join(' — ');
+        const noteParts = [];
+        if ((shippingInfo.name || '').trim()) noteParts.push(`ผู้มารับ: ${(shippingInfo.name || '').trim()}`);
+        if ((shippingInfo.notes || '').trim()) noteParts.push((shippingInfo.notes || '').trim());
+        orderData = {
+          order_type: 'pickup',
+          payment_method: paymentMethod,
+          delivery_address: storeLine || 'รับที่ร้าน',
+          delivery_phone: (shippingInfo.phone || '').trim(),
+          delivery_notes: noteParts.join(' · ') || 'รับสินค้าที่ร้าน',
+          items: cartItems.map((item) => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+          })),
+        };
+      } else if (useSaved) {
         const recipient =
           (selectedSaved.recipient_name || '').trim() || shippingInfo.name || '';
         orderData = {
@@ -645,12 +684,17 @@ const Checkout = () => {
     addresses.length > 0 &&
     selectedSavedAddress &&
     !manualShippingEntry;
-  const hasDeliveryFee = deliveryFeeEstimate != null && !deliveryFeeError && !loadingDeliveryFeeEstimate;
-  const canSubmitOrder = Boolean(paymentMethod)
-    && Boolean(selectedSavedAddress)
-    && hasDeliveryFee
-    && !submitting
-    && !createdOrderId;
+  const hasDeliveryFeeReady =
+    fulfillmentMode === 'pickup'
+      ? true
+      : deliveryFeeEstimate != null && !deliveryFeeError && !loadingDeliveryFeeEstimate;
+  /** โหมดจัดส่ง: ถ้าเลือกที่อยู่จากรายการต้องมี id; ถ้ากรอกเองระบบตรวจตอนกดส่ง */
+  const deliveryAddressReady =
+    fulfillmentMode !== 'delivery' ? true : (useSavedAddressFlow ? Boolean(selectedSavedAddress) : true);
+  const canSubmitOrder =
+    fulfillmentMode === 'pickup'
+      ? Boolean(paymentMethod) && hasDeliveryFeeReady && !submitting && !createdOrderId
+      : Boolean(paymentMethod) && deliveryAddressReady && hasDeliveryFeeReady && !submitting && !createdOrderId;
 
   return (
     <div className="checkout-page">
@@ -663,6 +707,29 @@ const Checkout = () => {
 
         <form onSubmit={handleSubmit} className="checkout-form" noValidate>
           <div className="checkout-content">
+            <div className="checkout-fulfillment customer-form-stack">
+              <h3 className="section-title">วิธีรับสินค้า</h3>
+              <div className="checkout-fulfillment-toggle" role="group" aria-label="เลือกจัดส่งหรือรับที่ร้าน">
+                <button
+                  type="button"
+                  className={fulfillmentMode === 'delivery' ? 'is-active' : ''}
+                  onClick={() => setFulfillmentMode('delivery')}
+                >
+                  จัดส่งถึงบ้าน
+                </button>
+                <button
+                  type="button"
+                  className={fulfillmentMode === 'pickup' ? 'is-active' : ''}
+                  onClick={() => setFulfillmentMode('pickup')}
+                >
+                  รับที่ร้าน
+                </button>
+              </div>
+              <p className="checkout-fulfillment-hint">
+                เลือก <strong>รับที่ร้าน</strong> ถ้ามารับสินค้าเอง — ไม่มีค่าจัดส่ง (คิดเฉพาะยอดสินค้า)
+              </p>
+            </div>
+
             {/* Order Summary */}
             <div className="order-summary">
               <h3 className="section-title">สรุปคำสั่งซื้อ</h3>
@@ -696,9 +763,11 @@ const Checkout = () => {
                   <span>{formatPrice(calculateSubtotal())}</span>
                 </div>
                 <div className="total-row">
-                  <span>ค่าจัดส่ง:</span>
+                  <span>{fulfillmentMode === 'pickup' ? 'ค่าจัดส่ง (รับที่ร้าน):' : 'ค่าจัดส่ง:'}</span>
                   <span>
-                    {deliveryFeeEstimate == null ? (
+                    {fulfillmentMode === 'pickup' ? (
+                      <span className="free-shipping">ไม่มี</span>
+                    ) : deliveryFeeEstimate == null ? (
                       <span className="free-shipping">
                         {deliveryFeeError || geocodingError
                           ? (deliveryFeeError || geocodingError)
@@ -722,10 +791,59 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Shipping Information */}
+            {/* Shipping / pickup */}
             <div className="shipping-info" ref={shippingSectionRef}>
-              <h3 className="section-title">ข้อมูลการจัดส่ง</h3>
+              <h3 className="section-title">
+                {fulfillmentMode === 'pickup' ? 'ข้อมูลผู้มารับที่ร้าน' : 'ข้อมูลการจัดส่ง'}
+              </h3>
 
+              {fulfillmentMode === 'pickup' ? (
+                <div className="pickup-panel customer-form-stack">
+                  <div className="pickup-store-card">
+                    <strong>{storeListing.name || 'ร้าน'}</strong>
+                    {storeListing.address ? (
+                      <p className="pickup-store-address">{storeListing.address}</p>
+                    ) : (
+                      <p className="muted pickup-store-address">
+                        ยังไม่มีที่อยู่ร้านในระบบ — แอดมินตั้งได้ที่การตั้งค่าร้าน / พิกัดร้าน
+                      </p>
+                    )}
+                  </div>
+                  <p className="muted" style={{ margin: 0 }}>
+                    เมื่อสั่งแล้วรอแอดมินจัดเตรียมและแจ้งให้มารับตามเวลาทำการของร้าน
+                  </p>
+                  <label className="form-label">ชื่อผู้มารับ</label>
+                  <input
+                    name="name"
+                    type="text"
+                    className="form-input"
+                    value={shippingInfo.name}
+                    onChange={handleInputChange}
+                    placeholder="ชื่อ–นามสกุล"
+                    autoComplete="name"
+                  />
+                  <label className="form-label">เบอร์โทรติดต่อ</label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    className="form-input"
+                    value={shippingInfo.phone}
+                    onChange={handleInputChange}
+                    placeholder="เบอร์โทร (อย่างน้อย 9 หลัก)"
+                    autoComplete="tel"
+                  />
+                  <label className="form-label">หมายเหตุถึงร้าน (ไม่บังคับ)</label>
+                  <input
+                    name="notes"
+                    type="text"
+                    className="form-input"
+                    value={shippingInfo.notes}
+                    onChange={handleInputChange}
+                    placeholder="เช่น จะไปรับช่วงบ่าย"
+                  />
+                </div>
+              ) : (
+                <>
               <div className="address-book customer-form-stack">
                 <div className="address-book-header">
                   <label className="form-label">เลือกที่อยู่ที่บันทึกไว้</label>
@@ -782,6 +900,8 @@ const Checkout = () => {
                   <p>กรุณาเพิ่มที่อยู่ใหม่ หรือเลือกที่อยู่ที่บันทึกไว้ก่อนสั่งซื้อ</p>
                 </div>
               )}
+                </>
+              )}
             </div>
 
             {/* Payment Method */}
@@ -818,7 +938,11 @@ const Checkout = () => {
                     <div className="payment-icon">💳</div>
                     <div>
                       <h4>ชำระปลายทาง</h4>
-                      <p>ชำระเงินเมื่อได้รับสินค้า</p>
+                      <p>
+                        {fulfillmentMode === 'pickup'
+                          ? 'ชำระเมื่อมารับสินค้าที่ร้าน'
+                          : 'ชำระเงินเมื่อได้รับสินค้า'}
+                      </p>
                     </div>
                   </div>
                 </label>

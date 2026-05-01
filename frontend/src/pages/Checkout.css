@@ -510,3 +510,62 @@
   color: #0f7f3f;
 }
 
+.checkout-fulfillment {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.checkout-fulfillment-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.checkout-fulfillment-toggle button {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.checkout-fulfillment-toggle button.is-active {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.checkout-fulfillment-hint {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.pickup-store-card {
+  border: 1px solid var(--border-soft, #e5e7eb);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  margin-bottom: 4px;
+}
+
+.pickup-store-card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.pickup-store-address {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.4;
+}
+

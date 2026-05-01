@@ -276,12 +276,16 @@ const OrderDetail = () => {
             <p><strong>หมายเลขคำสั่งซื้อ:</strong> {order.order_number || `#${order.id}`}</p>
             <p><strong>วันที่สั่งซื้อ:</strong> {formatDate(order.created_at)}</p>
             <p><strong>วิธีชำระเงิน:</strong> {order.payment_method_display || order.payment_method}</p>
-            <p><strong>ที่อยู่จัดส่ง:</strong> {order.delivery_address || '-'}</p>
-            <p><strong>เบอร์โทร:</strong> {order.delivery_phone || '-'}</p>
+            <p><strong>ประเภทคำสั่งซื้อ:</strong> {order.order_type_display || '—'}</p>
+            <p>
+              <strong>{order.order_type === 'pickup' ? 'การรับสินค้า / ที่อยู่ร้าน:' : 'ที่อยู่จัดส่ง:'}</strong>{' '}
+              {order.delivery_address || '-'}
+            </p>
+            <p><strong>เบอร์โทรติดต่อ:</strong> {order.delivery_phone || '-'}</p>
             {order.payment_method === 'promptpay' && (
               <p><strong>สถานะสลิป:</strong> {order.payment_slip_status_display || order.payment_slip_status}</p>
             )}
-            {order.driver_assignment && (
+            {order.driver_assignment && order.order_type !== 'pickup' && (
               <>
                 <p><strong>คนขับ:</strong> {order.driver_assignment.driver_name || '-'}</p>
                 <p><strong>สถานะจัดส่ง:</strong> {order.driver_assignment.status_display || order.driver_assignment.status}</p>
