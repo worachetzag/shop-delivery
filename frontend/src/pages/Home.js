@@ -153,6 +153,12 @@ const Home = () => {
   const promoSwipeIdleTimerRef = useRef(null);
 
   const promoIdsKey = useMemo(() => homePromotions.map((p) => p.id).join(','), [homePromotions]);
+  const promoLoopSlides = useMemo(() => {
+    if (homePromotions.length <= 1) return homePromotions;
+    const first = homePromotions[0];
+    const last = homePromotions[homePromotions.length - 1];
+    return [last, ...homePromotions, first];
+  }, [homePromotions]);
 
   useEffect(() => {
     const mq = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
@@ -177,6 +183,8 @@ const Home = () => {
   const syncPromoSlideIndexFromScroll = useCallback(() => {
     const root = promoScrollRef.current;
     if (!root || skipPromoScrollSyncRef.current) return;
+    const promoCount = homePromotions.length;
+    if (promoCount <= 1) return;
     let best = 0;
     let bestDist = Infinity;
     for (let i = 0; i < root.children.length; i++) {
@@ -187,8 +195,34 @@ const Home = () => {
         best = i;
       }
     }
-    setPromoSlideIndex((prev) => (prev === best ? prev : best));
-  }, []);
+    // โครงเลื่อนแบบ loop: [clone-last, ...real, clone-first]
+    if (best === 0) {
+      const lastReal = root.children[promoCount];
+      if (lastReal) {
+        skipPromoScrollSyncRef.current = true;
+        root.scrollTo({ left: lastReal.offsetLeft, behavior: 'auto' });
+        window.requestAnimationFrame(() => {
+          skipPromoScrollSyncRef.current = false;
+        });
+      }
+      setPromoSlideIndex(promoCount - 1);
+      return;
+    }
+    if (best === promoCount + 1) {
+      const firstReal = root.children[1];
+      if (firstReal) {
+        skipPromoScrollSyncRef.current = true;
+        root.scrollTo({ left: firstReal.offsetLeft, behavior: 'auto' });
+        window.requestAnimationFrame(() => {
+          skipPromoScrollSyncRef.current = false;
+        });
+      }
+      setPromoSlideIndex(0);
+      return;
+    }
+    const logical = best - 1;
+    setPromoSlideIndex((prev) => (prev === logical ? prev : logical));
+  }, [homePromotions.length]);
 
   const schedulePromoSwipeIdleResume = useCallback(() => {
     if (promoSwipeIdleTimerRef.current) window.clearTimeout(promoSwipeIdleTimerRef.current);
@@ -226,7 +260,7 @@ const Home = () => {
     if (!root || homePromotions.length <= 1) return undefined;
     if (!promoApplyScrollRef.current) return undefined;
     promoApplyScrollRef.current = false;
-    const child = root.children[promoSlideIndex];
+    const child = root.children[promoSlideIndex + 1];
     if (!child) return undefined;
     skipPromoScrollSyncRef.current = true;
     root.scrollTo({
@@ -449,8 +483,8 @@ const Home = () => {
                       onWheel={handlePromoWheelHorizontal}
                       role="presentation"
                     >
-                      {homePromotions.map((p) => (
-                        <div key={p.id} className="home-dynamic-promo-scroll-slide">
+                      {promoLoopSlides.map((p, idx) => (
+                        <div key={`${p.id}-${idx}`} className="home-dynamic-promo-scroll-slide">
                           <HomePromotionSlide promotion={p} />
                         </div>
                       ))}
