@@ -42,12 +42,12 @@ class Product(models.Model):
     is_featured = models.BooleanField(
         default=False,
         verbose_name="สินค้าแนะนำ",
-        help_text="แสดงในหมวดสินค้าแนะนำบนหน้าแรก (แยกจากสินค้าที่ตั้งราคาก่อนลด)",
+        help_text="ติ๊กเมื่อต้องการให้ขึ้นหมวดแนะนำบนหน้าแรกเท่านั้น — ไม่เกี่ยวกับการลดราคา",
     )
     is_special_offer = models.BooleanField(
         default=False,
-        verbose_name="ป้ายราคาพิเศษ",
-        help_text="แสดงป้ายในรายการสินค้าเมื่อไม่ได้กรอกราคาก่อนลด — ไม่ใช่หมวดแนะนำ",
+        verbose_name="ป้ายราคาพิเศษ (เลิกใช้)",
+        help_text="เก่า — ระบบลูกค้าใช้เฉพาะราคาก่อนลดสูงกว่าราคาขายในการแสดงว่าลดแล้ว",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -179,12 +179,12 @@ class ProductListView(generics.ListAPIView):
         if special_offer == 'true':
             queryset = queryset.filter(is_special_offer=True)
 
-        # หน้าแรก / ลิงก์ — สินค้าลดราคา (ราคาก่อนลด) หรือติดป้ายราคาพิเศษ
+        # หน้าแรก / ลิงก์ — เฉพาะสินค้าที่ตั้งราคาก่อนลดสูงกว่าราคาขายจริง (ไม่ใช้ป้าย is_special_offer)
         on_sale = self.request.query_params.get('on_sale')
         if on_sale == 'true':
             queryset = queryset.filter(
-                Q(compare_at_price__isnull=False, compare_at_price__gt=F('price'))
-                | Q(is_special_offer=True)
+                compare_at_price__isnull=False,
+                compare_at_price__gt=F('price'),
             )
 
         return queryset.annotate(available_quantity_calc=F('stock_quantity') - F('reserved_quantity'))

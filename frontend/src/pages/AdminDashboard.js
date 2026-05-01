@@ -76,7 +76,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     stock_quantity: '',
     is_available: true,
     is_featured: false,
-    is_special_offer: false,
   });
   const [categoryForm, setCategoryForm] = useState({
     name: '',
@@ -100,7 +99,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     stock_quantity: '',
     is_available: true,
     is_featured: false,
-    is_special_offer: false,
   });
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -505,7 +503,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       formData.append('stock_quantity', String(parseInt(productForm.stock_quantity, 10)));
       formData.append('is_available', productForm.is_available ? 'true' : 'false');
       formData.append('is_featured', productForm.is_featured ? 'true' : 'false');
-      formData.append('is_special_offer', productForm.is_special_offer ? 'true' : 'false');
+      formData.append('is_special_offer', 'false');
       if (productImageFile) {
         formData.append('image', productImageFile);
       }
@@ -539,7 +537,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         stock_quantity: '',
         is_available: true,
         is_featured: false,
-        is_special_offer: false,
       });
       setProductImageFile(null);
       await loadProducts();
@@ -610,7 +607,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       stock_quantity: String(product.stock_quantity ?? 0),
       is_available: Boolean(product.is_available),
       is_featured: Boolean(product.is_featured),
-      is_special_offer: Boolean(product.is_special_offer),
     });
     setProductEditImageFile(null);
   };
@@ -638,7 +634,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       formData.append('stock_quantity', String(parseInt(productEditForm.stock_quantity, 10)));
       formData.append('is_available', productEditForm.is_available ? 'true' : 'false');
       formData.append('is_featured', productEditForm.is_featured ? 'true' : 'false');
-      formData.append('is_special_offer', productEditForm.is_special_offer ? 'true' : 'false');
+      formData.append('is_special_offer', 'false');
       if (productEditImageFile) {
         formData.append('image', productEditImageFile);
       }
@@ -672,7 +668,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         stock_quantity: '',
         is_available: true,
         is_featured: false,
-        is_special_offer: false,
       });
       setProductEditImageFile(null);
       popup.info('แก้ไขสินค้าสำเร็จ');

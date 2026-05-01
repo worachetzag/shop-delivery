@@ -23,7 +23,6 @@ const getDefaultCreateForm = () => ({
   stock_quantity: '',
   is_available: true,
   is_featured: false,
-  is_special_offer: false,
 });
 
 const AdminProductFormPage = () => {
@@ -90,7 +89,6 @@ const AdminProductFormPage = () => {
             stock_quantity: String(product.stock_quantity ?? 0),
             is_available: Boolean(product.is_available),
             is_featured: Boolean(product.is_featured),
-            is_special_offer: Boolean(product.is_special_offer),
           });
         }
       } catch (error) {
@@ -166,7 +164,7 @@ const AdminProductFormPage = () => {
       formData.append('stock_quantity', String(parseInt(form.stock_quantity, 10)));
       formData.append('is_available', form.is_available ? 'true' : 'false');
       formData.append('is_featured', form.is_featured ? 'true' : 'false');
-      formData.append('is_special_offer', form.is_special_offer ? 'true' : 'false');
+      formData.append('is_special_offer', 'false');
       if (imageFile) formData.append('image', imageFile);
 
       const url = isEditMode
@@ -196,7 +194,6 @@ const AdminProductFormPage = () => {
           unit_detail_unit: prev.unit_detail_unit,
           is_available: prev.is_available,
           is_featured: prev.is_featured,
-          is_special_offer: prev.is_special_offer,
         }));
         setImageFile(null);
       } else {
@@ -242,7 +239,7 @@ const AdminProductFormPage = () => {
 
           <div className="product-form-grid">
             <input name="name" value={form.name} onChange={handleInputChange} placeholder="ชื่อสินค้า" required />
-            <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleInputChange} placeholder="ราคาขาย (หลังลด)" required />
+            <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleInputChange} placeholder="ราคาขายจริง (หลังลด)" required />
             <input
               name="compare_at_price"
               type="number"
@@ -250,7 +247,7 @@ const AdminProductFormPage = () => {
               step="0.01"
               value={form.compare_at_price}
               onChange={handleInputChange}
-              placeholder="ราคาก่อนลด (ไม่บังคับ)"
+              placeholder="ราคาก่อนลด — ต้องสูงกว่าราคาขาย"
             />
             <select name="unit_label" value={form.unit_label} onChange={handleInputChange} required>
               {UNIT_OPTIONS.map((unit) => (
@@ -276,6 +273,9 @@ const AdminProductFormPage = () => {
               ))}
             </select>
           </div>
+          <p className="product-form-price-hint" style={{ margin: '0 0 8px', fontSize: '0.82rem', color: '#64748b', lineHeight: 1.45 }}>
+            <strong>ราคา:</strong> ช่องแรก = ราคาที่ลูกค้าจ่ายจริง · ช่องราคาก่อนลด = ราคาป้ายเดิม (ถ้ากรอกและสูงกว่าราคาขาย ระบบจะแสดงว่าลดแล้ว — ไม่ต้องติ๊กอื่น)
+          </p>
 
           <textarea
             name="description"
@@ -292,11 +292,7 @@ const AdminProductFormPage = () => {
             </label>
             <label>
               <input type="checkbox" name="is_featured" checked={form.is_featured} onChange={handleInputChange} />
-              แสดงในหมวดสินค้าแนะนำ (หน้าแรก)
-            </label>
-            <label>
-              <input type="checkbox" name="is_special_offer" checked={form.is_special_offer} onChange={handleInputChange} />
-              แสดงป้ายราคาพิเศษ (เมื่อไม่ได้กรอกราคาก่อนลด)
+              สินค้าแนะนำบนหน้าแรก — <strong>ต้องติ๊ก</strong>ถึงจะขึ้นมุมแนะนำ (ไม่เกี่ยวกับการลดราคา)
             </label>
           </div>
 

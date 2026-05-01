@@ -10,15 +10,12 @@ import './Home.css';
 const SKELETON_CARD_COUNT = 6;
 const SECTION_PAGE_SIZE = 24;
 
-/** เรียงสินค้าลดราคา: % ส่วนลดสูงก่อน แล้วตามราคาขาย */
+/** เรียงสินค้าลดราคา: % ส่วนลดจากราคาก่อนลดสูงก่อน แล้วตามราคาขาย */
 function discountSortWeight(product) {
   const cmp = product.compare_at_price != null ? Number(product.compare_at_price) : NaN;
   const sale = Number(product.price ?? 0);
   if (Number.isFinite(cmp) && cmp > sale && sale >= 0) {
     return (cmp - sale) / cmp;
-  }
-  if (product.is_special_offer) {
-    return 0.0001;
   }
   return 0;
 }
@@ -279,7 +276,9 @@ const Home = () => {
       <section className="featured-products home-product-section">
         <div className="container">
           <h2 className="section-title">สินค้าแนะนำ</h2>
-          <p className="home-section-hint">สินค้าที่ร้านเลือกให้โชว์บนหน้าแรก — เลือกหมวดเพื่อดูเฉพาะกลุ่มนั้น</p>
+          <p className="home-section-hint">
+            แสดงเฉพาะสินค้าที่ติ๊ก «สินค้าแนะนำ» ในแบบฟอร์มสินค้า — เลือกหมวดด้านล่างเพื่อดูเฉพาะกลุ่มนั้น (คนละเรื่องกับสินค้าลดราคา)
+          </p>
           <div className="home-chips-panel">
             <CategoryChipsRow
               categories={categories}
@@ -317,7 +316,7 @@ const Home = () => {
         <div className="container">
           <h2 className="section-title">ราคาพิเศษ &amp; ลดราคา</h2>
           <p className="home-section-hint">
-            เรียงโดยสัดส่วนส่วนลดจากราคาก่อนลดก่อน — สินค้าที่มีป้ายราคาพิเศษอยู่ท้ายแถวเมื่อไม่มีราคาก่อนลด
+            เฉพาะสินค้าที่ตั้งราคาก่อนลดสูงกว่าราคาขาย — เรียงตามส่วนลด % สูงก่อน (ไม่ต้องติ๊กแนะนำหรือป้ายอื่น)
           </p>
           <div className="home-chips-panel">
             <CategoryChipsRow

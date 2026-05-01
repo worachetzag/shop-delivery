@@ -69,6 +69,24 @@
   white-space: normal;
 }
 
+.product-price-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.product-price-row {
+  display: block;
+  line-height: 1.35;
+}
+
+.product-price-caption {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
 .product-price-value {
   font-size: 1rem;
   font-weight: 700;

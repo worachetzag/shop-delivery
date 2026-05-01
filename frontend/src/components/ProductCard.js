@@ -166,8 +166,8 @@ const ProductCard = ({
             }}
           />
         </Link>
-        {listingOnly && (compareAtPrice != null || product.is_special_offer) && (
-          <span className="product-special-badge">{compareAtPrice != null ? 'ลดราคา' : 'ราคาพิเศษ'}</span>
+        {listingOnly && compareAtPrice != null && (
+          <span className="product-special-badge">ลดราคา</span>
         )}
         {listingOnly && product.is_low_stock && availableQty > 0 && (
           <span className="product-low-stock-badge">สินค้าใกล้หมด</span>
@@ -197,18 +197,25 @@ const ProductCard = ({
           {!listingOnly && <p className="product-description">{product.description}</p>}
           <div className={`product-price ${listingOnly ? 'product-price--browse' : ''}`}>
             {listingOnly ? (
-              <>
-                {compareAtPrice != null && (
-                  <>
+              compareAtPrice != null ? (
+                <div className="product-price-rows">
+                  <div className="product-price-row">
+                    <span className="product-price-caption">จาก</span>{' '}
                     <span className="product-price-compare-at">{formatBahtAmount(compareAtPrice)}</span>
-                    <span className="product-price-unit product-price-unit--muted"> บาท · </span>
-                  </>
-                )}
-                <span className={`product-price-value${compareAtPrice != null ? ' product-price-value--sale' : ''}`}>
-                  {formatBahtAmount(product.price)}
-                </span>
-                <span className="product-price-unit"> บาท</span>
-              </>
+                    <span className="product-price-unit product-price-unit--muted"> บาท</span>
+                  </div>
+                  <div className="product-price-row">
+                    <span className="product-price-caption">เหลือ</span>{' '}
+                    <span className="product-price-value product-price-value--sale">{formatBahtAmount(product.price)}</span>
+                    <span className="product-price-unit"> บาท</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span className="product-price-value">{formatBahtAmount(product.price)}</span>
+                  <span className="product-price-unit"> บาท</span>
+                </>
+              )
             ) : compareAtPrice != null ? (
               <span className="product-price-stack">
                 <span className="product-price-compare-at">{formatPrice(compareAtPrice)}</span>

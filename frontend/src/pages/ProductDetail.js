@@ -237,13 +237,27 @@ const ProductDetail = () => {
               <p className="product-detail-category">หมวดหมู่: {resolveCategoryLabel(product)}</p>
             )}
             <p className="product-detail-price">
-              {detailCompareAt != null && (
-                <span className="product-detail-price-compare">{formatBahtAmount(detailCompareAt)} บาท</span>
+              {detailCompareAt != null ? (
+                <>
+                  <span className="product-detail-price-block">
+                    <span className="product-detail-price-caption">จาก</span>{' '}
+                    <span className="product-detail-price-compare">{formatBahtAmount(detailCompareAt)}</span>
+                    <span className="product-detail-price-unit"> บาท</span>
+                  </span>
+                  <span className="product-detail-price-block">
+                    <span className="product-detail-price-caption">เหลือ</span>{' '}
+                    <span className="product-detail-price-value product-detail-price-value--sale">
+                      {formatBahtAmount(product.price)}
+                    </span>
+                    <span className="product-detail-price-unit"> บาท</span>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="product-detail-price-value">{formatBahtAmount(product.price)}</span>
+                  <span className="product-detail-price-unit"> บาท</span>
+                </>
               )}
-              <span className={`product-detail-price-value${detailCompareAt != null ? ' product-detail-price-value--sale' : ''}`}>
-                {formatBahtAmount(product.price)}
-              </span>
-              <span className="product-detail-price-unit"> บาท</span>
               {(product.unit_label || product.unit_detail) && (
                 <span className="product-detail-price-meta">
                   {' '}/ {product.unit_label || 'ชิ้น'}
@@ -301,9 +315,7 @@ const ProductDetail = () => {
                 return (
                   <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
                     <div className="related-product-image-wrap">
-                      {(relCmp != null || item.is_special_offer) && (
-                        <span className="related-product-badge">{relCmp != null ? 'ลดราคา' : 'ราคาพิเศษ'}</span>
-                      )}
+                      {relCmp != null && <span className="related-product-badge">ลดราคา</span>}
                       <img
                         src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
                         alt={item.name}

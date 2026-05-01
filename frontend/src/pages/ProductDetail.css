@@ -55,6 +55,20 @@
   font-weight: 600;
   margin: 0 0 6px 0;
   line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.product-detail-price-block {
+  display: block;
+}
+
+.product-detail-price-caption {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #64748b;
 }
 
 .product-detail-price-value {
