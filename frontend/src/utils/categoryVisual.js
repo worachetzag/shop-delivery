@@ -1,4 +1,8 @@
+import { resolveMediaUrl } from './media';
+
 /** อิโมจิและโทนสีสำหรับหมวด — API ไม่มีรูปหมวด */
+export const CATEGORY_ALL_EMOJI = '🛒';
+
 const FALLBACK_EMOJI = ['🛒', '📦', '🏷️', '✨', '🌿', '🥫', '🧃', '🍚'];
 
 const NAME_RULES = [
@@ -48,6 +52,25 @@ export function getCategoryEmoji(name, id) {
   let h = 0;
   for (let i = 0; i < n.length; i++) h = (h + n.charCodeAt(i) * (i + 1)) % 997;
   return FALLBACK_EMOJI[h % FALLBACK_EMOJI.length];
+}
+
+/** URL รูปไอคอนหมวดจาก API — ว่างถ้าไม่มี */
+export function pickCategoryIconUrl(category) {
+  if (!category || typeof category !== 'object') return '';
+  const candidates = [
+    category.icon_image,
+    category.icon_url,
+    category.image,
+    category.image_url,
+    category.thumbnail,
+  ];
+  const hit = candidates.find((value) => {
+    if (!value) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    return typeof value === 'object' && typeof value.url === 'string' && value.url.trim().length > 0;
+  });
+  if (!hit) return '';
+  return resolveMediaUrl(hit, '');
 }
 
 /** ไอคอน SVG การ์ตูนในแถบหมวด (คีย์ไปที่ CategoryIllustration) */

@@ -1,4 +1,4 @@
-/* แถบหมวดหมู่ — ใช้ร่วมหน้าแรกและหน้ารายการสินค้า */
+/* แถบหมวดหมู่ — ไอคอนแบบสติกเกอร์ (ไม่มีกรอบสี่เหลี่ยม พื้นหลัง) */
 .customer-category-strip {
   padding: 0.35rem 0 0.5rem;
 }
@@ -45,14 +45,13 @@
 .customer-category-strip-scroll {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.7rem;
+  gap: 0.65rem;
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
-  /* ให้ที่ว่างรอบวงกลม — overflow เดิมตัด box-shadow/outline ด้านบนให้เป็นเสี้ยวไม่กลม */
-  padding: 8px 4px 13px;
+  padding: 6px 4px 12px;
   margin: 0 -0.35rem;
 }
 
@@ -66,9 +65,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 4.95rem;
-  min-width: 4.95rem;
-  max-width: 5.2rem;
+  width: 4.85rem;
+  min-width: 4.85rem;
+  max-width: 5rem;
   text-decoration: none;
   color: var(--text-primary, #334155);
   text-align: center;
@@ -80,65 +79,82 @@
   transform: scale(0.96);
 }
 
-.customer-category-strip-item.is-active .customer-category-strip-icon-wrap {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 5px 10px rgba(15, 23, 42, 0.1);
-}
-
 .customer-category-strip-item.is-active .customer-category-strip-label {
   color: var(--brand-primary-strong, #047857);
   font-weight: 800;
 }
 
+/* โจทย์ที่ว่างของไอคอน — ไม่มีกล่องพื้นหลัง */
 .customer-category-strip-icon-wrap {
   box-sizing: border-box;
-  --category-accent-hue: 160;
   position: relative;
-  width: 3.9rem;
-  height: 3.9rem;
-  border-radius: 1.35rem;
-  border: none;
+  width: 3.65rem;
+  height: 3.65rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.42rem;
-  background: hsl(var(--category-accent-hue), 56%, 88%);
-  box-shadow:
-    0 3px 8px rgba(15, 23, 42, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.45) inset;
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
-  transform: none;
-}
-
-.customer-category-strip-icon-wrap::before {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.66);
+  margin-bottom: 0.38rem;
+  background: transparent;
   border: none;
+  box-shadow: none;
+  transition: transform 0.18s ease;
 }
 
-.customer-category-strip-icon-wrap::after {
-  content: none;
+.customer-category-strip-item:nth-child(odd) .customer-category-strip-icon {
+  transform: rotate(-3deg);
 }
 
-.customer-category-strip-icon-wrap.has-image::before {
-  content: none;
+.customer-category-strip-item:nth-child(even) .customer-category-strip-icon {
+  transform: rotate(2.5deg);
 }
 
+.customer-category-strip-item.is-active .customer-category-strip-icon-wrap {
+  transform: translateY(-2px);
+}
+
+.customer-category-strip-item.is-active .customer-category-strip-icon:not(:has(img)) {
+  transform: scale(1.12) rotate(0deg);
+  filter:
+    saturate(1.22)
+    contrast(1.08)
+    drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.92))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.65))
+    drop-shadow(0 4px 10px rgba(15, 23, 42, 0.18));
+}
+
+.customer-category-strip-item.is-active .customer-category-strip-icon:has(img) {
+  transform: scale(1.12) rotate(0deg);
+}
+
+.customer-category-strip-item.is-active .customer-category-strip-icon-image {
+  filter:
+    drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.92))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55))
+    drop-shadow(0 5px 12px rgba(15, 23, 42, 0.2));
+}
+
+/* ตัวไอคอน — สติกเกอร์: ขอบขาวบาง + เงา (emoji เท่านั้น — รูปใช้เงาที่ img) */
 .customer-category-strip-icon {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  font-size: 1.7rem;
+  width: 3rem;
+  height: 3rem;
+  font-size: 2.05rem;
   line-height: 1;
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  filter: saturate(1.18) contrast(1.12) drop-shadow(0 2px 0 rgba(255, 255, 255, 0.75));
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.customer-category-strip-icon:not(:has(img)) {
+  filter:
+    saturate(1.2)
+    contrast(1.1)
+    drop-shadow(0 0 0 0.85px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55))
+    drop-shadow(0 3px 8px rgba(15, 23, 42, 0.14));
 }
 
 .customer-category-strip-icon-image {
@@ -146,13 +162,11 @@
   height: 100%;
   object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
-  filter: drop-shadow(0 2px 2px rgba(15, 23, 42, 0.16));
-}
-
-.customer-category-strip-lottie {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 2px 2px rgba(15, 23, 42, 0.16));
+  transition: filter 0.18s ease;
+  filter:
+    drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.88))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5))
+    drop-shadow(0 4px 10px rgba(15, 23, 42, 0.15));
 }
 
 .customer-category-strip-label {

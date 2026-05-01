@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './CategoryChipsRow.css';
+import { CATEGORY_ALL_EMOJI, getCategoryEmoji, pickCategoryIconUrl } from '../utils/categoryVisual';
 
 /**
  * Horizontal category pills (same interaction as customer Products page).
@@ -59,6 +60,7 @@ const CategoryChipsRow = ({ categories, value, onChange, ariaLabel = 'หมว�
         {chips.map((category) => {
           const cid = category.id === '' || category.id == null ? '' : String(category.id);
           const active = value === cid;
+          const iconUrl = cid === '' ? '' : pickCategoryIconUrl(category);
           return (
             <button
               key={cid === '' ? 'category-all' : `category-${cid}`}
@@ -68,7 +70,18 @@ const CategoryChipsRow = ({ categories, value, onChange, ariaLabel = 'หมว�
               className={`category-chip${active ? ' is-active' : ''}`}
               onClick={() => onChange(cid)}
             >
-              {category.name}
+              <span className="category-chip-icon-wrap" aria-hidden>
+                <span className="category-chip-icon">
+                  {cid === '' ? (
+                    CATEGORY_ALL_EMOJI
+                  ) : iconUrl ? (
+                    <img src={iconUrl} alt="" className="category-chip-icon-image" loading="lazy" />
+                  ) : (
+                    getCategoryEmoji(category.name, category.id)
+                  )}
+                </span>
+              </span>
+              <span className="category-chip-label">{category.name}</span>
             </button>
           );
         })}
