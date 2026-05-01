@@ -187,25 +187,25 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
           ) : (
             <>
               <Link to="/customer" className={isCustomerHomeActive ? 'active' : ''}>
-                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                <span className="liff-bottom-nav-customer-icon" aria-hidden>
                   <BottomNavWatermarkHome />
                 </span>
                 <span className="liff-bottom-nav-customer-label">หน้าแรก</span>
               </Link>
               <Link to="/customer/products" className={isCustomerProductsActive ? 'active' : ''}>
-                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                <span className="liff-bottom-nav-customer-icon" aria-hidden>
                   <BottomNavWatermarkProducts />
                 </span>
                 <span className="liff-bottom-nav-customer-label">สินค้า</span>
               </Link>
               <Link to="/customer/cart" className={isActive('/customer/cart') ? 'active' : ''}>
-                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                <span className="liff-bottom-nav-customer-icon" aria-hidden>
                   <BottomNavWatermarkCart />
                 </span>
                 <span className="liff-bottom-nav-customer-label">ตะกร้า</span>
               </Link>
               <Link to="/customer/orders" className={isActiveGroup(['/customer/orders', '/customer/tracking']) ? 'active' : ''}>
-                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                <span className="liff-bottom-nav-customer-icon" aria-hidden>
                   <BottomNavWatermarkOrders />
                 </span>
                 <span className="liff-bottom-nav-customer-label">ออเดอร์</span>
@@ -214,7 +214,7 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
                 to={isLoggedIn ? '/customer/profile' : '/customer/login'}
                 className={isActiveGroup(['/customer/profile', '/customer/login']) ? 'active' : ''}
               >
-                <span className="liff-bottom-nav-customer-watermark" aria-hidden>
+                <span className="liff-bottom-nav-customer-icon" aria-hidden>
                   {isLoggedIn ? <BottomNavWatermarkProfile /> : <BottomNavWatermarkLogin />}
                 </span>
                 <span className="liff-bottom-nav-customer-label">{isLoggedIn ? 'โปรไฟล์' : 'ล็อกอิน'}</span>

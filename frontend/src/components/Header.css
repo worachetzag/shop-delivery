@@ -199,7 +199,7 @@
 
   .liff-bottom-nav--customer a:not(.active):hover {
     background: #f8fafc;
-    color: #334155;
+    color: #64748b;
   }
 
   .liff-bottom-nav--customer a.active:hover {
@@ -219,49 +219,52 @@
   display: none;
 }
 
-/* ลูกค้า — เม็ดเขียวตอน active + ไอคอนจางเป็นพื้นหลังในเม็ด */
+/* ลูกค้า — ไอคอนบนข้อความล่าง; ไม่เลือกจาง เลือกแล้วเข้ม + เม็ดเขียว */
 .liff-bottom-nav--customer a {
-  position: relative;
   flex-direction: column;
-  gap: 0;
-  min-height: 40px;
-  padding: 6px 6px;
-  font-size: 0.72rem;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  min-height: 48px;
+  padding: 6px 4px 7px;
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #475569;
+  color: #94a3b8;
   border-radius: 999px;
   background: transparent;
-  overflow: hidden;
+  overflow: visible;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
-.liff-bottom-nav--customer .liff-bottom-nav-customer-watermark {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -54%);
+.liff-bottom-nav--customer .liff-bottom-nav-customer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 0;
-  opacity: 0;
-  pointer-events: none;
-  user-select: none;
-  color: currentColor;
-  transition: opacity 0.18s ease;
+  color: inherit;
+  transition: opacity 0.18s ease, transform 0.15s ease;
 }
 
-.liff-bottom-nav--customer .liff-bottom-nav-customer-watermark svg {
-  width: clamp(28px, 7.6vw, 36px);
-  height: clamp(28px, 7.6vw, 36px);
+.liff-bottom-nav--customer .liff-bottom-nav-customer-icon svg {
+  width: 22px;
+  height: 22px;
   display: block;
+  opacity: 0.82;
 }
 
 .liff-bottom-nav--customer .liff-bottom-nav-customer-label {
-  position: relative;
-  z-index: 1;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  opacity: 0.92;
+}
+
+.liff-bottom-nav--customer a:not(.active) .liff-bottom-nav-customer-label {
+  font-weight: 600;
 }
 
 .liff-bottom-nav--customer a.active {
@@ -271,8 +274,13 @@
   box-shadow: inset 0 0 0 1px #6ee7b7;
 }
 
-.liff-bottom-nav--customer a.active .liff-bottom-nav-customer-watermark {
-  opacity: 0.26;
+.liff-bottom-nav--customer a.active .liff-bottom-nav-customer-icon svg {
+  opacity: 1;
+}
+
+.liff-bottom-nav--customer a.active .liff-bottom-nav-customer-label {
+  opacity: 1;
+  font-weight: 700;
 }
 
 .liff-bottom-nav--driver {
