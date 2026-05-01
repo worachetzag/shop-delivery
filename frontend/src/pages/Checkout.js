@@ -77,7 +77,10 @@ const Checkout = () => {
     postalCode: '',
     latitude: null,
     longitude: null,
+    notes: '',
   });
+  /** 'delivery' | 'pickup' */
+  const [fulfillmentMode, setFulfillmentMode] = useState('delivery');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
