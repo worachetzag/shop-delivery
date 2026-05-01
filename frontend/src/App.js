@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
+import CustomerViewportChrome from './components/CustomerViewportChrome';
 import AdminHeader from './components/AdminHeader';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -182,7 +183,10 @@ function AppContent() {
       {showAdminChrome ? (
         <AdminHeader />
       ) : showCustomerChrome ? (
-        <Header hideCustomerTopBar />
+        <>
+          <Header hideCustomerTopBar />
+          <CustomerViewportChrome />
+        </>
       ) : showDriverChrome ? (
         <Header hideCustomerTopBar hideDriverTopBar />
       ) : null}

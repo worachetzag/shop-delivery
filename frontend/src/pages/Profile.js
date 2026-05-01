@@ -12,6 +12,10 @@ import {
 } from '../utils/thaiFormInputs';
 import './Profile.css';
 
+/** ปิดชั่วคราว — ตั้งเป็น true เพื่อเปิด UI ที่อยู่ / จัดการบัญชี (โค้ดยังอยู่ครบ) */
+const PROFILE_UI_SHOW_ADDRESSES = false;
+const PROFILE_UI_SHOW_ACCOUNT = false;
+
 /** แปลงพิกัดจาก API (string/Decimal) เป็นตัวเลข — ใช้ก่อน .toFixed() / ส่ง backend */
 function parseCoord(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -187,6 +191,7 @@ const Profile = () => {
   }, [location.search]);
 
   useEffect(() => {
+    if (!PROFILE_UI_SHOW_ADDRESSES) return;
     const qp = new URLSearchParams(location.search);
     if (qp.get('section') === 'addresses' && qp.get('add') === '1') {
       setEditingAddressId(null);
@@ -210,9 +215,9 @@ const Profile = () => {
     const id =
       sectionFocus === 'personal'
         ? 'profile-section-personal'
-        : sectionFocus === 'addresses'
+        : sectionFocus === 'addresses' && PROFILE_UI_SHOW_ADDRESSES
           ? 'profile-section-addresses'
-          : sectionFocus === 'account'
+          : sectionFocus === 'account' && PROFILE_UI_SHOW_ACCOUNT
             ? 'profile-section-account'
             : null;
     if (!id) return;
@@ -791,6 +796,7 @@ const Profile = () => {
               </div>
           </section>
 
+          {PROFILE_UI_SHOW_ADDRESSES ? (
           <section id="profile-section-addresses" className="profile-section addresses-section">
               <div className="section-header">
                 <h3 className="section-title">ที่อยู่อ้างอิง</h3>
@@ -942,7 +948,9 @@ const Profile = () => {
                 </div>
               )}
           </section>
+          ) : null}
 
+          {PROFILE_UI_SHOW_ACCOUNT ? (
           <section id="profile-section-account" className="profile-section account-actions-section">
               <h3 className="section-title">การจัดการบัญชี</h3>
 
@@ -970,6 +978,7 @@ const Profile = () => {
                 </div>
               </div>
           </section>
+          ) : null}
         </div>
       </div>
     </div>

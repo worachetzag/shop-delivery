@@ -1,0 +1,40 @@
+/* เลื่อนขึ้นบนสุด — ปุ่มลอยเหนือแถบเมนูล่าง */
+.customer-scroll-top-fab {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(var(--mobile-bottom-nav-clearance, 62px) + 10px);
+  z-index: 1150;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--brand-primary-strong, #047857);
+  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+}
+
+.customer-scroll-top-fab:hover {
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.customer-scroll-top-fab:active {
+  transform: scale(0.94);
+}
+
+.customer-scroll-top-fab:focus-visible {
+  outline: 2px solid var(--brand-primary, #00a651);
+  outline-offset: 2px;
+}
+
+.customer-scroll-top-fab svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
