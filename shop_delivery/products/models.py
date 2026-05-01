@@ -94,7 +94,13 @@ class HomePromotion(models.Model):
         PRODUCT = 'product', 'สินค้ารายการเดียว'
         CUSTOM = 'custom', 'ลิงก์กำหนดเอง'
 
-    title = models.CharField(max_length=120, verbose_name="หัวข้อ")
+    title = models.CharField(
+        max_length=120,
+        blank=True,
+        default="",
+        verbose_name="หัวข้อ",
+        help_text="ถ้ามีรูปแบนเนอร์ไม่บังคับ — ใช้เป็น alt รูปและชื่อในแอดมินถ้ากรอก",
+    )
     description = models.TextField(blank=True, verbose_name="คำอธิบาย")
     banner_image = models.ImageField(
         upload_to='home_promotions/',
@@ -150,7 +156,7 @@ class HomePromotion(models.Model):
         ordering = ["sort_order", "id"]
 
     def __str__(self):
-        return self.title
+        return (self.title or "").strip() or f"โปรโมชั่น #{self.pk}"
 
     def resolve_link_url(self) -> str:
         """ลิงก์ภายในแอปสำหรับหน้าลูกค้า (ไม่มี = ไม่ให้คลิกไปไหน)"""

@@ -159,8 +159,11 @@ const AdminHomePromotionsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) {
-      popup.info('กรุณากรอกหัวข้อ');
+    const editingRow = editingId ? items.find((r) => r.id === editingId) : null;
+    const hasStoredBanner = Boolean(editingRow?.banner_image) && !form.remove_banner_image;
+    const hasBanner = Boolean(form.banner_image_file instanceof File) || hasStoredBanner;
+    if (!form.title.trim() && !hasBanner) {
+      popup.info('กรุณากรอกหัวข้อ — หรืออัปโหลดรูปแบนเนอร์');
       return;
     }
     setSaving(true);
@@ -240,7 +243,7 @@ const AdminHomePromotionsPage = () => {
 
   const handleDelete = async (row) => {
     if (
-      !(await popup.confirm(`ลบการ์ด «${row.title}»?`, {
+      !(await popup.confirm(`ลบการ์ด «${(row.title || '').trim() || 'โปรโมชั่น'}»?`, {
         tone: 'danger',
         confirmText: 'ลบ',
       }))
@@ -348,8 +351,7 @@ const AdminHomePromotionsPage = () => {
             name="title"
             value={form.title}
             onChange={handleChange}
-            placeholder="หัวข้อ * (ใช้เป็น alt ของรูปด้วย)"
-            required
+            placeholder="หัวข้อ — ไม่บังคับถ้ามีรูปแบนเนอร์ (ใช้เป็น alt ถ้ากรอก)"
             style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
           />
           <textarea
@@ -524,7 +526,7 @@ const AdminHomePromotionsPage = () => {
                         <span style={{ fontSize: '1.2rem' }}>{row.icon || '—'}</span>
                       )}
                     </td>
-                    <td>{row.title}</td>
+                    <td>{(row.title || '').trim() ? row.title : '—'}</td>
                     <td style={{ fontSize: '0.78rem', maxWidth: 260 }}>
                       {LINK_TARGET_OPTIONS.find((o) => o.value === row.link_target)?.label || row.link_target}
                       {row.link_target === 'category' && row.link_category ? (

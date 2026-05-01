@@ -104,6 +104,27 @@ class HomePromotionAdminSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = getattr(self, 'instance', None)
+        remove_banner = bool(attrs.get('remove_banner_image'))
+
+        title_val = attrs.get('title')
+        if title_val is None and instance is not None:
+            title_val = instance.title
+        title_clean = (title_val or '').strip()
+
+        has_banner = False
+        if attrs.get('banner_image'):
+            has_banner = True
+        elif remove_banner:
+            has_banner = False
+        elif instance is not None and instance.banner_image:
+            has_banner = True
+
+        if not has_banner and not title_clean:
+            raise serializers.ValidationError(
+                {'title': 'กรอกหัวข้อ — หรืออัปโหลดรูปแบนเนอร์'}
+            )
+        attrs['title'] = title_clean
+
         target = attrs.get('link_target')
         if target is None:
             target = instance.link_target if instance else HomePromotion.LinkTarget.CUSTOM
