@@ -569,3 +569,15 @@
   line-height: 1.4;
 }
 
+.checkout-delivery-map-wrap {
+  width: 100%;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft, #e5e7eb);
+}
+
+.checkout-delivery-map-wrap > div {
+  border-radius: 12px;
+}
+

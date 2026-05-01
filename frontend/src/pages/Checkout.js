@@ -6,6 +6,7 @@ import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import CustomerInlineBack from '../components/CustomerInlineBack';
+import AddressPicker from '../components/AddressPicker';
 import { clampPhoneTen, formatMobileTenDisplay } from '../utils/thaiFormInputs';
 import './Checkout.css';
 
@@ -27,7 +28,7 @@ function checkoutShippingIssues(shippingInfo, paymentMethod) {
   if (!/^\d{5}$/.test((shippingInfo.postalCode || '').trim())) issues.push('รหัสไปรษณีย์ 5 หลัก');
   // ระบบคำนวณค่าส่งตามระยะทาง ต้องมีพิกัดปลายทาง
   if (shippingInfo.latitude == null || shippingInfo.longitude == null) {
-    issues.push('ไม่พบพิกัดที่อยู่ (รอให้ระบบคำนวณค่าส่งก่อน)');
+    issues.push('ปักหมุดบนแผนที่ หรือกรอกที่อยู่ให้ครบเพื่อให้มีพิกัดคำนวณค่าส่ง');
   }
   if (!paymentMethod) issues.push('วิธีชำระเงิน');
   return issues;
@@ -379,6 +380,31 @@ const Checkout = () => {
     setShippingInfo((prev) => ({
       ...prev,
       [name]: v,
+    }));
+  };
+
+  const handleDeliveryMapLocation = (lat, lon) => {
+    const la = Number(lat);
+    const lo = Number(lon);
+    if (!Number.isFinite(la) || !Number.isFinite(lo)) return;
+    setShippingInfo((prev) => ({
+      ...prev,
+      latitude: la,
+      longitude: lo,
+    }));
+    setGeocodingError(null);
+  };
+
+  const handleDeliveryMapAddress = (addressData) => {
+    if (!addressData || typeof addressData !== 'object') return;
+    setShippingInfo((prev) => ({
+      ...prev,
+      address: (addressData.address && String(addressData.address).trim()) || prev.address,
+      district: (addressData.district && String(addressData.district).trim()) || prev.district,
+      province: (addressData.province && String(addressData.province).trim()) || prev.province,
+      postalCode: addressData.postalCode
+        ? String(addressData.postalCode).replace(/\D/g, '').slice(0, 5)
+        : prev.postalCode,
     }));
   };
 
@@ -762,6 +788,27 @@ const Checkout = () => {
                     placeholder="0812345678"
                     autoComplete="tel"
                   />
+
+                  <label className="form-label">ปักหมุดจุดจัดส่ง</label>
+                  <p className="muted checkout-map-hint" style={{ margin: '0 0 10px', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                    คลิกบนแผนที่ ใช้ปุ่ม 📍 ตำแหน่งปัจจุบัน หรือค้นหาที่อยู่ — พิกัดใช้คำนวณค่าส่ง และระบบจะช่วยเติมช่องด้านล่าง (โปรดตรวจก่อนส่ง)
+                  </p>
+                  <div className="checkout-delivery-map-wrap">
+                    <AddressPicker
+                      onLocationSelect={handleDeliveryMapLocation}
+                      onAddressSelect={handleDeliveryMapAddress}
+                      initialLat={
+                        toFiniteNumberOrNull(shippingInfo.latitude)
+                        ?? toFiniteNumberOrNull(storeOrigin.latitude)
+                        ?? 13.7563
+                      }
+                      initialLon={
+                        toFiniteNumberOrNull(shippingInfo.longitude)
+                        ?? toFiniteNumberOrNull(storeOrigin.longitude)
+                        ?? 100.5018
+                      }
+                    />
+                  </div>
 
                   <label className="form-label">ที่อยู่จัดส่ง (เลขที่ ถนน ซอย)</label>
                   <textarea
