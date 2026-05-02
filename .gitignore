@@ -150,6 +150,9 @@ logs/
 ehthumbs.db
 Thumbs.db
 
+# Local-only flow documentation (PDF/HTML sources kept off-repo)
+docs/private/
+
 # Project specific
 *.xlsx
 *.xls
