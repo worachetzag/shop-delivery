@@ -5,8 +5,10 @@ import CategoryChipsRow from '../components/CategoryChipsRow';
 import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
 import CustomerCategoryStrip from '../components/CustomerCategoryStrip';
 import CustomerServiceHoursStrip from '../components/CustomerServiceHoursStrip';
+import CustomerFloatingCart from '../components/CustomerFloatingCart';
+import { usePopup } from '../components/PopupProvider';
 import config from '../config';
-import { productsService } from '../services/api';
+import { productsService, cartService } from '../services/api';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import { resolveMediaUrl } from '../utils/media';
 import {
@@ -130,6 +132,7 @@ function HomePromotionSlide({ promotion: p }) {
 const Home = () => {
   const location = useLocation();
   useRestoreCustomerListingScroll(location);
+  const popup = usePopup();
 
   const [categories, setCategories] = useState([]);
   const [homePromotions, setHomePromotions] = useState([]);
@@ -148,6 +151,88 @@ const Home = () => {
   /** หยุด autoplay ช่วงผู้ใช้เลื่อนด้วยนิ้ว/ล้อ — เลิกเลื่อนแล้วจะปิดอัตโนมัติหลัง idle */
   const [promoSwipePaused, setPromoSwipePaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  const readCartCache = () => {
+    try {
+      const raw = localStorage.getItem('products_cart_quantities');
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  };
+
+  const [cartQuantities, setCartQuantities] = useState(readCartCache);
+  const [cartLineItems, setCartLineItems] = useState([]);
+  const [showCartSummary, setShowCartSummary] = useState(false);
+
+  const syncCartQuantities = useCallback(async () => {
+    try {
+      const cartResponse = await cartService.getCart();
+      const items = cartResponse.items || [];
+      setCartLineItems(Array.isArray(items) ? items : []);
+      const quantityMap = {};
+      items.forEach((item) => {
+        quantityMap[item.product_id || item.id] = Number(item.quantity || 0);
+      });
+      setCartQuantities(quantityMap);
+    } catch (error) {
+      console.error('Cart sync failed:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncCartQuantities();
+  }, [syncCartQuantities]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('products_cart_quantities', JSON.stringify(cartQuantities));
+    } catch (error) {
+      // ignore
+    }
+  }, [cartQuantities]);
+
+  const handleCartIncreaseQuantity = async (product) => {
+    const currentQty = Number(cartQuantities[product.id] || 0);
+    const nextQty = currentQty + 1;
+    if (nextQty > Number(product.stock_quantity || 0)) {
+      return;
+    }
+    try {
+      await cartService.updateCartItem(product.id, nextQty);
+      setCartQuantities((prev) => ({ ...prev, [product.id]: nextQty }));
+      await syncCartQuantities();
+    } catch (error) {
+      console.error('Error increasing quantity:', error);
+      popup.error(error?.error || 'ไม่สามารถอัปเดตจำนวนสินค้าได้');
+    }
+  };
+
+  const handleCartDecreaseQuantity = async (product) => {
+    const currentQty = Number(cartQuantities[product.id] || 0);
+    if (currentQty <= 0) {
+      return;
+    }
+    const nextQty = currentQty - 1;
+    try {
+      await cartService.updateCartItem(product.id, nextQty);
+      setCartQuantities((prev) => {
+        const next = { ...prev };
+        if (nextQty <= 0) {
+          delete next[product.id];
+        } else {
+          next[product.id] = nextQty;
+        }
+        return next;
+      });
+      await syncCartQuantities();
+    } catch (error) {
+      console.error('Error decreasing quantity:', error);
+      popup.error(error?.error || 'ไม่สามารถอัปเดตจำนวนสินค้าได้');
+    }
+  };
 
   const promoScrollRef = useRef(null);
   const skipPromoScrollSyncRef = useRef(false);
@@ -615,6 +700,15 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <CustomerFloatingCart
+        cartLineItems={cartLineItems}
+        cartQuantities={cartQuantities}
+        showCartSummary={showCartSummary}
+        setShowCartSummary={setShowCartSummary}
+        onIncreaseQuantity={handleCartIncreaseQuantity}
+        onDecreaseQuantity={handleCartDecreaseQuantity}
+      />
     </div>
   );
 };

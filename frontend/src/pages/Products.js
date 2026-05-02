@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import CustomerCategoryStrip from '../components/CustomerCategoryStrip';
 import ApiPaginationBar from '../components/ApiPaginationBar';
@@ -9,6 +9,7 @@ import { usePopup } from '../components/PopupProvider';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
 import CustomerServiceHoursStrip from '../components/CustomerServiceHoursStrip';
+import CustomerFloatingCart from '../components/CustomerFloatingCart';
 import { PRODUCT_SORT_OPTIONS_STANDARD, apiOrderingForSortKey } from '../utils/productSort';
 
 const PAGE_SIZE = 12;
@@ -35,7 +36,10 @@ const Products = () => {
 
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
+  const page = useMemo(() => {
+    const n = Number.parseInt(searchParams.get('page') || '1', 10);
+    return Number.isFinite(n) && n >= 1 ? n : 1;
+  }, [searchParams]);
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -50,13 +54,46 @@ const Products = () => {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
+  const prevFiltersKeyRef = useRef(null);
+  /** เลือกหมวด / ค้นหา / เรียง / ชิปกรองเปลี่ยน — กลับไปหน้า 1 (ไม่รันตอน mount เพื่อเก็บ ?page= จากย้อนกลับจากรายละเอียดสินค้า) */
   useEffect(() => {
-    setPage(1);
+    const key = `${categoryIdFromUrl}|${debouncedSearch}|${sortBy}|${onSaleOnly}|${featuredOnly}`;
+    const prev = prevFiltersKeyRef.current;
+    prevFiltersKeyRef.current = key;
+    if (prev !== null && prev !== key) {
+      setSearchParams(
+        (params) => {
+          const sp = new URLSearchParams(params);
+          if (!sp.has('page')) return sp;
+          sp.delete('page');
+          return sp;
+        },
+        { replace: true },
+      );
+    }
   }, [categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly]);
+
+  const handlePageChange = useCallback(
+    (nextPage) => {
+      const n = Number(nextPage);
+      if (!Number.isFinite(n) || n < 1) return;
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          if (n <= 1) sp.delete('page');
+          else sp.set('page', String(Math.floor(n)));
+          return sp;
+        },
+        { replace: false },
+      );
+    },
+    [setSearchParams],
+  );
 
   const categoryStripHref = useCallback(
     (categoryId) => {
       const next = new URLSearchParams(searchParams);
+      next.delete('page');
       if (categoryId) next.set('category_id', categoryId);
       else next.delete('category_id');
       const qs = next.toString();
@@ -71,6 +108,7 @@ const Products = () => {
       setSearchParams(
         (prev) => {
           const sp = new URLSearchParams(prev);
+          sp.delete('page');
           if (mode === 'all') {
             sp.delete('on_sale');
             sp.delete('featured');
@@ -217,15 +255,6 @@ const Products = () => {
     }
   };
 
-  const lineToProductStub = (line) => ({
-    id: line.product_id || line.id,
-    name: line.name || line.product_name,
-    stock_quantity: line.stock_quantity ?? 999999,
-  });
-
-  const totalCartQuantity = Object.values(cartQuantities).reduce((sum, qty) => sum + Number(qty || 0), 0);
-  const floatingLines = cartLineItems.filter((line) => Number(cartQuantities[line.product_id || line.id] || 0) > 0);
-
   if (!listReady) {
     return (
       <div className="products-page">
@@ -340,7 +369,7 @@ const Products = () => {
                 count={totalCount}
                 page={page}
                 pageSize={PAGE_SIZE}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
               />
             </>
           ) : (
@@ -353,51 +382,14 @@ const Products = () => {
         </div>
       </div>
 
-      {totalCartQuantity > 0 && (
-        <div className="floating-cart-wrapper">
-          <button
-            type="button"
-            className="floating-cart-button"
-            onClick={() => setShowCartSummary((prev) => !prev)}
-          >
-            <span className="floating-cart-icon">🛒</span>
-            <span className="floating-cart-text">ในตะกร้า {totalCartQuantity} ชิ้น</span>
-          </button>
-
-          {showCartSummary && (
-            <div className="floating-cart-summary">
-              <div className="floating-cart-summary-title">สรุปตะกร้าสินค้า</div>
-              <div className="floating-cart-items">
-                {floatingLines.map((line) => {
-                  const stub = lineToProductStub(line);
-                  const qty = Number(cartQuantities[stub.id] || 0);
-                  if (qty <= 0) return null;
-                  return (
-                    <div key={stub.id} className="floating-cart-item">
-                      <span className="floating-cart-item-name">{stub.name}</span>
-                      <div className="floating-cart-item-actions">
-                        <button type="button" onClick={() => handleDecreaseQuantity(stub)}>
-                          -
-                        </button>
-                        <span>{qty}</span>
-                        <button type="button" onClick={() => handleIncreaseQuantity(stub)}>
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <Link to="/customer/checkout" className="floating-checkout-link">
-                ไปหน้าชำระเงิน
-              </Link>
-              <Link to="/customer/cart" className="floating-cart-link">
-                ไปหน้าตะกร้า
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
+      <CustomerFloatingCart
+        cartLineItems={cartLineItems}
+        cartQuantities={cartQuantities}
+        showCartSummary={showCartSummary}
+        setShowCartSummary={setShowCartSummary}
+        onIncreaseQuantity={handleIncreaseQuantity}
+        onDecreaseQuantity={handleDecreaseQuantity}
+      />
     </div>
   );
 };

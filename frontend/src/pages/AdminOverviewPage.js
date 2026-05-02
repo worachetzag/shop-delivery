@@ -70,17 +70,25 @@ const AdminOverviewPage = () => {
   }, []);
 
   const chartItems = useMemo(() => {
-    const revenueInThousands = Math.round((stats.total_revenue || 0) / 1000);
+    const revenueBaht = Math.round(Number(stats.total_revenue || 0));
+    const revenueForBar =
+      revenueBaht <= 0 ? 0 : Math.max(Math.round(revenueBaht / 1000), 1);
     const rows = [
-      { key: 'total_orders', label: 'ออเดอร์ทั้งหมด', value: Number(stats.total_orders || 0), color: '#667eea' },
-      { key: 'pending_orders', label: 'รอจัดเตรียม', value: Number(stats.pending_orders || 0), color: '#f5576c' },
-      { key: 'active_drivers', label: 'คนขับพร้อมงาน', value: Number(stats.active_drivers || 0), color: '#34d399' },
-      { key: 'revenue_k', label: 'รายได้รวม (พันบาท)', value: Number(revenueInThousands || 0), color: '#00c2ff' },
+      { key: 'total_orders', label: 'ออเดอร์ทั้งหมด', value: Number(stats.total_orders || 0), barScale: Number(stats.total_orders || 0), color: '#667eea' },
+      { key: 'pending_orders', label: 'รอจัดเตรียม', value: Number(stats.pending_orders || 0), barScale: Number(stats.pending_orders || 0), color: '#f5576c' },
+      { key: 'active_drivers', label: 'คนขับพร้อมงาน', value: Number(stats.active_drivers || 0), barScale: Number(stats.active_drivers || 0), color: '#34d399' },
+      {
+        key: 'revenue',
+        label: 'รายได้รวม (บาท)',
+        value: revenueBaht,
+        barScale: revenueForBar,
+        color: '#00c2ff',
+      },
     ];
-    const max = Math.max(...rows.map((item) => item.value), 1);
+    const max = Math.max(...rows.map((item) => item.barScale), 1);
     return rows.map((item) => ({
       ...item,
-      percent: Math.max(8, Math.round((item.value / max) * 100)),
+      percent: Math.max(8, Math.round((item.barScale / max) * 100)),
     }));
   }, [stats]);
 
@@ -167,7 +175,7 @@ const AdminOverviewPage = () => {
                 />
               </div>
               <div className="admin-mini-chart-value">
-                {item.key === 'revenue_k' ? `${item.value.toLocaleString()}k` : item.value.toLocaleString()}
+                {item.key === 'revenue' ? `฿${item.value.toLocaleString()}` : item.value.toLocaleString()}
               </div>
             </div>
           ))}
