@@ -41,10 +41,12 @@ def _display_name(user):
 def _order_detail_url(order_id: int) -> str:
     liff_id = (getattr(settings, 'LINE_LIFF_ID', '') or '').strip()
     if liff_id:
-        # LIFF: ต้องมี / คั่นหลัง liffId แล้วตามด้วย path จริง — ห้าม quote เป็น %2F ต่อท้าย id
-        # (รูปแบบผิดเช่น .../liffId%2Fcustomer%2Forders%2F1 จะไม่เปิด SPA ที่ root ของ order)
+        # LIFF: ส่วนหลัง liffId ต่อท้าย Endpoint URL — ถ้า Endpoint เป็น .../customer/ ต้องใช้แค่ orders/<id>
+        # ไม่ใช้ customer/orders/<id> เพราะจะได้ .../customer/customer/orders/<id>
         oid = int(order_id)
-        return f'https://liff.line.me/{liff_id}/customer/orders/{oid}'
+        prefix = (getattr(settings, 'LINE_LIFF_ORDER_URI_PREFIX', None) or 'orders').strip().strip('/')
+        rel = f'{prefix}/{oid}' if prefix else f'orders/{oid}'
+        return f'https://liff.line.me/{liff_id}/{rel}'
 
     frontend = (getattr(settings, 'FRONTEND_URL', '') or '').strip().rstrip('/')
     if not frontend:

@@ -316,6 +316,10 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', 'your-channel-secret')
 LINE_LOGIN_CHANNEL_ID = os.getenv('LINE_LOGIN_CHANNEL_ID', '2008347227')
 LINE_LOGIN_CHANNEL_SECRET = os.getenv('LINE_LOGIN_CHANNEL_SECRET', '9b724c3d737e5c6661c4c9b9b8fc953c')
 LINE_LIFF_ID = os.getenv('LINE_LIFF_ID', '2008347227-Bd7D38KD')
+# path หลัง LIFF ID สำหรับดีลิงก์แจ้งเตือนออเดอร์ — ต่อท้าย Endpoint URL ใน LINE Console
+# default: orders/<id> เมื่อ Endpoint ลงท้ายด้วย .../customer/ ได้ URL สุดท้าย .../customer/orders/<id>
+# ถ้า Endpoint เป็นโดเมนราก (ไม่มี /customer) ให้ตั้งเป็น customer/orders
+LINE_LIFF_ORDER_URI_PREFIX = (os.getenv('LINE_LIFF_ORDER_URI_PREFIX', 'orders') or 'orders').strip().strip('/')
 
 # Payment Gateway settings
 PROMPTPAY_MERCHANT_ID = 'your-promptpay-merchant-id'

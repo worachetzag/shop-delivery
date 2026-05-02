@@ -56,6 +56,19 @@ function NavigatePreserveSearch({ to }) {
   return <Navigate to={`${to}${search || ''}${hash || ''}`} replace />;
 }
 
+/** LIFF …/orders/<orderId> → รายละเอียดออเดอร์ (แจ้งเตือน LINE / ลิงก์เก่า) */
+function LiffOrderDetailNavigate() {
+  const { orderId } = useParams();
+  const loc = useLocation();
+  const idPart = encodeURIComponent(orderId || '');
+  return (
+    <Navigate
+      to={`/customer/orders/${idPart}${loc.search}${loc.hash || ''}`}
+      replace
+    />
+  );
+}
+
 /** LIFF URL `https://liff.line.me/<id>/<segment>` — segment แปลงเป็นหน้าลูกค้า */
 function LiffSegmentNavigate() {
   const { segment } = useParams();
@@ -290,6 +303,7 @@ function AppContent() {
           {/* Customer Routes (canonical) */}
           <Route path="/" element={<NavigatePreserveSearch to="/customer" />} />
           <Route path="/liff" element={<NavigatePreserveSearch to="/customer" />} />
+          <Route path="/liff/orders/:orderId" element={<LiffOrderDetailNavigate />} />
           <Route path="/liff/:segment" element={<LiffSegmentNavigate />} />
           <Route path="/customer/products/:productId" element={<ProductDetail />} />
           <Route path="/customer/products" element={<Products />} />
