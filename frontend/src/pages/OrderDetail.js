@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { usePopup } from '../components/PopupProvider';
 import CustomerInlineBack from '../components/CustomerInlineBack';
+import { saveElementAsPdf } from '../utils/receiptPdf';
 import './OrderDetail.css';
 
 const OrderDetail = () => {
@@ -18,33 +19,90 @@ const OrderDetail = () => {
   const [slipPreviewUrl, setSlipPreviewUrl] = useState('');
   const [promptPayInfo, setPromptPayInfo] = useState(null);
   const [loadingPromptPayQr, setLoadingPromptPayQr] = useState(false);
+  const [savingPdf, setSavingPdf] = useState(false);
+  const [receiptSlipOpen, setReceiptSlipOpen] = useState(false);
+  const receiptPdfRef = useRef(null);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${config.API_BASE_URL}orders/${orderId}/`, {
-          headers: {
-            ...(token ? { Authorization: `Token ${token}` } : {}),
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
-          credentials: 'include',
-        });
-        if (!response.ok) {
+  const fetchOrder = useCallback(async ({ silent = false } = {}) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${config.API_BASE_URL}orders/${orderId}/`, {
+        headers: {
+          ...(token ? { Authorization: `Token ${token}` } : {}),
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        if (!silent) {
           throw new Error('ไม่พบคำสั่งซื้อ');
         }
-        const data = await response.json();
-        setOrder(data);
-      } catch (error) {
+        return;
+      }
+      const data = await response.json();
+      setOrder(data);
+    } catch (error) {
+      if (!silent) {
         setOrder(null);
-      } finally {
+      }
+    } finally {
+      if (!silent) {
         setLoading(false);
       }
-    };
-
-    fetchOrder();
+    }
   }, [orderId]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchOrder();
+  }, [orderId, fetchOrder]);
+
+  /** แอดมินยืนยันสลิปแล้ว — ลูกค้าต้องเห็นใบเสร็จทันทีหลังข้อมูลอัปเดต (โหลดครั้งเดียวไม่พอ) */
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOrder({ silent: true });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [fetchOrder]);
+
+  /** รอสถานะสลิปจากแอดมิน — ดึงซ้ำเป็นระยะจน verified หรือยกเลิก */
+  useEffect(() => {
+    if (!order) return;
+    if (String(order.payment_method || '').toLowerCase() !== 'promptpay') return;
+    if (String(order.payment_slip_status || '').toLowerCase() === 'verified') return;
+    if (order.status === 'cancelled') return;
+
+    const t = setInterval(() => fetchOrder({ silent: true }), 12000);
+    return () => clearInterval(t);
+  }, [
+    order?.id,
+    order?.payment_method,
+    order?.payment_slip_status,
+    order?.status,
+    fetchOrder,
+  ]);
+
+  useEffect(() => {
+    if (!receiptSlipOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setReceiptSlipOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [receiptSlipOpen]);
+
+  useEffect(() => {
+    if (!receiptSlipOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [receiptSlipOpen]);
 
   useEffect(() => {
     let objectUrl = '';
@@ -79,21 +137,28 @@ const OrderDetail = () => {
   const formatPrice = (price) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(Number(price || 0));
   const formatDate = (dateString) => new Date(dateString).toLocaleString('th-TH');
   const hasSlip = Boolean(order?.payment_slip_url);
-  const canUploadSlip = order?.payment_method === 'promptpay'
+  const pm = String(order?.payment_method || '').toLowerCase();
+  const slipSt = String(order?.payment_slip_status || '').toLowerCase();
+  const isPromptPayOrder = pm === 'promptpay';
+  const slipVerified = slipSt === 'verified';
+  const slipNotRequired = slipSt === 'not_required';
+  const canUploadSlip = isPromptPayOrder
     && !hasSlip
-    && !['verified', 'not_required'].includes(order?.payment_slip_status)
+    && !slipVerified
+    && !slipNotRequired
     && !['delivered', 'cancelled'].includes(order?.status);
-  const canDeleteSlip = order?.payment_method === 'promptpay'
+  const canDeleteSlip = isPromptPayOrder
     && hasSlip
-    && order?.payment_slip_status !== 'verified'
+    && !slipVerified
     && !['delivered', 'cancelled'].includes(order?.status);
-  const canShowPromptPayQr = order?.payment_method === 'promptpay'
+  const canShowPromptPayQr = isPromptPayOrder
     && !hasSlip
     && !['delivered', 'cancelled'].includes(order?.status)
-    && !['verified', 'not_required'].includes(order?.payment_slip_status);
+    && !slipVerified
+    && !slipNotRequired;
   const receiptReady = Boolean(order) && (
-    (order.payment_method === 'promptpay' && order.payment_slip_status === 'verified')
-    || (order.payment_method !== 'promptpay' && order.status === 'delivered')
+    (isPromptPayOrder && slipVerified)
+    || (!isPromptPayOrder && order.status === 'delivered')
   );
   const receiptIssuedAt = order?.payment_verified_at || (order?.status === 'delivered' ? order?.updated_at : null);
   const receiptNo = order?.order_number ? `${order.order_number}-R` : `RCPT-${order?.id || ''}`;
@@ -246,6 +311,20 @@ const OrderDetail = () => {
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    if (!receiptReady || !receiptPdfRef.current) return;
+    const safeName = String(order.order_number || order.id).replace(/[^\w\u0E00-\u0E7F-]/g, '_');
+    setSavingPdf(true);
+    try {
+      await saveElementAsPdf(receiptPdfRef.current, `ใบเสร็จ-${safeName}.pdf`);
+    } catch (err) {
+      console.error(err);
+      popup.error(err?.message || 'บันทึก PDF ไม่สำเร็จ ลองอีกครั้ง');
+    } finally {
+      setSavingPdf(false);
+    }
+  };
+
   if (loading) return <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>;
 
   if (!order) {
@@ -262,15 +341,37 @@ const OrderDetail = () => {
     );
   }
 
+  const itemsSubtotalSum = (order.items || []).reduce(
+    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0
+  );
+  const displaySubtotal =
+    order.subtotal != null && order.subtotal !== ''
+      ? Number(order.subtotal)
+      : itemsSubtotalSum;
+
+  const itemPieces = (order.items || []).reduce((s, item) => s + Number(item.quantity || 0), 0);
+  const slipDateLine = (() => {
+    const d = new Date(receiptIssuedAt || order.created_at);
+    if (Number.isNaN(d.getTime())) return '-';
+    return d.toLocaleString('th-TH', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  })();
+
   return (
     <div className="orders-page">
       <div className="container">
-        <CustomerInlineBack />
-        <div className="page-header">
+        <CustomerInlineBack className="order-detail-no-print" />
+        <div className="page-header order-detail-no-print">
           <h1 className="page-title">คำสั่งซื้อ {order.order_number || `#${order.id}`}</h1>
         </div>
 
-        <div className="order-card">
+        <div className="order-card order-detail-no-print">
           <div className="detail-meta">
             <p><strong>หมายเลขคำสั่งซื้อ:</strong> {order.order_number || `#${order.id}`}</p>
             <p><strong>วันที่สั่งซื้อ:</strong> {formatDate(order.created_at)}</p>
@@ -384,12 +485,22 @@ const OrderDetail = () => {
             ))}
           </div>
 
-          <div className="order-footer">
-            <div className="order-total">
-              <span>ยอดรวม: </span>
-              <span className="total-amount">{formatPrice(order.total_amount)}</span>
+          <div className="order-footer order-detail-footer">
+            <div className="order-detail-price-summary" aria-label="สรุปราคา">
+              <div className="order-detail-price-row">
+                <span>ราคาสินค้า</span>
+                <strong>{formatPrice(displaySubtotal)}</strong>
+              </div>
+              <div className="order-detail-price-row">
+                <span>{order.order_type === 'pickup' ? 'ค่าจัดส่ง (รับที่ร้าน)' : 'ค่าจัดส่ง'}</span>
+                <strong>{formatPrice(order.delivery_fee)}</strong>
+              </div>
+              <div className="order-detail-price-row order-detail-price-row--total">
+                <span>ราคารวม</span>
+                <strong>{formatPrice(order.total_amount)}</strong>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="order-footer-actions">
               {order.driver_assignment && !['delivered', 'cancelled'].includes(order.status) && (
                 <Link to={`/customer/tracking/${order.id}`} className="btn btn-primary btn-sm">ติดตามคนขับ</Link>
               )}
@@ -398,7 +509,7 @@ const OrderDetail = () => {
           </div>
         </div>
 
-        <div className="order-card receipt-card">
+        <div className="order-card receipt-card order-detail-no-print">
           <div className="receipt-header">
             <h2 className="receipt-title">ใบเสร็จรับเงิน</h2>
             <span className={`receipt-status ${receiptReady ? 'ready' : 'pending'}`}>
@@ -406,39 +517,119 @@ const OrderDetail = () => {
             </span>
           </div>
 
-          {!receiptReady ? (
-            null
-          ) : (
-            <div className="receipt-content">
-              <div className="receipt-row"><span>เลขที่ใบเสร็จ:</span><strong>{receiptNo}</strong></div>
-              <div className="receipt-row"><span>อ้างอิงออเดอร์:</span><strong>{order.order_number || `#${order.id}`}</strong></div>
-              <div className="receipt-row"><span>วันที่ออก:</span><strong>{receiptIssuedAt ? formatDate(receiptIssuedAt) : '-'}</strong></div>
-              <div className="receipt-row"><span>ชื่อลูกค้า:</span><strong>{customerName}</strong></div>
-              <div className="receipt-row"><span>ช่องทางชำระ:</span><strong>{order.payment_method_display || order.payment_method}</strong></div>
-
-              <div className="receipt-items">
-                {(order.items || []).map((item) => (
-                  <div className="receipt-item" key={`receipt-${item.id}`}>
-                    <span>{displayProductLineName(item)} x {item.quantity}</span>
-                    <strong>{formatPrice(Number(item.price) * Number(item.quantity))}</strong>
-                  </div>
-                ))}
-              </div>
-
-              <div className="receipt-total">
-                <div><span>ค่าสินค้า:</span><strong>{formatPrice(order.subtotal)}</strong></div>
-                <div><span>ค่าจัดส่ง:</span><strong>{formatPrice(order.delivery_fee)}</strong></div>
-                <div><span>รวมสุทธิ:</span><strong>{formatPrice(order.total_amount)}</strong></div>
-              </div>
-
-              <div className="receipt-actions">
-                <button type="button" className="btn btn-primary btn-sm" onClick={handlePrintReceipt}>
-                  พิมพ์ / บันทึกใบเสร็จ
-                </button>
-              </div>
-            </div>
+          {receiptReady && (
+            <button
+              type="button"
+              className="btn btn-primary receipt-slip-open-btn"
+              onClick={() => setReceiptSlipOpen(true)}
+            >
+              ดูใบเสร็จ
+            </button>
           )}
         </div>
+
+        {receiptSlipOpen && receiptReady && (
+          <div
+            className="receipt-slip-backdrop"
+            role="presentation"
+            onClick={() => setReceiptSlipOpen(false)}
+          >
+            <div
+              className="receipt-slip-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="receipt-slip-heading"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="receipt-slip-close"
+                aria-label="ปิด"
+                onClick={() => setReceiptSlipOpen(false)}
+              >
+                ×
+              </button>
+
+              <div ref={receiptPdfRef} className="receipt-slip-paper">
+                <p id="receipt-slip-heading" className="receipt-slip-store">
+                  {config.BRANDING.storeName}
+                </p>
+                <p className="receipt-slip-doc-title">ใบเสร็จรับเงิน</p>
+                <div className="receipt-slip-datetime">{slipDateLine}</div>
+                <div className="receipt-slip-ref">
+                  <span>เลขที่ใบเสร็จ {receiptNo}</span>
+                  <span>ออเดอร์ {order.order_number || `#${order.id}`}</span>
+                </div>
+
+                <div className="receipt-slip-divider" />
+
+                <p className="receipt-slip-section-label">รายการสินค้า</p>
+                <ul className="receipt-slip-lines">
+                  {(order.items || []).map((item) => (
+                    <li key={`slip-${item.id}`}>
+                      <span className="receipt-slip-line-name">
+                        {item.quantity} {displayProductLineName(item)}
+                      </span>
+                      <span className="receipt-slip-line-price">
+                        {formatPrice(Number(item.price) * Number(item.quantity))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="receipt-slip-divider dashed" />
+
+                <div className="receipt-slip-net">
+                  <span>ยอดสุทธิ {itemPieces} ชิ้น</span>
+                  <strong>{formatPrice(order.total_amount)}</strong>
+                </div>
+
+                <div className="receipt-slip-pay-row">
+                  <span>{order.payment_method_display || order.payment_method}</span>
+                  <span>{formatPrice(order.total_amount)}</span>
+                </div>
+
+                <div className="receipt-slip-rows-compact">
+                  <div><span>ค่าสินค้า</span><span>{formatPrice(order.subtotal)}</span></div>
+                  <div><span>ค่าจัดส่ง</span><span>{formatPrice(order.delivery_fee)}</span></div>
+                  <div className="emph"><span>รวมสุทธิ</span><span>{formatPrice(order.total_amount)}</span></div>
+                </div>
+
+                <div className="receipt-slip-divider" />
+
+                <div className="receipt-slip-customer">
+                  <span>ลูกค้า</span>
+                  <span>{customerName}</span>
+                </div>
+
+                <div className="receipt-slip-zigzag" aria-hidden />
+              </div>
+
+              <div className="receipt-slip-modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm receipt-slip-primary-done"
+                  onClick={() => setReceiptSlipOpen(false)}
+                >
+                  ปิด
+                </button>
+                <div className="receipt-slip-extra-actions">
+                  <button type="button" className="btn btn-outline btn-sm" onClick={handlePrintReceipt}>
+                    พิมพ์
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={handleDownloadPdf}
+                    disabled={savingPdf}
+                  >
+                    {savingPdf ? 'กำลังสร้าง...' : 'บันทึก PDF'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
