@@ -154,6 +154,66 @@ def _audit_log_product_update(instance, old, validated_data):
     return summary, detail
 
 
+def _home_promotion_audit_snapshot(obj):
+    """ข้อมูลสำหรับบันทึก audit / เปรียบเทียบก่อน–หลังแก้ไขแบนเนอร์หน้าแรก"""
+    return {
+        'promotion_id': obj.id,
+        'title': (obj.title or '')[:120],
+        'link_target': obj.link_target,
+        'link_category_id': obj.link_category_id,
+        'link_product_id': obj.link_product_id,
+        'link_label': (obj.link_label or '')[:80],
+        'link_url': (obj.link_url or '')[:200],
+        'icon': (obj.icon or '')[:20],
+        'sort_order': obj.sort_order,
+        'is_active': obj.is_active,
+        'has_banner': bool(obj.banner_image),
+    }
+
+
+def _audit_log_home_promotion_create(instance):
+    label = (instance.title or '').strip() or f'#{instance.id}'
+    action_th = f'เพิ่มแบนเนอร์/โปรหน้าแรก «{label}»'
+    detail = _home_promotion_audit_snapshot(instance)
+    detail['action_label_th'] = action_th[:300]
+    return f'{action_th} (รหัส #{instance.id})'[:500], detail
+
+
+def _audit_log_home_promotion_update(old_snap, instance, validated_data):
+    new_snap = _home_promotion_audit_snapshot(instance)
+    pieces = []
+    if old_snap.get('title') != new_snap.get('title'):
+        pieces.append(
+            f'หัวข้อ «{old_snap.get("title") or "—"}» → «{new_snap.get("title") or "—"}»'
+        )
+    if old_snap.get('link_target') != new_snap.get('link_target'):
+        pieces.append('เปลี่ยนเป้าหมายลิงก์')
+    if old_snap.get('sort_order') != new_snap.get('sort_order'):
+        pieces.append(f'ลำดับ {old_snap.get("sort_order")} → {new_snap.get("sort_order")}')
+    if old_snap.get('is_active') != new_snap.get('is_active'):
+        pieces.append('เปลี่ยนสถานะแสดง/ปิด')
+    if validated_data.get('banner_image') or validated_data.get('remove_banner_image'):
+        if validated_data.get('remove_banner_image'):
+            pieces.append('ลบรูปแบนเนอร์')
+        else:
+            pieces.append('เปลี่ยน/อัปโหลดรูปแบนเนอร์')
+    elif old_snap.get('has_banner') != new_snap.get('has_banner'):
+        pieces.append('เปลี่ยนรูปแบนเนอร์')
+    if old_snap.get('link_category_id') != new_snap.get('link_category_id'):
+        pieces.append('เปลี่ยนหมวดลิงก์')
+    if old_snap.get('link_product_id') != new_snap.get('link_product_id'):
+        pieces.append('เปลี่ยนสินค้าลิงก์')
+    if old_snap.get('link_url') != new_snap.get('link_url') or old_snap.get('link_label') != new_snap.get('link_label'):
+        pieces.append('แก้ข้อความปุ่ม/ลิงก์')
+    if not pieces:
+        pieces.append('บันทึกแบนเนอร์หน้าแรก')
+    action_th = ' · '.join(pieces)
+    detail = {**new_snap, 'before': old_snap, 'action_label_th': action_th[:400]}
+    label = (instance.title or '').strip() or f'#{instance.id}'
+    summary = f'«{label}» {action_th}'[:500]
+    return summary, detail
+
+
 class ProductListView(generics.ListAPIView):
     """รายการสินค้าทั้งหมด"""
     serializer_class = ProductSerializer
@@ -242,6 +302,18 @@ class AdminHomePromotionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return HomePromotion.objects.all().order_by('sort_order', 'id')
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        summary, detail = _audit_log_home_promotion_create(instance)
+        log_staff_audit(
+            self.request,
+            StaffAuditLog.Action.HOME_PROMOTION_CREATE,
+            target_type='home_promotion',
+            target_id=str(instance.id),
+            summary=summary,
+            detail=detail,
+        )
+
 
 class AdminHomePromotionDetailView(generics.RetrieveUpdateDestroyAPIView):
     """แอดมิน — ดู / แก้ / ลบการ์ดโปรโมชั่นหน้าแรก"""
@@ -250,6 +322,38 @@ class AdminHomePromotionDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = HomePromotionAdminSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def perform_update(self, serializer):
+        old_snap = _home_promotion_audit_snapshot(serializer.instance)
+        vd = dict(serializer.validated_data)
+        instance = serializer.save()
+        summary, detail = _audit_log_home_promotion_update(old_snap, instance, vd)
+        log_staff_audit(
+            self.request,
+            StaffAuditLog.Action.HOME_PROMOTION_UPDATE,
+            target_type='home_promotion',
+            target_id=str(instance.id),
+            summary=summary,
+            detail=detail,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        promotion = self.get_object()
+        pid = promotion.id
+        title = (promotion.title or '').strip() or f'#{pid}'
+        snap = _home_promotion_audit_snapshot(promotion)
+        response = super().destroy(request, *args, **kwargs)
+        if response.status_code in (status.HTTP_200_OK, status.HTTP_204_NO_CONTENT):
+            action_th = f'ลบแบนเนอร์/โปรหน้าแรก «{title}»'
+            log_staff_audit(
+                request,
+                StaffAuditLog.Action.HOME_PROMOTION_DELETE,
+                target_type='home_promotion',
+                target_id=str(pid),
+                summary=f'{action_th} (รหัส #{pid})'[:500],
+                detail={**snap, 'action_label_th': action_th[:300]},
+            )
+        return response
 
 
 class AdminProductListCreateView(generics.ListCreateAPIView):
@@ -538,7 +642,7 @@ class AdminStockMovementListCreateView(generics.ListCreateAPIView):
         )
         log_staff_audit(
             request,
-            StaffAuditLog.Action.PRODUCT_UPDATE,
+            StaffAuditLog.Action.INVENTORY_ADJUSTMENT,
             target_type='product',
             target_id=str(product.id),
             summary=action_th[:500],
@@ -564,11 +668,76 @@ class AdminSupplierListCreateView(generics.ListCreateAPIView):
     queryset = Supplier.objects.all()
     pagination_class = None
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        al = f'เพิ่มผู้จำหน่าย «{instance.name}»'
+        log_staff_audit(
+            self.request,
+            StaffAuditLog.Action.SUPPLIER_CREATE,
+            target_type='supplier',
+            target_id=str(instance.id),
+            summary=f'{al} (รหัส #{instance.id})'[:500],
+            detail={
+                'supplier_id': instance.id,
+                'name': instance.name,
+                'action_label_th': al[:300],
+            },
+        )
+
 
 class AdminSupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = SupplierSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
     queryset = Supplier.objects.all()
+
+    def perform_update(self, serializer):
+        old = {
+            'name': serializer.instance.name,
+            'phone': serializer.instance.phone or '',
+            'is_active': serializer.instance.is_active,
+        }
+        instance = serializer.save()
+        vd = serializer.validated_data
+        pieces = []
+        if 'name' in vd and instance.name != old['name']:
+            pieces.append(f'ชื่อ «{old["name"]}» → «{instance.name}»')
+        if 'phone' in vd:
+            pieces.append('แก้เบอร์/ช่องทางติดต่อ')
+        if 'is_active' in vd and instance.is_active != old['is_active']:
+            pieces.append('เปลี่ยนสถานะใช้งาน')
+        if set(vd) & {'contact_name', 'email', 'address'}:
+            pieces.append('แก้ข้อมูลผู้ติดต่อ/ที่อยู่')
+        if not pieces:
+            pieces.append('แก้ไขผู้จำหน่าย')
+        action_th = ' · '.join(pieces)
+        log_staff_audit(
+            self.request,
+            StaffAuditLog.Action.SUPPLIER_UPDATE,
+            target_type='supplier',
+            target_id=str(instance.id),
+            summary=f'«{instance.name}» {action_th}'[:500],
+            detail={
+                'supplier_id': instance.id,
+                'name': instance.name,
+                'action_label_th': action_th[:400],
+            },
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        supplier = self.get_object()
+        sid, sname = supplier.id, supplier.name
+        response = super().destroy(request, *args, **kwargs)
+        if response.status_code in (status.HTTP_200_OK, status.HTTP_204_NO_CONTENT):
+            al = f'ลบผู้จำหน่าย «{sname}»'
+            log_staff_audit(
+                request,
+                StaffAuditLog.Action.SUPPLIER_DELETE,
+                target_type='supplier',
+                target_id=str(sid),
+                summary=f'{al} (รหัส #{sid})'[:500],
+                detail={'supplier_id': sid, 'name': sname, 'action_label_th': al[:300]},
+            )
+        return response
 
 
 class AdminPurchaseOrderListCreateView(generics.ListCreateAPIView):
@@ -589,11 +758,84 @@ class AdminPurchaseOrderListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(Q(reference__icontains=q) | Q(notes__icontains=q) | Q(supplier__name__icontains=q))
         return qs
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        sup_name = instance.supplier.name if instance.supplier_id else ''
+        al = f'สร้างใบสั่งซื้อ {instance.reference}' + (f' ({sup_name})' if sup_name else '')
+        log_staff_audit(
+            self.request,
+            StaffAuditLog.Action.PURCHASE_ORDER_CREATE,
+            target_type='purchase_order',
+            target_id=str(instance.id),
+            summary=al[:500],
+            detail={
+                'purchase_order_id': instance.id,
+                'reference': instance.reference,
+                'supplier_id': instance.supplier_id,
+                'supplier_name': sup_name,
+                'items_count': instance.items.count(),
+                'action_label_th': al[:300],
+            },
+        )
+
 
 class AdminPurchaseOrderDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PurchaseOrderSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
     queryset = PurchaseOrder.objects.select_related('supplier', 'created_by').prefetch_related('items__product')
+
+    def perform_update(self, serializer):
+        old_inst = serializer.instance
+        old_status = old_inst.status
+        old_supplier_id = old_inst.supplier_id
+        instance = serializer.save()
+        vd = serializer.validated_data
+        pieces = []
+        if vd.get('supplier') is not None and instance.supplier_id != old_supplier_id:
+            pieces.append('เปลี่ยนผู้จำหน่าย')
+        if vd.get('status') is not None and instance.status != old_status:
+            pieces.append(f'สถานะ → {instance.get_status_display()}')
+        if 'items' in vd:
+            pieces.append('แก้รายการสินค้าในใบ')
+        if vd.keys() & {'notes', 'expected_date'}:
+            pieces.append('แก้หมายเหตุหรือวันที่คาดรับ')
+        if not pieces:
+            pieces.append('แก้ไขใบสั่งซื้อ')
+        action_th = ' · '.join(pieces)
+        al = f'{instance.reference}: {action_th}'
+        log_staff_audit(
+            self.request,
+            StaffAuditLog.Action.PURCHASE_ORDER_UPDATE,
+            target_type='purchase_order',
+            target_id=str(instance.id),
+            summary=al[:500],
+            detail={
+                'purchase_order_id': instance.id,
+                'reference': instance.reference,
+                'status': instance.status,
+                'action_label_th': al[:400],
+            },
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        po = self.get_object()
+        pid, ref = po.id, po.reference
+        response = super().destroy(request, *args, **kwargs)
+        if response.status_code in (status.HTTP_200_OK, status.HTTP_204_NO_CONTENT):
+            al = f'ลบใบสั่งซื้อ {ref}'
+            log_staff_audit(
+                request,
+                StaffAuditLog.Action.PURCHASE_ORDER_DELETE,
+                target_type='purchase_order',
+                target_id=str(pid),
+                summary=al[:500],
+                detail={
+                    'purchase_order_id': pid,
+                    'reference': ref,
+                    'action_label_th': al[:300],
+                },
+            )
+        return response
 
 
 class AdminPurchaseOrderReceiveView(APIView):
@@ -652,18 +894,20 @@ class AdminPurchaseOrderReceiveView(APIView):
             purchase_order.status = next_status
             purchase_order.save(update_fields=['status', 'updated_at'])
 
+        al = f'รับเข้าจากใบสั่งซื้อ {purchase_order.reference}'
         log_staff_audit(
             request,
-            StaffAuditLog.Action.PRODUCT_UPDATE,
+            StaffAuditLog.Action.PURCHASE_ORDER_RECEIVE,
             target_type='purchase_order',
             target_id=str(purchase_order.id),
-            summary=f'รับเข้าสินค้าจากใบสั่งซื้อ {purchase_order.reference}',
+            summary=f'{al} (สถานะ {purchase_order.get_status_display()})'[:500],
             detail={
                 'purchase_order_id': purchase_order.id,
                 'reference': purchase_order.reference,
                 'status': purchase_order.status,
                 'total_ordered': total_ordered,
                 'total_received': total_received,
+                'action_label_th': al[:300],
             },
         )
         purchase_order.refresh_from_db()

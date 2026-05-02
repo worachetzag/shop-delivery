@@ -117,9 +117,13 @@ class StaffAuditLogSerializer(serializers.ModelSerializer):
         ]
 
     def get_actor_username(self, obj):
-        if obj.actor_id:
-            return obj.actor.username
-        return '(ลบผู้ใช้แล้ว)'
+        if not obj.actor_id:
+            return '(ลบผู้ใช้แล้ว)'
+        u = obj.actor
+        full = (u.get_full_name() or '').strip()
+        if full:
+            return f'{full} ({u.username})'
+        return u.username
 
     def get_action_display(self, obj):
         """ถ้ามี action_label_th ใน detail ให้แสดงแทนป้ายทั่วไป (ละเอียดตามที่บันทึก)"""

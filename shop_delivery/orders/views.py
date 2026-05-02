@@ -245,6 +245,30 @@ class AdminStoreSettingsView(APIView):
                             is_active=True,
                         )
 
+        sections = []
+        if request.data.get('store_location'):
+            sections.append('ข้อมูลร้าน/พิกัด/PromptPay')
+        if request.data.get('service_hours'):
+            sections.append('เวลาเปิด-ปิดรับ/จัดส่ง')
+        if request.data.get('delivery_fee_tiers'):
+            sections.append('อัตราค่าจัดส่งตามระยะ')
+        if not sections:
+            sections.append('ตั้งค่าร้าน')
+        loc_after = StoreLocation.objects.order_by('id').first()
+        sec_label = ' · '.join(sections)
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.STORE_SETTINGS_UPDATE,
+            target_type='store_settings',
+            target_id=str(loc_after.id) if loc_after else '',
+            summary=f'แก้ไขตั้งค่าร้าน: {sec_label}'[:500],
+            detail={
+                'store_location_id': loc_after.id if loc_after else None,
+                'sections': sections,
+                'action_label_th': f'แก้ไขตั้งค่าร้าน ({sec_label})'[:300],
+            },
+        )
+
         return self.get(request)
 
 

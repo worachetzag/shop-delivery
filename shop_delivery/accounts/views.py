@@ -635,6 +635,21 @@ class AdminDriverListCreateView(generics.GenericAPIView):
             profile.photo = upload
             profile.save(update_fields=['photo'])
 
+        al = f'เพิ่มคนขับ «{user.username}»'
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.DRIVER_CREATE,
+            target_type='driver',
+            target_id=str(profile.id),
+            summary=f'{al} (รหัสโปรไฟล์ #{profile.id})'[:500],
+            detail={
+                'driver_profile_id': profile.id,
+                'user_id': user.id,
+                'username': user.username,
+                'action_label_th': al[:300],
+            },
+        )
+
         return Response({
             'message': 'เพิ่มคนขับสำเร็จ',
             'username': user.username,
@@ -709,6 +724,23 @@ class AdminDriverDetailView(generics.GenericAPIView):
 
         driver.save()
 
+        al = f'แก้ไขคนขับ «{user.username}»'
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.DRIVER_UPDATE,
+            target_type='driver',
+            target_id=str(driver.id),
+            summary=f'{al} (โปรไฟล์ #{driver.id})'[:500],
+            detail={
+                'driver_profile_id': driver.id,
+                'user_id': user.id,
+                'username': user.username,
+                'password_changed': bool(password),
+                'photo_updated': bool(upload) or clear_photo_flag,
+                'action_label_th': al[:300],
+            },
+        )
+
         return Response({
             'message': 'แก้ไขข้อมูลคนขับสำเร็จ',
             'id': driver.id,
@@ -729,6 +761,23 @@ class AdminDriverDetailView(generics.GenericAPIView):
             return Response({'error': 'ไม่มีสิทธิ์ลบคนขับ'}, status=status.HTTP_403_FORBIDDEN)
 
         driver = get_object_or_404(DriverProfile.objects.select_related('user'), id=driver_id)
+        uname = driver.user.username
+        did = driver.id
+        uid = driver.user_id
+        al = f'ลบคนขับ «{uname}»'
+        log_staff_audit(
+            request,
+            StaffAuditLog.Action.DRIVER_DELETE,
+            target_type='driver',
+            target_id=str(did),
+            summary=f'{al} (โปรไฟล์ #{did})'[:500],
+            detail={
+                'driver_profile_id': did,
+                'user_id': uid,
+                'username': uname,
+                'action_label_th': al[:300],
+            },
+        )
         driver.user.delete()
         return Response({'message': 'ลบคนขับสำเร็จ'}, status=status.HTTP_200_OK)
 

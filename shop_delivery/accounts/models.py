@@ -103,6 +103,21 @@ class StaffAuditLog(models.Model):
         STAFF_CREATE = 'staff_create', 'เพิ่มบัญชีพนักงาน'
         STAFF_UPDATE = 'staff_update', 'แก้ไขบัญชีพนักงาน'
         STAFF_DELETE = 'staff_delete', 'ลบบัญชีพนักงาน'
+        HOME_PROMOTION_CREATE = 'home_promotion_create', 'เพิ่มแบนเนอร์/โปรหน้าแรก'
+        HOME_PROMOTION_UPDATE = 'home_promotion_update', 'แก้ไขแบนเนอร์/โปรหน้าแรก'
+        HOME_PROMOTION_DELETE = 'home_promotion_delete', 'ลบแบนเนอร์/โปรหน้าแรก'
+        SUPPLIER_CREATE = 'supplier_create', 'เพิ่มผู้จำหน่าย'
+        SUPPLIER_UPDATE = 'supplier_update', 'แก้ไขผู้จำหน่าย'
+        SUPPLIER_DELETE = 'supplier_delete', 'ลบผู้จำหน่าย'
+        PURCHASE_ORDER_CREATE = 'purchase_order_create', 'สร้างใบสั่งซื้อ'
+        PURCHASE_ORDER_UPDATE = 'purchase_order_update', 'แก้ไขใบสั่งซื้อ'
+        PURCHASE_ORDER_DELETE = 'purchase_order_delete', 'ลบใบสั่งซื้อ'
+        PURCHASE_ORDER_RECEIVE = 'purchase_order_receive', 'รับเข้าจากใบสั่งซื้อ'
+        STORE_SETTINGS_UPDATE = 'store_settings_update', 'แก้ไขตั้งค่าร้าน'
+        DRIVER_CREATE = 'driver_create', 'เพิ่มบัญชีคนขับ'
+        DRIVER_UPDATE = 'driver_update', 'แก้ไขบัญชีคนขับ'
+        DRIVER_DELETE = 'driver_delete', 'ลบบัญชีคนขับ'
+        INVENTORY_ADJUSTMENT = 'inventory_adjustment', 'ปรับสต็อกมือ (คลัง)'
 
     actor = models.ForeignKey(
         User,
