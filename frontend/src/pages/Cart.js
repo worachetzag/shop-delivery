@@ -111,7 +111,7 @@ const Cart = () => {
             {cartItems.map(item => (
               <div key={item.id} className="cart-item">
                 <div className="item-image">
-                  <img 
+                  <img
                     src={pickLineItemImage(item, PLACEHOLDER_IMAGES.md)}
                     alt={displayProductLineName(item)}
                     onError={(e) => {
@@ -119,43 +119,45 @@ const Cart = () => {
                     }}
                   />
                 </div>
-                
-                <div className="item-details">
-                  <h3 className="item-name">{displayProductLineName(item)}</h3>
+
+                <div className="cart-item-main">
+                  <div className="cart-item-title-row">
+                    <h3 className="item-name">{displayProductLineName(item)}</h3>
+                    <button
+                      type="button"
+                      className="remove-btn"
+                      onClick={() => removeItem(item.id)}
+                      title="ลบสินค้า"
+                      aria-label="ลบสินค้า"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                   <p className="item-category">{item.category}</p>
                   <p className="item-price">
-                    {formatPrice(item.price)} / {item.unit_label || 'ชิ้น'}{item.unit_detail ? ` (${item.unit_detail})` : ''}
+                    {formatPrice(item.price)} / {item.unit_label || 'ชิ้น'}
+                    {item.unit_detail ? ` (${item.unit_detail})` : ''}
                   </p>
-                </div>
-                
-                <div className="item-quantity">
-                  <button 
-                    className="quantity-btn"
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                  >
-                    -
-                  </button>
-                  <span className="quantity">{item.quantity}</span>
-                  <button 
-                    className="quantity-btn"
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  >
-                    +
-                  </button>
-                </div>
-                
-                <div className="item-total">
-                  <p className="total-price">{formatPrice(item.price * item.quantity)}</p>
-                </div>
-                
-                <div className="item-actions">
-                  <button 
-                    className="remove-btn"
-                    onClick={() => removeItem(item.id)}
-                    title="ลบสินค้า"
-                  >
-                    🗑️
-                  </button>
+                  <div className="cart-item-controls">
+                    <div className="item-quantity">
+                      <button
+                        type="button"
+                        className="quantity-btn"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      >
+                        −
+                      </button>
+                      <span className="quantity">{item.quantity}</span>
+                      <button
+                        type="button"
+                        className="quantity-btn"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="item-line-total">{formatPrice(item.price * item.quantity)}</span>
+                  </div>
                 </div>
               </div>
             ))}
