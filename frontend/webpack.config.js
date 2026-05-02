@@ -58,9 +58,13 @@ module.exports = {
               stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
             },
             () => {
+              // พาธเก่าที่เลิกใช้ — ต้องอยู่ก่อน SPA fallback
               compilation.emitAsset(
                 '_redirects',
-                new compiler.webpack.sources.RawSource('/* /index.html 200\n')
+                new compiler.webpack.sources.RawSource(
+                  ['/line-flow /customer 301', '/line-flow.html /customer 301', '/* /index.html 200', '']
+                    .join('\n'),
+                ),
               );
             }
           );

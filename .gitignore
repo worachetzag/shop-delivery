@@ -150,8 +150,9 @@ logs/
 ehthumbs.db
 Thumbs.db
 
-# Local-only flow documentation (PDF/HTML sources kept off-repo)
+# Local-only docs / flow diagrams / PDF exports — never commit
 docs/private/
+scripts/export-flow-docs-pdf.sh
 
 # Project specific
 *.xlsx
