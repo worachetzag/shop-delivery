@@ -49,6 +49,48 @@ const LIFF_PAGE_ROUTES = {
   login: '/customer/login',
 };
 
+/**
+ * LINE หลายครั้งไม่ส่ง ?page= ตรงๆ หลัง redirect — ใส่ใน `liff.state` แทน (ดูเอกสาร Opening a LIFF app / primary redirect)
+ */
+function resolveLiffRichMenuPath(search) {
+  const params = new URLSearchParams(search);
+  const routeForKey = (key) => {
+    const k = (key || '').trim().toLowerCase();
+    return k ? LIFF_PAGE_ROUTES[k] || null : null;
+  };
+
+  const direct = routeForKey(params.get('page'));
+  if (direct) return direct;
+
+  const rawState = params.get('liff.state');
+  if (!rawState) return null;
+
+  let decoded = rawState;
+  try {
+    decoded = decodeURIComponent(rawState);
+  } catch {
+    return null;
+  }
+
+  const noHash = decoded.split('#')[0];
+  const qIdx = noHash.indexOf('?');
+  const pathPart = qIdx >= 0 ? noHash.slice(0, qIdx) : noHash;
+  let queryPart = qIdx >= 0 ? noHash.slice(qIdx + 1) : '';
+  if (!queryPart && /[=]/.test(pathPart) && !pathPart.includes('/')) {
+    queryPart = pathPart;
+  }
+
+  const fromQuery = routeForKey(new URLSearchParams(queryPart).get('page'));
+  if (fromQuery) return fromQuery;
+
+  const segments = pathPart.replace(/^\/+/, '').split('/').filter(Boolean);
+  const lastSeg = segments[segments.length - 1] || '';
+  const fromPath = routeForKey(lastSeg);
+  if (fromPath) return fromPath;
+
+  return null;
+}
+
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -65,14 +107,14 @@ function AppContent() {
   const [routeLoading, setRouteLoading] = useState(false);
   const previousPathRef = useRef(location.pathname + location.search);
 
-  /** Rich Menu แนะนำ: .../liff-id?page=products — แม้ pathname จะเหลือแค่ /customer ก็ยังไปหน้าที่ถูก */
+  /** Rich Menu: รองรับทั้ง ?page= และค่าที่ LINE ย้ายไปไว้ใน liff.state */
   useLayoutEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const pageKey = (params.get('page') || '').toLowerCase();
-    const route = LIFF_PAGE_ROUTES[pageKey];
+    const route = resolveLiffRichMenuPath(location.search);
     if (!route) return;
 
+    const params = new URLSearchParams(location.search);
     params.delete('page');
+    params.delete('liff.state');
     const qs = params.toString();
     const dest = `${route}${qs ? `?${qs}` : ''}`;
     const current = `${location.pathname}${location.search}`;
@@ -107,6 +149,7 @@ function AppContent() {
     params.delete('user_role');
     params.delete('login');
     params.delete('page');
+    params.delete('liff.state');
     const cleanedSearch = params.toString();
     const nextPath = `${location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
 

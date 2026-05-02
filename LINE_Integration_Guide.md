@@ -76,7 +76,9 @@ LINE_PAY_MERCHANT_ID=your-line-pay-merchant-id
 
 คีย์อื่นที่แอปรองรับ: `checkout`, `tracking`, `profile`, `login`
 
-ถ้าใช้ path เต็ม (`.../customer/products`) แล้วทำงานถูกต้องในเครื่องคุณก็ใช้ต่อได้ — แต่ถ้าทุกปุ่มไปหน้าแรก ให้เปลี่ยนมาใช้ `?page=` ตามตาราง (การซิงก์ทำใน `App.js` ด้วย `useLayoutEffect`)
+**หมายเหตุสำคัญ:** ตามพฤติกรรม LINE (primary redirect) พารามิเตอร์หลัง `liff.line.me/...` อาจถูกย้ายไปอยู่ใน **`liff.state`** บน URL ของเว็บจริง ไม่ได้เหลือเป็น `?page=` ให้เห็นตรงๆ — แอปจึงอ่านทั้ง `page` และ **`liff.state`** (ถอดรหัสแล้วดึง `page`) ใน `App.js`
+
+ถ้าใช้ path เต็ม (`.../customer/products`) แล้วทำงานถูกต้องในเครื่องคุณก็ใช้ต่อได้ — Rich Menu แบบ `?page=` ยังใช้ได้และควรทำงานหลังแก้ด้านบน
 
 ## 🔗 API Endpoints
 
