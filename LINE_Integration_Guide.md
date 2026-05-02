@@ -57,6 +57,8 @@ LINE_PAY_MERCHANT_ID=your-line-pay-merchant-id
 
 ตัวอย่าง: [https://shop-delivery.pages.dev/line-flow.html](https://shop-delivery.pages.dev/line-flow.html)
 
+**ไฟล์เดียวเปิดในเครื่องได้ (ไม่ต้องมีเน็ต):** ใน repo มี `docs/line-flow-customer-offline.html` — คัดลอกไฟล์นี้ไปให้ลูกค้าหรือส่งเป็นแนบ แล้วดับเบิลคลิกเปิดใน Chrome / Safari / Edge ได้ทันที
+
 ### สำหรับลูกค้า
 - **ดูสินค้า** - ดูรายการสินค้าทั้งหมด
 - **ตะกร้าสินค้า** - จัดการสินค้าในตะกร้า
