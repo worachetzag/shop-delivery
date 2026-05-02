@@ -102,6 +102,32 @@ function parseLiffStateRoute(rawState, routeMap) {
   return null;
 }
 
+/** LINE ใส่ path จริงใน liff.state เช่น %2Fcustomer%2Forders%2F7 */
+function routeFromLiffStateCustomerPath(rawState) {
+  if (!rawState || typeof rawState !== 'string') return null;
+  let decoded = rawState.trim();
+  for (let i = 0; i < 4; i += 1) {
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    } catch {
+      break;
+    }
+  }
+  const main = decoded.split('#')[0];
+  const qIdx = main.indexOf('?');
+  const pathOnly = (qIdx >= 0 ? main.slice(0, qIdx) : main).trim();
+  const queryPart = qIdx >= 0 ? main.slice(qIdx + 1) : '';
+  let candidate = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+  if (queryPart) candidate = `${candidate}?${queryPart}`;
+  const sanitized = sanitizeCustomerOAuthNext(candidate);
+  const baseOnly = sanitized.split('?')[0];
+  if (baseOnly === '/customer') return null;
+  if (!baseOnly.startsWith('/customer/')) return null;
+  return sanitized;
+}
+
 function routeFromHash(hash, routeMap) {
   if (!hash || hash.length <= 1) return null;
   const h = hash.startsWith('#') ? hash.slice(1) : hash;
@@ -192,6 +218,11 @@ export function resolveCustomerDeepLink(pathname, search, hash, opts = {}) {
       stripCustomerRoutingParams(params);
       const qs = params.toString();
       return qs ? `${fromState}?${qs}` : fromState;
+    }
+    const fromStatePath = routeFromLiffStateCustomerPath(rawState);
+    if (fromStatePath) {
+      stripCustomerRoutingParams(params);
+      return mergePreservedQuery(fromStatePath, params);
     }
   }
 
