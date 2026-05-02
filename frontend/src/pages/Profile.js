@@ -838,6 +838,10 @@ const Profile = () => {
                           onAddressSelect={handleAddressSelect}
                           initialLat={parseCoord(newAddress.latitude) ?? 13.7563}
                           initialLon={parseCoord(newAddress.longitude) ?? 100.5018}
+                          autoLocateOnMount={
+                            parseCoord(newAddress.latitude) == null
+                            || parseCoord(newAddress.longitude) == null
+                          }
                         />
                         {parseCoord(newAddress.latitude) != null && parseCoord(newAddress.longitude) != null && (
                           <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>

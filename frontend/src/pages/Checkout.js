@@ -790,6 +790,10 @@ const Checkout = () => {
                         ?? toFiniteNumberOrNull(storeOrigin.longitude)
                         ?? 100.5018
                       }
+                      autoLocateOnMount={
+                        toFiniteNumberOrNull(shippingInfo.latitude) == null
+                        || toFiniteNumberOrNull(shippingInfo.longitude) == null
+                      }
                     />
                   </div>
 

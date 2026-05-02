@@ -136,13 +136,21 @@ function MapClickSelect({ onPick }) {
   return null;
 }
 
-const AddressPicker = ({ onLocationSelect, onAddressSelect, initialLat = 13.7563, initialLon = 100.5018 }) => {
+const AddressPicker = ({
+  onLocationSelect,
+  onAddressSelect,
+  initialLat = 13.7563,
+  initialLon = 100.5018,
+  /** โหลดปุ๊บ ขอพิกัดอุปกรณ์แล้วย้ายหมุดมาที่ตำแหน่งผู้ใช้ (ใช้เมื่อยังไม่มีพิกัดที่บันทึกไว้) */
+  autoLocateOnMount = false,
+}) => {
   const popup = usePopup();
   const [selectedLat, setSelectedLat] = useState(() => parseCoord(initialLat, 13.7563));
   const [selectedLon, setSelectedLon] = useState(() => parseCoord(initialLon, 100.5018));
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [address, setAddress] = useState('');
+  const handleLocationSelectRef = useRef(null);
 
   useEffect(() => {
     setSelectedLat(parseCoord(initialLat, 13.7563));
@@ -206,6 +214,38 @@ const AddressPicker = ({ onLocationSelect, onAddressSelect, initialLat = 13.7563
     },
     [onLocationSelect, getAddressFromCoords],
   );
+
+  handleLocationSelectRef.current = handleLocationSelect;
+
+  useEffect(() => {
+    if (!autoLocateOnMount) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+
+    let cancelled = false;
+    setIsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        if (cancelled) return;
+        const fn = handleLocationSelectRef.current;
+        if (fn) {
+          await fn(position.coords.latitude, position.coords.longitude);
+        }
+        if (!cancelled) setIsLoading(false);
+      },
+      () => {
+        if (!cancelled) setIsLoading(false);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 120000,
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [autoLocateOnMount]);
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
