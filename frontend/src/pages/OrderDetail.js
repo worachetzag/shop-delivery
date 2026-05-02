@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { usePopup } from '../components/PopupProvider';
 import CustomerInlineBack from '../components/CustomerInlineBack';
-import { saveElementAsPdf } from '../utils/receiptPdf';
 import './OrderDetail.css';
 
 const OrderDetail = () => {
@@ -19,9 +18,7 @@ const OrderDetail = () => {
   const [slipPreviewUrl, setSlipPreviewUrl] = useState('');
   const [promptPayInfo, setPromptPayInfo] = useState(null);
   const [loadingPromptPayQr, setLoadingPromptPayQr] = useState(false);
-  const [savingPdf, setSavingPdf] = useState(false);
   const [receiptSlipOpen, setReceiptSlipOpen] = useState(false);
-  const receiptPdfRef = useRef(null);
 
   const fetchOrder = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -311,20 +308,6 @@ const OrderDetail = () => {
     window.print();
   };
 
-  const handleDownloadPdf = async () => {
-    if (!receiptReady || !receiptPdfRef.current) return;
-    const safeName = String(order.order_number || order.id).replace(/[^\w\u0E00-\u0E7F-]/g, '_');
-    setSavingPdf(true);
-    try {
-      await saveElementAsPdf(receiptPdfRef.current, `ใบเสร็จ-${safeName}.pdf`);
-    } catch (err) {
-      console.error(err);
-      popup.error(err?.message || 'บันทึก PDF ไม่สำเร็จ ลองอีกครั้ง');
-    } finally {
-      setSavingPdf(false);
-    }
-  };
-
   if (loading) return <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>;
 
   if (!order) {
@@ -550,7 +533,7 @@ const OrderDetail = () => {
                 ×
               </button>
 
-              <div ref={receiptPdfRef} className="receipt-slip-paper">
+              <div className="receipt-slip-paper">
                 <p id="receipt-slip-heading" className="receipt-slip-store">
                   {config.BRANDING.storeName}
                 </p>
@@ -606,26 +589,16 @@ const OrderDetail = () => {
               </div>
 
               <div className="receipt-slip-modal-actions">
+                <button type="button" className="btn btn-outline btn-sm" onClick={handlePrintReceipt}>
+                  พิมพ์
+                </button>
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm receipt-slip-primary-done"
+                  className="btn btn-primary btn-sm"
                   onClick={() => setReceiptSlipOpen(false)}
                 >
                   ปิด
                 </button>
-                <div className="receipt-slip-extra-actions">
-                  <button type="button" className="btn btn-outline btn-sm" onClick={handlePrintReceipt}>
-                    พิมพ์
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    onClick={handleDownloadPdf}
-                    disabled={savingPdf}
-                  >
-                    {savingPdf ? 'กำลังสร้าง...' : 'บันทึก PDF'}
-                  </button>
-                </div>
               </div>
             </div>
           </div>

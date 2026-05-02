@@ -463,23 +463,13 @@
 
 .receipt-slip-modal-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 8px;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-.receipt-slip-extra-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-.receipt-slip-extra-actions .btn {
+.receipt-slip-modal-actions .btn {
   flex: 1;
   min-width: 6rem;
-}
-
-.receipt-slip-primary-done {
-  width: 100%;
 }
