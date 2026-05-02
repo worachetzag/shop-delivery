@@ -83,7 +83,10 @@ function AppContent() {
 
   /** Rich Menu / LIFF: ?page=, liff.state, hash #page=, ?next= */
   useLayoutEffect(() => {
-    const dest = resolveCustomerDeepLink(location.pathname, location.search, location.hash);
+    const dest = resolveCustomerDeepLink(location.pathname, location.search, location.hash, {
+      referrer: typeof document !== 'undefined' ? document.referrer : '',
+      navigationAgeMs: typeof performance !== 'undefined' ? performance.now() : Infinity,
+    });
     if (!dest) return;
 
     try {

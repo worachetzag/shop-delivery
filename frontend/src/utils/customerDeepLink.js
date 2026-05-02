@@ -112,6 +112,33 @@ function routeFromHash(hash, routeMap) {
   return routeForPageKey(routeMap, getQueryParamInsensitive(hp, 'page'));
 }
 
+/**
+ * LINE เปิด Endpoint ที่ /customer เปล่า แต่บางครั้งยังเหลือ URL เดิมใน document.referrer
+ * (เช่น https://liff.line.me/<id>?page=products หรือ .../<id>/products)
+ */
+function routeFromLiffReferrer(referrer, routeMap) {
+  if (!referrer || typeof referrer !== 'string') return null;
+  let ru;
+  try {
+    ru = new URL(referrer);
+  } catch {
+    return null;
+  }
+  if (!/^liff\.line\.me$/i.test(ru.hostname)) return null;
+
+  const pageQs = routeForPageKey(routeMap, getQueryParamInsensitive(ru.searchParams, 'page'));
+  if (pageQs) return pageQs;
+
+  const parts = ru.pathname.split('/').filter(Boolean);
+  if (parts.length >= 2) {
+    const seg = parts[parts.length - 1];
+    const segRoute = routeForPageKey(routeMap, seg);
+    if (segRoute) return segRoute;
+  }
+
+  return null;
+}
+
 /** ลบพารามิเตอร์ที่ใช้สำหรับเปิดหน้าจาก LINE — ใช้หลัง consume deep link / OAuth callback */
 export function stripCustomerRoutingParams(params) {
   for (const k of [...params.keys()]) {
@@ -137,10 +164,17 @@ function mergePreservedQuery(destWithoutLeadingAmbiguity, preservedSearchParams)
   return ms ? `${base}?${ms}` : base;
 }
 
+/** ms หลังโหลดเอกสาร — ใช้ referrer จาก liff.line.me เฉพาะช่วงแรก (กัน SPA กลับหน้าแรกแล้วโดนดึงซ้ำ) */
+export const LIFF_REFERRER_MAX_AGE_MS = 8000;
+
 /**
+ * @param opts.referrer document.referrer จากเบราว์เซอร์
+ * @param opts.navigationAgeMs performance.now() ตอนเรียก (ช่วงหลังโหลดหน้า)
  * @returns {string|null} pathname + optional search — เต็ม relative URL หลัง resolve
  */
-export function resolveCustomerDeepLink(pathname, search, hash) {
+export function resolveCustomerDeepLink(pathname, search, hash, opts = {}) {
+  const { referrer = '', navigationAgeMs = Infinity } = opts;
+
   const params = new URLSearchParams(search);
 
   const pageVal = getQueryParamInsensitive(params, 'page');
@@ -179,6 +213,20 @@ export function resolveCustomerDeepLink(pathname, search, hash) {
     const sanitized = sanitizeCustomerOAuthNext(nextRaw);
     stripCustomerRoutingParams(params);
     return mergePreservedQuery(sanitized, params);
+  }
+
+  const bareCustomerLanding =
+    (pathNorm === '/customer' || pathNorm === '/')
+    && !search;
+  if (
+    bareCustomerLanding
+    && referrer
+    && navigationAgeMs < LIFF_REFERRER_MAX_AGE_MS
+  ) {
+    const fromRef = routeFromLiffReferrer(referrer, LIFF_PAGE_ROUTES);
+    if (fromRef && fromRef !== '/customer') {
+      return fromRef;
+    }
   }
 
   return null;
