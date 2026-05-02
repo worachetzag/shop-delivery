@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import config from '../config';
+import { popupNotify } from './PopupProvider';
 import {
   BottomNavWatermarkCart,
   BottomNavWatermarkHome,
@@ -13,9 +14,15 @@ import {
 import { clearDriverSession, getDriverRole, getDriverToken } from '../utils/driverAuth';
 import './Header.css';
 
+/** โพลสรุปออเดอร์ลูกค้า — ป้ายเมนู + toast เมื่อมีการเปลี่ยนแปลง */
+const CUSTOMER_ORDER_ATTENTION_POLL_MS = 18000;
+
 const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [customerAttentionCount, setCustomerAttentionCount] = useState(0);
+  const customerAttentionBaselineRef = useRef(false);
+  const prevCustomerAttentionDigestRef = useRef(null);
   const location = useLocation();
   const { isMobile, isTablet } = useResponsive();
 
@@ -86,6 +93,92 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
     checkLoginStatus();
   }, [location.pathname, location.search]);
 
+  useEffect(() => {
+    const driverMode = location.pathname.startsWith('/driver');
+    const customerZone = location.pathname.startsWith('/customer');
+    const token = localStorage.getItem('auth_token');
+    if (
+      driverMode
+      || !customerZone
+      || !token
+      || location.pathname.startsWith('/customer/login')
+    ) {
+      customerAttentionBaselineRef.current = false;
+      prevCustomerAttentionDigestRef.current = null;
+      setCustomerAttentionCount(0);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const pollAttention = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      try {
+        const res = await fetch(`${config.API_BASE_URL}orders/customer/attention-summary/`, {
+          credentials: 'include',
+          headers: {
+            Authorization: `Token ${token}`,
+            'ngrok-skip-browser-warning': 'true',
+          },
+        });
+        if (cancelled) return;
+        if (res.status === 403) {
+          setCustomerAttentionCount(0);
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        const cnt = Number(data.attention_count || 0);
+        const digest = String(data.digest || '');
+        setCustomerAttentionCount(cnt);
+
+        if (!customerAttentionBaselineRef.current) {
+          customerAttentionBaselineRef.current = true;
+          prevCustomerAttentionDigestRef.current = digest;
+          return;
+        }
+
+        if (digest && digest !== prevCustomerAttentionDigestRef.current) {
+          const onCheckout = location.pathname.startsWith('/customer/checkout');
+          if (!onCheckout) {
+            const prevDigest = prevCustomerAttentionDigestRef.current || '';
+            const prevCnt = prevDigest.includes(':')
+              ? Number(prevDigest.split(':')[0]) || 0
+              : 0;
+            if (cnt > prevCnt) {
+              popupNotify(`มีคำสั่งซื้อที่ติดตามเพิ่ม ${cnt - prevCnt} รายการ`, {
+                type: 'info',
+                duration: 5200,
+              });
+            } else {
+              popupNotify('ร้านอัปเดตสถานะคำสั่งซื้อของคุณ — แตะเมนูออเดอร์เพื่อดู', {
+                type: 'info',
+                duration: 5200,
+              });
+            }
+          }
+          prevCustomerAttentionDigestRef.current = digest;
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    pollAttention();
+    const intervalId = window.setInterval(pollAttention, CUSTOMER_ORDER_ATTENTION_POLL_MS);
+    const onVisibility = () => {
+      if (!document.hidden) pollAttention();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     const driverMode = location.pathname.startsWith('/driver');
     const role = driverMode ? getDriverRole() : localStorage.getItem('user_role') || '';
@@ -139,7 +232,22 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
                 <>
                   <Link to="/customer" className={isCustomerHomeActive ? 'active' : ''}>หน้าแรก</Link>
                   <Link to="/customer/products" className={isCustomerProductsActive ? 'active' : ''}>สินค้า</Link>
-                  <Link to="/customer/orders" className={isActive('/customer/orders') ? 'active' : ''}>คำสั่งซื้อ</Link>
+                  <Link
+                    to="/customer/orders"
+                    className={`${isActive('/customer/orders') ? 'active' : ''} nav-menu-link--badged`.trim()}
+                    aria-label={
+                      customerAttentionCount > 0
+                        ? `คำสั่งซื้อ — ติดตาม ${customerAttentionCount} รายการ`
+                        : 'คำสั่งซื้อ'
+                    }
+                  >
+                    <span>คำสั่งซื้อ</span>
+                    {customerAttentionCount > 0 ? (
+                      <span className="customer-nav-menu-badge" aria-hidden>
+                        {customerAttentionCount > 99 ? '99+' : customerAttentionCount}
+                      </span>
+                    ) : null}
+                  </Link>
                   <Link to="/customer/orders" className={isActiveGroup(['/customer/tracking', '/customer/orders']) ? 'active' : ''}>ติดตาม</Link>
                 </>
               )}
@@ -214,9 +322,24 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
                 </span>
                 <span className="liff-bottom-nav-customer-label">ตะกร้า</span>
               </Link>
-              <Link to="/customer/orders" className={isActiveGroup(['/customer/orders', '/customer/tracking']) ? 'active' : ''}>
-                <span className="liff-bottom-nav-customer-icon" aria-hidden>
-                  <BottomNavWatermarkOrders />
+              <Link
+                to="/customer/orders"
+                className={isActiveGroup(['/customer/orders', '/customer/tracking']) ? 'active' : ''}
+                aria-label={
+                  customerAttentionCount > 0
+                    ? `ออเดอร์ — มีคำสั่งซื้อที่ติดตาม ${customerAttentionCount} รายการ`
+                    : 'ออเดอร์'
+                }
+              >
+                <span className="liff-bottom-nav-customer-icon-wrap">
+                  <span className="liff-bottom-nav-customer-icon" aria-hidden>
+                    <BottomNavWatermarkOrders />
+                  </span>
+                  {customerAttentionCount > 0 ? (
+                    <span className="customer-bottom-nav-badge" aria-hidden>
+                      {customerAttentionCount > 99 ? '99+' : customerAttentionCount}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="liff-bottom-nav-customer-label">ออเดอร์</span>
               </Link>

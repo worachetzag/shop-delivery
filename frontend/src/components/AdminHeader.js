@@ -1,12 +1,34 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
+import { popupNotify } from './PopupProvider';
 import './AdminHeader.css';
 
 const COMPACT_MEDIA = '(max-width: 1024px)';
+/** โพลสถานะออเดอร์ฝั่งแอดมิน — ใกล้เรียลไทม์โดยไม่ต้อง WebSocket */
+const ADMIN_ORDER_ALERT_POLL_MS = 14000;
 
 function navLinkClass(active) {
   return active ? 'admin-nav-link admin-nav-link--active' : 'admin-nav-link';
+}
+
+function OrdersNavLink({ isActivePath, pendingOrders, slipsAwaiting }) {
+  const urgent = Number(pendingOrders || 0) + Number(slipsAwaiting || 0);
+  const badge =
+    urgent > 0 ? (
+      <span className="admin-nav-badge" aria-hidden>
+        {urgent > 99 ? '99+' : urgent}
+      </span>
+    ) : null;
+  return (
+    <Link
+      to="/admin/orders"
+      className={`${navLinkClass(isActivePath('/admin/orders'))} admin-nav-link--with-badge`.trim()}
+    >
+      <span className="admin-nav-link__label">คำสั่งซื้อ</span>
+      {badge}
+    </Link>
+  );
 }
 
 function AdminNavSections({
@@ -14,15 +36,19 @@ function AdminNavSections({
   openGroup,
   toggleGroup,
   showAuditLog,
+  pendingOrders,
+  slipsAwaiting,
 }) {
   return (
     <>
       <Link to="/admin/dashboard" className={navLinkClass(isActivePath('/admin/dashboard'))}>
         ภาพรวม
       </Link>
-      <Link to="/admin/orders" className={navLinkClass(isActivePath('/admin/orders'))}>
-        คำสั่งซื้อ
-      </Link>
+      <OrdersNavLink
+        isActivePath={isActivePath}
+        pendingOrders={pendingOrders}
+        slipsAwaiting={slipsAwaiting}
+      />
       <Link to="/admin/products" className={navLinkClass(isActivePath('/admin/products'))}>
         สินค้า
       </Link>
@@ -105,6 +131,11 @@ const AdminHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [username] = useState(localStorage.getItem('username') || 'Admin');
+  const [pendingOrders, setPendingOrders] = useState(0);
+  const [slipsAwaiting, setSlipsAwaiting] = useState(0);
+  const statsBaselineRef = useRef(false);
+  const prevPendingRef = useRef(null);
+  const prevSlipsRef = useRef(null);
   const [isCompact, setIsCompact] = useState(
     typeof window !== 'undefined' ? window.matchMedia(COMPACT_MEDIA).matches : false,
   );
@@ -145,6 +176,83 @@ const AdminHeader = () => {
 
   useEffect(() => {
     setMenuOpen(false);
+  }, [location.pathname]);
+
+  /** โพลคำสั่งซื้อรอดำเนินการ + สลิปรอตรวจ — แจ้ง toast เมื่อตัวเลขเพิ่มขึ้น */
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    const onAdminApp =
+      location.pathname.startsWith('/admin') && !location.pathname.startsWith('/admin/login');
+    if (!token || !onAdminApp) {
+      statsBaselineRef.current = false;
+      prevPendingRef.current = null;
+      prevSlipsRef.current = null;
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const fetchStats = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      try {
+        const response = await fetch(`${config.API_BASE_URL}orders/admin/stats/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+        });
+        if (!response.ok || cancelled) return;
+        const data = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        const nextPending = Number(data.pending_orders || 0);
+        const nextSlips = Number(data.slips_awaiting_review || 0);
+        setPendingOrders(nextPending);
+        setSlipsAwaiting(nextSlips);
+
+        if (!statsBaselineRef.current) {
+          statsBaselineRef.current = true;
+          prevPendingRef.current = nextPending;
+          prevSlipsRef.current = nextSlips;
+          return;
+        }
+
+        const prevP = prevPendingRef.current ?? nextPending;
+        const prevS = prevSlipsRef.current ?? nextSlips;
+        const deltaP = nextPending - prevP;
+        const deltaS = nextSlips - prevS;
+
+        if (deltaP > 0 || deltaS > 0) {
+          const parts = [];
+          if (deltaP > 0) {
+            parts.push(`มีคำสั่งซื้อใหม่ ${deltaP} รายการ (รอดำเนินการ)`);
+          }
+          if (deltaS > 0) {
+            parts.push(`มีสลิปโอนเงินรอตรวจ ${deltaS} รายการ`);
+          }
+          popupNotify(parts.join(' · '), { type: 'info', duration: 6500 });
+        }
+
+        prevPendingRef.current = nextPending;
+        prevSlipsRef.current = nextSlips;
+      } catch {
+        /* ignore */
+      }
+    };
+
+    fetchStats();
+    const id = window.setInterval(fetchStats, ADMIN_ORDER_ALERT_POLL_MS);
+    const onVis = () => {
+      if (!document.hidden) fetchStats();
+    };
+    document.addEventListener('visibilitychange', onVis);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [location.pathname]);
 
   useEffect(() => {
@@ -200,12 +308,18 @@ const AdminHeader = () => {
     openGroup,
     toggleGroup,
     showAuditLog,
+    pendingOrders,
+    slipsAwaiting,
   }), [
     isActivePath,
     openGroup,
     toggleGroup,
     showAuditLog,
+    pendingOrders,
+    slipsAwaiting,
   ]);
+
+  const ordersAttentionCount = pendingOrders + slipsAwaiting;
 
   const closeDrawer = useCallback(() => setMenuOpen(false), []);
 
@@ -224,10 +338,16 @@ const AdminHeader = () => {
           <div className="admin-header__topbar">
             <button
               type="button"
-              className="admin-header__menu-btn"
+              className={`admin-header__menu-btn${ordersAttentionCount > 0 ? ' admin-header__menu-btn--attention' : ''}`}
               aria-expanded={menuOpen}
               aria-controls="admin-nav-drawer"
-              aria-label={menuOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
+              aria-label={
+                menuOpen
+                  ? 'ปิดเมนู'
+                  : ordersAttentionCount > 0
+                    ? `เปิดเมนู — มีคำสั่งซื้อ/สลิปรอดำเนินการรวม ${ordersAttentionCount} รายการ`
+                    : 'เปิดเมนู'
+              }
               onClick={() => setMenuOpen((o) => !o)}
             >
               <span className="admin-header__menu-icon" aria-hidden>{menuOpen ? '✕' : '☰'}</span>

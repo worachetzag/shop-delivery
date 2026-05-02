@@ -8,6 +8,7 @@ urlpatterns = [
     path('admin/store-settings/', views.AdminStoreSettingsView.as_view(), name='admin-store-settings'),
     path('', views.OrderCreateView.as_view(), name='order-create'),
     path('list/', views.OrderListView.as_view(), name='order-list'),
+    path('customer/attention-summary/', views.CustomerOrderAttentionSummaryView.as_view(), name='customer-order-attention-summary'),
     path('<int:order_id>/assign-driver/', views.AdminAssignDriverView.as_view(), name='admin-assign-driver'),
     path('driver/assignments/', views.DriverAssignmentListView.as_view(), name='driver-assignment-list'),
     path('driver/assignments/<int:assignment_id>/', views.DriverAssignmentDetailView.as_view(), name='driver-assignment-detail'),

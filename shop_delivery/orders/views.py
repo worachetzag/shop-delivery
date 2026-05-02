@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Max
 from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
@@ -503,6 +503,7 @@ class AdminOrderStatsView(APIView):
         orders_qs = Order.objects.all()
         total_orders = orders_qs.count()
         pending_orders = orders_qs.filter(status='pending').count()
+        slips_awaiting_review = orders_qs.filter(payment_slip_status='uploaded').count()
         # Revenue should include only completed orders.
         total_revenue = orders_qs.filter(status='delivered').aggregate(
             total=Sum('total_amount')
@@ -512,8 +513,37 @@ class AdminOrderStatsView(APIView):
         return Response({
             'total_orders': total_orders,
             'pending_orders': pending_orders,
+            'slips_awaiting_review': slips_awaiting_review,
             'total_revenue': float(total_revenue),
             'active_drivers': active_drivers,
+        }, status=status.HTTP_200_OK)
+
+
+class CustomerOrderAttentionSummaryView(APIView):
+    """ลูกค้า — จำนวนออเดอร์ที่ยังติดตาม + digest สำหรับโพลแจ้งเตือนแบบใกล้เรียลไทม์"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if _is_admin_user(request.user):
+            return Response(
+                {'error': 'เฉพาะบัญชีลูกค้า'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        customer = Customer.objects.filter(user=request.user).first()
+        if not customer:
+            return Response({'attention_count': 0, 'digest': '0:'})
+
+        qs = Order.objects.filter(customer=customer)
+        attention_qs = qs.exclude(status__in=['delivered', 'cancelled'])
+        attention_count = attention_qs.count()
+        latest_updated = qs.aggregate(m=Max('updated_at')).get('m')
+        digest_ts = latest_updated.isoformat() if latest_updated else ''
+
+        return Response({
+            'attention_count': attention_count,
+            'digest': f'{attention_count}:{digest_ts}',
         }, status=status.HTTP_200_OK)
 
 

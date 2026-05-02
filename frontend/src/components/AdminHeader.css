@@ -65,6 +65,37 @@
   border-color: rgba(103, 232, 249, 0.95);
 }
 
+.admin-nav-link--with-badge {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-nav-link__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-nav-badge {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45);
+}
+
+.admin-nav-link--active .admin-nav-badge {
+  background: #fff;
+  color: #0284c7;
+  box-shadow: none;
+}
+
 .admin-nav-section-label {
   font-size: 0.74rem;
   color: #93c5fd;
@@ -190,6 +221,22 @@
 
 .admin-header__menu-btn:active {
   background: rgba(255, 255, 255, 0.35);
+}
+
+.admin-header__menu-btn--attention {
+  position: relative;
+}
+
+.admin-header__menu-btn--attention::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
 .admin-header__menu-icon {
