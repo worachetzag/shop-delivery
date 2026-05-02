@@ -42,7 +42,8 @@
 | `CSRF_TRUSTED_ORIGINS_EXTRA` | เดียวกับแถวบน |
 | `NGROK_CROSS_SITE_COOKIES` | `True` (ให้ cookie/session ข้ามโดเมนได้เมื่อ API กับ SPA คนละโดเมนและเป็น HTTPS) |
 | `RESET_DB_ON_START` | **`0`** บน production เสมอ — ถ้าเป็น `1` จะ `flush` DB ทุกครั้งที่ container start และโหลดข้อมูลสำรองยาวมาก → Render ขึ้น `No open ports detected` นานจนกว่า startup จะจบ |
-| `SEED_DEMO_ON_START` | **`0`** เป็นค่าปกติ — ใส่ **`1` เฉพาะครั้งเดียว** เมื่ออยากให้รัน `seed_grocery_demo` + โหลดรูป (ใช้เวลานาน) แล้วตั้งกลับเป็น `0` ทันที — อย่าปล่อย `1` ค้างเพราะทุก deploy/restart จะ seed ใหม่ทั้งก้อน |
+| `SEED_IMAGES_ONLY_ON_START` | **`0`** เป็นค่าปกติ — ใส่ **`1` เฉพาะครั้งเดียว** เมื่ออยากให้ตอน boot รัน `seed_grocery_demo --images-only --refresh-images` (โหลดรูปลง container **อย่างเดียว** ไม่แตะสต็อก/ราคา) แล้วตั้งกลับ `0` ทันที — ใช้เมื่อไม่มี Render Shell หรืออยากเติมรูปหลัง redeploy โดยไม่รัน seed เต็ม |
+| `SEED_DEMO_ON_START` | **`0`** เป็นค่าปกติ — ใส่ **`1` เฉพาะครั้งเดียว** เมื่ออยากให้รัน `seed_grocery_demo` เต็มรูปแบบ + โหลดรูป (ใช้เวลานาน) แล้วตั้งกลับเป็น `0` ทันที — อย่าปล่อย `1` ค้างเพราะทุก deploy/restart จะ seed ใหม่ทั้งก้อน — ถ้าตั้ง **`SEED_IMAGES_ONLY_ON_START=1`** ด้วย ระบบจะรันแค่โหมดรูป (ไม่รัน seed เต็ม) |
 
 ค่าที่ควรมีถ้าใช้ LINE / LIFF / PromptPay (ตามที่มีอยู่ในโปรเจ็กต์):
 
@@ -51,7 +52,7 @@
 
 5. กด **Create Web Service** แล้วรอ build เสร็จ  
 6. จด URL backend เช่น `https://shop-delivery-api.onrender.com`
-7. ถ้ารูปจาก seed ขึ้น 404 หลัง deploy/restart ให้ตั้ง `SEED_DEMO_ON_START=1` แล้ว deploy **หนึ่งรอบ** — พอขึ้นปกติแล้วให้ตั้งกลับเป็น `0` (ถ้าปล่อย `1` ค้าง + `RESET_DB_ON_START=1` จะเห็น log คล้าย seed หมวดสินค้ายาวๆ และ `"No open ports detected"` ค้างจนกว่า startup จะจบ)
+7. ถ้ารูปจาก seed ขึ้น 404 หลัง deploy/restart ให้ตั้ง **`SEED_IMAGES_ONLY_ON_START=1`** (หรือ `SEED_DEMO_ON_START=1` ถ้าต้องการ seed เต็ม) แล้ว deploy **หนึ่งรอบ** — พอขึ้นปกติแล้วให้ตั้งกลับเป็น `0` (ถ้าปล่อย `1` ค้าง + `RESET_DB_ON_START=1` จะเห็น log คล้าย seed หมวดสินค้ายาวๆ และ `"No open ports detected"` ค้างจนกว่า startup จะจบ)
 
 ### Shell บน Render (ครั้งแรก)
 
@@ -74,9 +75,10 @@ cd shop_delivery && python manage.py createsuperuser
 รันโหลดรูปบน **ตัว container เดียวกับที่รันเว็บ** โดยให้คำสั่งใน `Dockerfile` ทำงานตอน **เริ่ม service**:
 
 1. ใน Dashboard → Environment ให้ **`RESET_DB_ON_START=0`** (สำคัญ — อย่าปล่อยเป็น `1`)
-2. ตั้ง **`SEED_DEMO_ON_START=1`** ชั่วคราว
-3. กด **Manual Deploy** / redeploy **หนึ่งรอบ** — ระหว่าง boot จะรัน `seed_grocery_demo` (โหลดรูปลงดิสก์ของ container บน Render)
-4. พอเว็บขึ้นปกติและรูปโหลดได้แล้ว ให้ตั้ง **`SEED_DEMO_ON_START=0`** กลับทันที — อย่าปล่อย `1` ค้าง (ทุก restart จะ seed ใหม่และช้ามาก)
+2. **แนะนำ (มีสินค้าในฐานแล้ว แค่เติมรูป):** ตั้ง **`SEED_IMAGES_ONLY_ON_START=1`** ชั่วคราว — boot จะรัน `seed_grocery_demo --images-only --refresh-images` (ไม่เขียนทับสต็อก)
+3. **ถ้ายังไม่มีสินค้าในฐาน / อยาก sync ชุด demo เต็ม:** ใช้ **`SEED_DEMO_ON_START=1`** แทน (หรือใช้หลัง flush DB ใหม่)
+4. กด **Manual Deploy** / redeploy **หนึ่งรอบ**
+5. พอเว็บขึ้นปกติและรูปโหลดได้แล้ว ให้ตั้ง **`SEED_IMAGES_ONLY_ON_START=0`** และ **`SEED_DEMO_ON_START=0`** กลับทันที — อย่าปล่อย `1` ค้าง (ทุก restart จะช้ามาก)
 
 ไม่มีค่า Shell แยก — จ่ายแค่แผน Web Service ตามที่ใช้อยู่ (ฟรีทียังอยู่ในขีดจำกัดฟรี)
 

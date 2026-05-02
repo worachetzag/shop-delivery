@@ -19,6 +19,8 @@ services:
         value: "0"
       - key: SEED_DEMO_ON_START
         value: "0"
+      - key: SEED_IMAGES_ONLY_ON_START
+        value: "0"
       - key: DEBUG
         value: "False"
       - key: SECRET_KEY

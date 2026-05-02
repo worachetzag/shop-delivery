@@ -51,6 +51,7 @@ class Command(BaseCommand):
                 self.style.WARNING(
                     'ถ้าเพิ่งรัน seed บนเครื่องตัวเองขณะ DATABASE_URL ชี้ production → '
                     'ไฟล์จะอยู่แค่เครื่องคุณ ไม่ได้อยู่บน Render '
-                    '(ให้รัน seed_grocery_demo --refresh-images ใน Render Shell แทน)'
+                    '(ให้รัน seed_grocery_demo --images-only --refresh-images --no-input ใน Render Shell '
+                    'เพื่อโหลดรูปอย่างเดียวโดยไม่แตะสต็อก)'
                 )
             )

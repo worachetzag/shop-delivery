@@ -4,17 +4,22 @@
 โหมดปกติ: upsert (ไม่ลบข้อมูลเดิม)
 โหมด reset: ลบสินค้า/หมวดหมู่เดิมก่อนแล้วค่อยใส่ใหม่
 
+ค่าเริ่มต้น: อัปเดตสินค้าเดิมโดย **ไม่แตะ stock_quantity** (กันสต็อกจริงจากการ seed)
+สินค้าใหม่ที่สร้างจาก seed ยังได้จำนวนตามชุด SEED
+
 รัน:
     python manage.py seed_grocery_demo
     python manage.py seed_grocery_demo --no-input
     python manage.py seed_grocery_demo --reset --no-input
+    python manage.py seed_grocery_demo --images-only --refresh-images --no-input   # โหลดรูปอย่างเดียว
+    python manage.py seed_grocery_demo --sync-stock --no-input                    # เขียนทับสต็อกให้ตรงชุด demo
 """
 
 from urllib.parse import urlparse
 
 import requests
 from django.core.files.base import ContentFile
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
 
@@ -166,6 +171,16 @@ class Command(BaseCommand):
             action='store_true',
             help='บังคับโหลดรูปใหม่ แม้สินค้ามีรูปอยู่แล้ว',
         )
+        parser.add_argument(
+            '--images-only',
+            action='store_true',
+            help='อัปเดตเฉพาะรูปสินค้าที่มีอยู่แล้ว (ไม่แตะราคา/สต็อก/คำอธิบาย) — จับคู่ชื่อ+หมวดจากชุด SEED',
+        )
+        parser.add_argument(
+            '--sync-stock',
+            action='store_true',
+            help='เมื่อ upsert ให้เขียนทับ stock_quantity ตามชุด SEED (ค่าเริ่มต้นคือไม่เขียนทับสต็อกของแถวเดิม)',
+        )
 
     @staticmethod
     def _default_image_url(product_name):
@@ -207,6 +222,13 @@ class Command(BaseCommand):
         reset = options['reset']
         skip_images = options['skip_images']
         refresh_images = options['refresh_images']
+        images_only = options['images_only']
+        sync_stock = options['sync_stock']
+
+        if images_only and reset:
+            raise CommandError('ใช้ --images-only กับ --reset พร้อมกันไม่ได้')
+        if images_only and skip_images:
+            raise CommandError('ใช้ --images-only ร่วมกับ --skip-images ไม่ได้')
 
         if reset and not no_input:
             self.stdout.write(
@@ -219,6 +241,10 @@ class Command(BaseCommand):
             if confirm != 'yes':
                 self.stdout.write(self.style.ERROR('ยกเลิกแล้ว'))
                 return
+
+        if images_only:
+            self._run_images_only(skip_images, refresh_images)
+            return
 
         with transaction.atomic():
             if reset:
@@ -252,19 +278,25 @@ class Command(BaseCommand):
                     *extra,
                 ) in items:
                     image_url = extra[0] if extra else self._default_image_url(name)
+                    defaults = {
+                        'description': desc or '',
+                        'price': price,
+                        'unit_label': unit_label,
+                        'unit_detail': unit_detail,
+                        'category': cat,
+                        'is_available': True,
+                        'is_special_offer': is_special,
+                    }
+                    if sync_stock:
+                        defaults['stock_quantity'] = stock
+
                     product, created = Product.objects.update_or_create(
                         name=name,
-                        defaults={
-                            'description': desc or '',
-                            'price': price,
-                            'unit_label': unit_label,
-                            'unit_detail': unit_detail,
-                            'category': cat,
-                            'stock_quantity': stock,
-                            'is_available': True,
-                            'is_special_offer': is_special,
-                        },
+                        defaults=defaults,
                     )
+                    if created and not sync_stock:
+                        product.stock_quantity = stock
+                        product.save(update_fields=['stock_quantity'])
                     if created:
                         total_created += 1
                     else:
@@ -280,5 +312,51 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f'เสร็จแล้ว: {len(SEED)} หมวดหมู่, {total_products} สินค้า '
                 f'(เพิ่มใหม่ {total_created}, อัปเดต {total_updated}, โหลดรูป {total_images})'
+                + (' — สต็อกของแถวเดิมไม่ถูกเขียนทับ (ใช้ --sync-stock ถ้าต้องการให้ตรงชุด demo)' if not sync_stock else '')
+            )
+        )
+
+    def _run_images_only(self, skip_images, refresh_images):
+        """โหลด/แทนที่รูปตามชุด SEED เฉพาะสินค้าที่มีอยู่แล้ว — ไม่แตะฟิลด์อื่น"""
+        total_images = 0
+        missing_cat = 0
+        missing_prod = 0
+
+        with transaction.atomic():
+            for cat_name, cat_desc, items in SEED:
+                cat = Category.objects.filter(name=cat_name).first()
+                if not cat:
+                    missing_cat += 1
+                    self.stdout.write(self.style.WARNING(
+                        f'ข้ามหมวด "{cat_name}" (ยังไม่มีในฐานข้อมูล)'
+                    ))
+                    continue
+
+                for (
+                    name,
+                    desc,
+                    price,
+                    unit_label,
+                    unit_detail,
+                    stock,
+                    is_special,
+                    *extra,
+                ) in items:
+                    image_url = extra[0] if extra else self._default_image_url(name)
+                    product = Product.objects.filter(name=name, category=cat).first()
+                    if not product:
+                        missing_prod += 1
+                        self.stdout.write(self.style.WARNING(
+                            f'  ข้าม "{name}" ในหมวด "{cat_name}" (ไม่พบสินค้า)'
+                        ))
+                        continue
+                    if not skip_images and (refresh_images or not product.image):
+                        if self._attach_image_from_url(product, image_url):
+                            total_images += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'โหมด images-only เสร็จแล้ว: โหลดรูป {total_images} รายการ '
+                f'(หมวดที่ไม่มี {missing_cat}, สินค้าที่ไม่พบ {missing_prod})'
             )
         )
