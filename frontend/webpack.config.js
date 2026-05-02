@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
@@ -62,6 +63,16 @@ module.exports = {
                 '_redirects',
                 new compiler.webpack.sources.RawSource('/* /index.html 200\n')
               );
+              try {
+                const lineFlowPath = path.join(__dirname, 'public', 'line-flow.html');
+                const lineFlowHtml = fs.readFileSync(lineFlowPath, 'utf8');
+                compilation.emitAsset(
+                  'line-flow.html',
+                  new compiler.webpack.sources.RawSource(lineFlowHtml),
+                );
+              } catch (err) {
+                console.warn('[webpack] Could not emit line-flow.html:', err.message);
+              }
             }
           );
         });

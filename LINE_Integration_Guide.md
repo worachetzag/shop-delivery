@@ -49,6 +49,14 @@ LINE_PAY_MERCHANT_ID=your-line-pay-merchant-id
 
 ## 📱 LINE LIFF Features
 
+### โฟลว์ภาพสำหรับลูกค้า (แชร์ลิงก์ได้)
+
+หลัง deploy frontend มีหน้าเว็บนิ่งที่มีไดอะแกรมอธิบายภาพรวม (เปิดจากมือถือหรือคอมได้):
+
+`https://<โดเมน-frontend>/line-flow.html`
+
+ตัวอย่าง: [https://shop-delivery.pages.dev/line-flow.html](https://shop-delivery.pages.dev/line-flow.html)
+
 ### สำหรับลูกค้า
 - **ดูสินค้า** - ดูรายการสินค้าทั้งหมด
 - **ตะกร้าสินค้า** - จัดการสินค้าในตะกร้า
