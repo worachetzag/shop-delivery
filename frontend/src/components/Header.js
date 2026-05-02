@@ -10,6 +10,7 @@ import {
   BottomNavWatermarkProducts,
   BottomNavWatermarkProfile,
 } from './CustomerBottomNavWatermarkIcons';
+import { clearDriverSession, getDriverRole, getDriverToken } from '../utils/driverAuth';
 import './Header.css';
 
 const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
@@ -20,8 +21,9 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const token = localStorage.getItem('auth_token');
-      const role = localStorage.getItem('user_role') || '';
+      const driverMode = location.pathname.startsWith('/driver');
+      const token = driverMode ? getDriverToken() : localStorage.getItem('auth_token');
+      const role = driverMode ? getDriverRole() : localStorage.getItem('user_role') || '';
       if (!token) {
         setIsLoggedIn(false);
         setUserProfile(null);
@@ -47,7 +49,10 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
         }
 
         if (role === 'driver') {
-          const username = localStorage.getItem('username') || 'คนขับ';
+          const username =
+            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('driver_username')) ||
+            localStorage.getItem('username') ||
+            'คนขับ';
           setIsLoggedIn(true);
           setUserProfile({
             displayName: username,
@@ -82,7 +87,8 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   }, [location.pathname, location.search]);
 
   const handleLogout = async () => {
-    const role = localStorage.getItem('user_role') || '';
+    const driverMode = location.pathname.startsWith('/driver');
+    const role = driverMode ? getDriverRole() : localStorage.getItem('user_role') || '';
     try {
       await fetch(`${config.LIFF_ENDPOINT_URL}/accounts/logout/`, {
         method: 'POST',
@@ -91,12 +97,16 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
     } catch (error) {
       console.error('Error logging out:', error);
     } finally {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_role');
-      localStorage.removeItem('username');
+      if (driverMode || role === 'driver') {
+        clearDriverSession();
+      } else {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('username');
+      }
       setIsLoggedIn(false);
       setUserProfile(null);
-      window.location.href = role === 'driver' ? '/driver/login' : '/customer/login';
+      window.location.href = driverMode || role === 'driver' ? '/driver/login' : '/customer/login';
     }
   };
 

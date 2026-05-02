@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import ApiPaginationBar from '../components/ApiPaginationBar';
@@ -7,6 +7,8 @@ import './AdminDashboard.css';
 
 const ADMIN_ORDERS_PAGE_SIZE = 15;
 const ADMIN_PRODUCTS_PAGE_SIZE = 20;
+
+const ADMIN_PRODUCTS_STOCK_FILTERS = new Set(['all', 'low', 'out', 'promo', 'featured']);
 
 function getProductAvailableQty(product) {
   if (product.available_quantity != null && product.available_quantity !== '') {
@@ -59,6 +61,55 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const UNIT_DETAIL_OPTIONS = ['มล.', 'ลิตร', 'กรัม', 'กก.', 'ชิ้น', 'แพ็ค', 'ขวด', 'กล่อง', 'ซอง', 'ถุง'];
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isAdminProductsListRoute = location.pathname === '/admin/products';
+  const productsPage = useMemo(() => {
+    if (!isAdminProductsListRoute) return 1;
+    const raw = parseInt(searchParams.get('page') || '1', 10);
+    return Number.isFinite(raw) && raw >= 1 ? raw : 1;
+  }, [isAdminProductsListRoute, searchParams]);
+  const productsStockFilter = useMemo(() => {
+    if (!isAdminProductsListRoute) return 'all';
+    const s = searchParams.get('stock') || 'all';
+    return ADMIN_PRODUCTS_STOCK_FILTERS.has(s) ? s : 'all';
+  }, [isAdminProductsListRoute, searchParams]);
+  const adminProductsReturnSearch = useMemo(
+    () => (location.search && location.search.startsWith('?') ? location.search : ''),
+    [location.search],
+  );
+
+  const handleProductsPageChange = useCallback(
+    (nextPage) => {
+      const p = Math.max(1, Number(nextPage) || 1);
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          if (p <= 1) sp.delete('page');
+          else sp.set('page', String(p));
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const handleProductsStockFilterChange = useCallback(
+    (stock) => {
+      const nextStock = ADMIN_PRODUCTS_STOCK_FILTERS.has(stock) ? stock : 'all';
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          sp.delete('page');
+          if (!nextStock || nextStock === 'all') sp.delete('stock');
+          else sp.set('stock', nextStock);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const ordersCustomerIdFilter = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     const raw = (sp.get('customer_id') || '').trim();
@@ -85,10 +136,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   /** all | delivery | pickup — แยกจัดส่ง vs มารับที่ร้าน */
   const [ordersFulfillmentFilter, setOrdersFulfillmentFilter] = useState('all');
   const [products, setProducts] = useState([]);
-  const [productsPage, setProductsPage] = useState(1);
   const [productsTotalCount, setProductsTotalCount] = useState(0);
-  /** all | low | out | promo (ลดราคา) | featured (แนะนำ) — กรองรายการสินค้าแอดมิน */
-  const [productsStockFilter, setProductsStockFilter] = useState('all');
   const [categories, setCategories] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -1270,7 +1318,15 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         {activeTab === 'products' && (
           <div className="products-section">
             <div className="personnel-create-actions" style={{ marginBottom: '12px' }}>
-              <button type="button" className="btn-primary" onClick={() => navigate('/admin/products/new')}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() =>
+                  navigate('/admin/products/new', {
+                    state: { adminProductsReturnSearch },
+                  })
+                }
+              >
                 ➕ เพิ่มสินค้าใหม่
               </button>
             </div>
@@ -1289,30 +1345,21 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 <button
                   type="button"
                   className={`admin-fulfillment-chip ${productsStockFilter === 'all' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setProductsStockFilter('all');
-                    setProductsPage(1);
-                  }}
+                  onClick={() => handleProductsStockFilterChange('all')}
                 >
                   สินค้าทั้งหมด
                 </button>
                 <button
                   type="button"
                   className={`admin-fulfillment-chip admin-fulfillment-chip--pickup ${productsStockFilter === 'low' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setProductsStockFilter('low');
-                    setProductsPage(1);
-                  }}
+                  onClick={() => handleProductsStockFilterChange('low')}
                 >
                   ใกล้หมด
                 </button>
                 <button
                   type="button"
                   className={`admin-fulfillment-chip ${productsStockFilter === 'out' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setProductsStockFilter('out');
-                    setProductsPage(1);
-                  }}
+                  onClick={() => handleProductsStockFilterChange('out')}
                   style={{ borderColor: '#fecaca' }}
                 >
                   สินค้าหมด
@@ -1320,10 +1367,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 <button
                   type="button"
                   className={`admin-fulfillment-chip admin-fulfillment-chip--delivery ${productsStockFilter === 'promo' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setProductsStockFilter('promo');
-                    setProductsPage(1);
-                  }}
+                  onClick={() => handleProductsStockFilterChange('promo')}
                   title="สินค้าที่มีราคาก่อนลดสูงกว่าราคาขายจริง"
                 >
                   สินค้าลดราคา
@@ -1331,10 +1375,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 <button
                   type="button"
                   className={`admin-fulfillment-chip ${productsStockFilter === 'featured' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setProductsStockFilter('featured');
-                    setProductsPage(1);
-                  }}
+                  onClick={() => handleProductsStockFilterChange('featured')}
                   title="สินค้าที่ตั้งให้แสดงในหมวดแนะนำบนหน้าแรก"
                 >
                   สินค้าแนะนำ
@@ -1366,7 +1407,11 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       <tr
                         key={product.id}
                         className={getAdminProductRowClassName(product)}
-                        onClick={() => navigate(`/admin/products/${product.id}/edit`)}
+                        onClick={() =>
+                          navigate(`/admin/products/${product.id}/edit`, {
+                            state: { adminProductsReturnSearch },
+                          })
+                        }
                         title="คลิกเพื่อแก้ไขสินค้า"
                       >
                         <td>{product.name}</td>
@@ -1415,7 +1460,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 count={productsTotalCount}
                 page={productsPage}
                 pageSize={ADMIN_PRODUCTS_PAGE_SIZE}
-                onPageChange={setProductsPage}
+                onPageChange={handleProductsPageChange}
               />
             </div>
           </div>

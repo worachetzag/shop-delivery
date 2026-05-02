@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { AdminBackLink } from '../components/AdminBackButton';
@@ -29,7 +29,12 @@ const AdminProductFormPage = () => {
   const popup = usePopup();
   const { productId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const isEditMode = Boolean(productId);
+  const productsListPath = useMemo(
+    () => `/admin/products${location.state?.adminProductsReturnSearch || ''}`,
+    [location.state?.adminProductsReturnSearch],
+  );
   const getAdminToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
 
   const [loading, setLoading] = useState(true);
@@ -198,7 +203,7 @@ const AdminProductFormPage = () => {
         setImageFile(null);
       } else {
         popup.info(isEditMode ? 'บันทึกการแก้ไขสินค้าเรียบร้อย' : 'เพิ่มสินค้าใหม่เรียบร้อย');
-        navigate('/admin/products');
+        navigate(productsListPath);
       }
     } catch (error) {
       popup.error(error.message || 'บันทึกสินค้าไม่สำเร็จ');
@@ -215,7 +220,7 @@ const AdminProductFormPage = () => {
     <div className="admin-dashboard">
       <div className="admin-content">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-          <AdminBackLink to="/admin/products" ariaLabel="รายการสินค้า" />
+          <AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />
           <h2 style={{ margin: 0 }}>{pageTitle}</h2>
         </div>
         <form className="product-form" onSubmit={handleSubmit}>
@@ -321,7 +326,7 @@ const AdminProductFormPage = () => {
                 </button>
               </>
             )}
-            <AdminBackLink to="/admin/products" ariaLabel="รายการสินค้า" />
+            <AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />
           </div>
         </form>
       </div>

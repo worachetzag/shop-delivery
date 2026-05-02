@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { setDriverSession } from '../utils/driverAuth';
 import './DriverLogin.css';
 
 const DriverLogin = () => {
@@ -28,8 +29,11 @@ const DriverLogin = () => {
       
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('auth_token', data.token);
-        localStorage.setItem('user_role', data.role || 'driver');
+        setDriverSession({
+          token: data.token,
+          role: data.role || 'driver',
+          username: data.username || '',
+        });
         navigate('/driver/dashboard');
       } else {
         const err = await response.json().catch(() => ({}));

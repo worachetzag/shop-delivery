@@ -19,7 +19,8 @@ const DriverDashboard = () => {
 
   const loadAssignments = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token =
+        typeof window !== 'undefined' ? sessionStorage.getItem('driver_auth_token') : null;
       const response = await fetch(`${config.API_BASE_URL}orders/driver/assignments/?page_size=50`, {
         headers: {
           ...(token ? { Authorization: `Token ${token}` } : {}),

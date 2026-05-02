@@ -29,7 +29,7 @@ const AdminLogin = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('admin_token', data.token);
-        localStorage.setItem('auth_token', data.token);
+        /* ไม่เขียน auth_token — ใช้เฉพาะลูกค้า/LIFF; เขียนร่วมทำให้แท็บคนขับได้สิทธิ์แอดมิน */
         localStorage.setItem('user_role', data.role);
         localStorage.setItem('username', data.username);
         if (data.can_view_staff_audit) {

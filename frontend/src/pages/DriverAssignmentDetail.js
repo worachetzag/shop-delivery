@@ -23,7 +23,8 @@ const DriverAssignmentDetail = () => {
 
   const loadAssignment = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token =
+        typeof window !== 'undefined' ? sessionStorage.getItem('driver_auth_token') : null;
       const response = await fetch(`${config.API_BASE_URL}orders/driver/assignments/${assignmentId}/`, {
         headers: {
           ...(token ? { Authorization: `Token ${token}` } : {}),
@@ -77,7 +78,8 @@ const DriverAssignmentDetail = () => {
     const { withSaving = true, silentError = false } = options;
     if (withSaving) setSaving(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token =
+        typeof window !== 'undefined' ? sessionStorage.getItem('driver_auth_token') : null;
       const payload = {
         status,
         current_location_text: locationText || '',

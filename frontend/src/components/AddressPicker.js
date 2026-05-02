@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { usePopup } from './PopupProvider';
+import './AddressPicker.css';
 
 // Fix default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -233,11 +234,6 @@ const AddressPicker = ({ onLocationSelect, onAddressSelect, initialLat = 13.7563
     );
   };
 
-  const handleOpenGoogleMaps = () => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${selectedLat},${selectedLon}`;
-    window.location.assign(url);
-  };
-
   const handleSearch = async () => {
     if (!searchQuery) return;
     
@@ -262,75 +258,44 @@ const AddressPicker = ({ onLocationSelect, onAddressSelect, initialLat = 13.7563
   };
 
   return (
-    <div style={{ width: '100%', height: '400px', border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
-      <div style={{ padding: '10px', backgroundColor: '#f5f5f5' }}>
+    <div className="address-picker-wrap">
+      <div className="address-picker-toolbar">
         <input
           type="text"
+          className="address-picker-search-input"
           placeholder="ค้นหาที่อยู่..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          style={{
-            width: '65%',
-            padding: '8px',
-            marginRight: '5px',
-            border: '1px solid #ccc',
-            borderRadius: '4px'
-          }}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          aria-label="ค้นหาที่อยู่"
         />
         <button
+          type="button"
+          className="address-picker-tool-btn address-picker-tool-btn--gps"
           onClick={handleGetCurrentLocation}
           disabled={isLoading}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: '#e74c3c',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '18px'
-          }}
           title="ใช้ GPS หาตำแหน่งปัจจุบัน"
         >
           📍
         </button>
         <button
+          type="button"
+          className="address-picker-tool-btn address-picker-tool-btn--search"
           onClick={handleSearch}
           disabled={isLoading}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: '#00B900',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginLeft: '5px'
-          }}
+          title="ค้นหา"
         >
           {isLoading ? '⏳' : '🔍'}
         </button>
-        <button
-          onClick={handleOpenGoogleMaps}
-          style={{
-            padding: '8px 12px',
-            marginLeft: '5px',
-            backgroundColor: '#4285f4',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          🗺️
-        </button>
       </div>
-      
-      <MapContainer
-        center={[selectedLat, selectedLon]}
-        zoom={15}
-        style={{ height: '85%', width: '100%' }}
-        scrollWheelZoom
-      >
+
+      <div className="address-picker-map-shell">
+        <MapContainer
+          center={[selectedLat, selectedLon]}
+          zoom={15}
+          style={{ height: '100%', width: '100%' }}
+          scrollWheelZoom
+        >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -346,9 +311,10 @@ const AddressPicker = ({ onLocationSelect, onAddressSelect, initialLat = 13.7563
             Lon: {Number.isFinite(selectedLon) ? selectedLon.toFixed(6) : '—'}
           </Popup>
         </Marker>
-      </MapContainer>
-      
-      <div style={{ padding: '10px', backgroundColor: '#fff', borderTop: '1px solid #ddd' }}>
+        </MapContainer>
+      </div>
+
+      <div className="address-picker-footer">
         <div style={{ marginBottom: '5px' }}>
           <strong>📍 พิกัด:</strong>{' '}
         {Number.isFinite(selectedLat) ? selectedLat.toFixed(6) : '—'},{' '}

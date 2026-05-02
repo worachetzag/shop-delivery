@@ -106,6 +106,11 @@ function AppContent() {
   }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {
+    /* หน้าคนขับใช้ sessionStorage แยกแท็บ — อย่าเด้งจาก user_role แอดมินใน localStorage */
+    if (location.pathname.startsWith('/driver')) {
+      return;
+    }
+
     const userRole = localStorage.getItem('user_role') || '';
     const token = localStorage.getItem('auth_token') || localStorage.getItem('admin_token');
     if (!token || !userRole) return;
@@ -132,6 +137,9 @@ function AppContent() {
   /** ลูกค้าที่ล็อกอินแล้วแต่ยังไม่กรอกโปรไฟล์ครบ — จำกัดอยู่หน้าโปรไฟล์ / login */
   useEffect(() => {
     let cancelled = false;
+    if (location.pathname.startsWith('/driver')) {
+      return;
+    }
     const token = localStorage.getItem('auth_token');
     const role = localStorage.getItem('user_role') || '';
     if (!token) return;

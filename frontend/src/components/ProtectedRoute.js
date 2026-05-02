@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import config from '../config';
+import {
+  DRIVER_ROLE_KEY,
+  DRIVER_TOKEN_KEY,
+  clearDriverSession,
+  getDriverRole,
+  getDriverToken,
+} from '../utils/driverAuth';
 
 const ADMIN_ROLES = ['admin', 'store_admin', 'super_admin'];
 const DRIVER_ROLES = ['driver'];
@@ -15,8 +22,15 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
       const urlParams = new URLSearchParams(location.search);
       const tokenFromUrl = urlParams.get('token');
       const adminToken = localStorage.getItem('admin_token');
-      const existingToken = requireAdmin ? (adminToken || localStorage.getItem('auth_token')) : localStorage.getItem('auth_token');
-      const token = existingToken || tokenFromUrl;
+      let existingToken;
+      if (requireAdmin) {
+        existingToken = adminToken || localStorage.getItem('auth_token');
+      } else if (requireDriver) {
+        existingToken = getDriverToken();
+      } else {
+        existingToken = localStorage.getItem('auth_token');
+      }
+      let token = existingToken || tokenFromUrl;
 
       if (!token) {
         setIsAuthenticated(false);
@@ -28,14 +42,22 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
       if (!existingToken && tokenFromUrl) {
         if (requireAdmin) {
           localStorage.setItem('admin_token', tokenFromUrl);
+        } else if (requireDriver) {
+          sessionStorage.setItem(DRIVER_TOKEN_KEY, tokenFromUrl);
+          sessionStorage.setItem(DRIVER_ROLE_KEY, 'driver');
         } else {
           localStorage.setItem('auth_token', tokenFromUrl);
         }
       }
 
       try {
-        const userRole = localStorage.getItem('user_role') || '';
-        if (!requireAdmin && !requireDriver && DRIVER_ROLES.includes(userRole)) {
+        const userRoleLs = localStorage.getItem('user_role') || '';
+        const userRoleDriver = getDriverRole();
+        if (
+          !requireAdmin &&
+          !requireDriver &&
+          (DRIVER_ROLES.includes(userRoleLs) || DRIVER_ROLES.includes(userRoleDriver))
+        ) {
           // Driver should not access customer-only protected pages.
           setIsAuthenticated(true);
           setNeedsProfileCompletion(false);
@@ -64,7 +86,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
             credentials: 'include',
           });
         } else if (requireDriver) {
-          const userRole = localStorage.getItem('user_role');
+          const userRole = getDriverRole();
           if (!DRIVER_ROLES.includes(userRole || '')) {
             setIsAuthenticated(false);
             setNeedsProfileCompletion(false);
@@ -100,6 +122,8 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
             localStorage.removeItem('admin_token');
             localStorage.removeItem('user_role');
             localStorage.removeItem('username');
+          } else if (requireDriver) {
+            clearDriverSession();
           } else {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user_role');
@@ -125,11 +149,15 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
       } catch (error) {
         if (requireAdmin) {
           localStorage.removeItem('admin_token');
+        } else if (requireDriver) {
+          clearDriverSession();
         } else {
           localStorage.removeItem('auth_token');
         }
-        localStorage.removeItem('user_role');
-        localStorage.removeItem('username');
+        if (!requireDriver) {
+          localStorage.removeItem('user_role');
+          localStorage.removeItem('username');
+        }
         setIsAuthenticated(false);
         setNeedsProfileCompletion(false);
       } finally {
@@ -148,7 +176,8 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
 
-  const userRole = localStorage.getItem('user_role');
+  const userRole =
+    requireDriver ? getDriverRole() : localStorage.getItem('user_role');
   /** ตรวจผ่าน accounts/api-profile/ แล้ว — ถ้ายังไม่ครบให้จับอยู่หน้าโปรไฟล์ (ไม่พึ่ง user_role เพราะบางเซสชันอาจว่าง) */
   if (
     needsProfileCompletion
@@ -165,22 +194,24 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
     );
   }
 
-  if (!requireAdmin && !requireDriver && DRIVER_ROLES.includes(userRole || '')) {
+  const lsRole = localStorage.getItem('user_role') || '';
+  if (
+    !requireAdmin &&
+    !requireDriver &&
+    (DRIVER_ROLES.includes(lsRole) || DRIVER_ROLES.includes(getDriverRole()))
+  ) {
     return <Navigate to="/driver/dashboard" replace state={{ from: location }} />;
   }
-  if (!requireAdmin && !requireDriver && ADMIN_ROLES.includes(userRole || '')) {
+  if (!requireAdmin && !requireDriver && ADMIN_ROLES.includes(lsRole)) {
     return <Navigate to="/admin/orders" replace state={{ from: location }} />;
   }
-  if (requireAdmin && !ADMIN_ROLES.includes(userRole || '')) {
-    if (DRIVER_ROLES.includes(userRole || '')) {
+  if (requireAdmin && !ADMIN_ROLES.includes(lsRole || '')) {
+    if (DRIVER_ROLES.includes(getDriverRole())) {
       return <Navigate to="/driver/dashboard" replace state={{ from: location }} />;
     }
     return <Navigate to="/admin/login" replace state={{ from: location }} />;
   }
   if (requireDriver && !DRIVER_ROLES.includes(userRole || '')) {
-    if (ADMIN_ROLES.includes(userRole || '')) {
-      return <Navigate to="/admin/orders" replace state={{ from: location }} />;
-    }
     return <Navigate to="/driver/login" replace state={{ from: location }} />;
   }
 
