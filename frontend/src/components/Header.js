@@ -14,7 +14,7 @@ import {
 import { clearDriverSession, getDriverRole, getDriverToken } from '../utils/driverAuth';
 import './Header.css';
 
-/** โพลสรุปออเดอร์ลูกค้า — ป้ายเมนู + toast เมื่อมีการเปลี่ยนแปลง */
+/** โพลสรุปออเดอร์ลูกค้า — ป้ายเมนู + toast เฉพาะเมื่อมีงานติดตามเพิ่ม (ไม่แจ้งทุกครั้งที่ร้านเปลี่ยนสถานะ) */
 const CUSTOMER_ORDER_ATTENTION_POLL_MS = 18000;
 
 const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
@@ -22,7 +22,7 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [customerAttentionCount, setCustomerAttentionCount] = useState(0);
   const customerAttentionBaselineRef = useRef(false);
-  const prevCustomerAttentionDigestRef = useRef(null);
+  const prevCustomerAttentionCountRef = useRef(null);
   const location = useLocation();
   const { isMobile, isTablet } = useResponsive();
 
@@ -104,7 +104,7 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
       || location.pathname.startsWith('/customer/login')
     ) {
       customerAttentionBaselineRef.current = false;
-      prevCustomerAttentionDigestRef.current = null;
+      prevCustomerAttentionCountRef.current = null;
       setCustomerAttentionCount(0);
       return undefined;
     }
@@ -130,36 +130,23 @@ const Header = ({ hideCustomerTopBar = false, hideDriverTopBar = false }) => {
         const data = await res.json().catch(() => ({}));
         if (cancelled) return;
         const cnt = Number(data.attention_count || 0);
-        const digest = String(data.digest || '');
         setCustomerAttentionCount(cnt);
 
         if (!customerAttentionBaselineRef.current) {
           customerAttentionBaselineRef.current = true;
-          prevCustomerAttentionDigestRef.current = digest;
+          prevCustomerAttentionCountRef.current = cnt;
           return;
         }
 
-        if (digest && digest !== prevCustomerAttentionDigestRef.current) {
-          const onCheckout = location.pathname.startsWith('/customer/checkout');
-          if (!onCheckout) {
-            const prevDigest = prevCustomerAttentionDigestRef.current || '';
-            const prevCnt = prevDigest.includes(':')
-              ? Number(prevDigest.split(':')[0]) || 0
-              : 0;
-            if (cnt > prevCnt) {
-              popupNotify(`มีคำสั่งซื้อที่ติดตามเพิ่ม ${cnt - prevCnt} รายการ`, {
-                type: 'info',
-                duration: 5200,
-              });
-            } else {
-              popupNotify('ร้านอัปเดตสถานะคำสั่งซื้อของคุณ — แตะเมนูออเดอร์เพื่อดู', {
-                type: 'info',
-                duration: 5200,
-              });
-            }
-          }
-          prevCustomerAttentionDigestRef.current = digest;
+        const prevCnt = prevCustomerAttentionCountRef.current ?? cnt;
+        const onCheckout = location.pathname.startsWith('/customer/checkout');
+        if (!onCheckout && cnt > prevCnt) {
+          popupNotify(`มีคำสั่งซื้อที่ติดตามเพิ่ม ${cnt - prevCnt} รายการ`, {
+            type: 'info',
+            duration: 5200,
+          });
         }
+        prevCustomerAttentionCountRef.current = cnt;
       } catch {
         /* ignore */
       }
