@@ -233,9 +233,10 @@
 .category-edit-icon-preview {
   width: 72px;
   height: 72px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid #e8ebf3;
+  object-fit: contain;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.1);
 }
 
 .category-remove-icon-check {
@@ -258,9 +259,10 @@
 .category-admin-icon-thumb {
   width: 40px;
   height: 40px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #e8ebf3;
+  object-fit: contain;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
 }
 
 .product-form-grid input,
