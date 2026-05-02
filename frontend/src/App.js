@@ -100,6 +100,41 @@ function AppContent() {
     navigate(dest, { replace: true });
   }, [location.pathname, location.search, location.hash, navigate]);
 
+  /**
+   * LINE In-App Browser / LIFF บางครั้งอัปเดตที่อยู่ด้วย history.replaceState โดยไม่เกิด popstate
+   * React Router เลยค้างที่ route เก่า (มักเป็น /customer = หน้าแรก) ทั้งที่แถบ URL เป็น /customer/products
+   */
+  useEffect(() => {
+    const browserLocationKey = () =>
+      `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const routerLocationKey = () =>
+      `${location.pathname}${location.search}${location.hash}`;
+
+    const reconcile = () => {
+      const b = browserLocationKey();
+      const r = routerLocationKey();
+      if (b !== r) {
+        navigate(b, { replace: true });
+      }
+    };
+
+    reconcile();
+    const intervalId = window.setInterval(reconcile, 80);
+    window.addEventListener('popstate', reconcile);
+    document.addEventListener('visibilitychange', reconcile);
+
+    const stopPollingId = window.setTimeout(() => {
+      window.clearInterval(intervalId);
+    }, 8000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(stopPollingId);
+      window.removeEventListener('popstate', reconcile);
+      document.removeEventListener('visibilitychange', reconcile);
+    };
+  }, [location.pathname, location.search, location.hash, navigate]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
@@ -256,9 +291,8 @@ function AppContent() {
           <Route path="/" element={<NavigatePreserveSearch to="/customer" />} />
           <Route path="/liff" element={<NavigatePreserveSearch to="/customer" />} />
           <Route path="/liff/:segment" element={<LiffSegmentNavigate />} />
-          <Route path="/customer" element={<Home />} />
-          <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/products/:productId" element={<ProductDetail />} />
+          <Route path="/customer/products" element={<Products />} />
           <Route
             path="/customer/cart"
             element={(
@@ -308,6 +342,7 @@ function AppContent() {
             )}
           />
           <Route path="/customer/login" element={<Login />} />
+          <Route path="/customer" element={<Home />} />
 
           {/* Legacy customer URLs -> canonical */}
           <Route path="/products" element={<NavigatePreserveSearch to="/customer/products" />} />
