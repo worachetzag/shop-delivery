@@ -41,10 +41,46 @@ def _normalize_product_payload(initial_data):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """ลูกค้าได้ icon_image เป็น path ของไฟล์ — resolveMediaUrl ฝั่งเว็บ; แอดมินส่ง multipart"""
+
+    icon_image = serializers.SerializerMethodField(read_only=True)
+    remove_icon = serializers.BooleanField(write_only=True, required=False, default=False)
+
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'created_at']
+        fields = ['id', 'name', 'description', 'created_at', 'icon_image', 'icon', 'remove_icon']
         read_only_fields = ['created_at']
+
+    def get_icon_image(self, obj):
+        ic = getattr(obj, 'icon', None)
+        if not ic:
+            return None
+        try:
+            return ic.url
+        except ValueError:
+            return None
+
+    def create(self, validated_data):
+        validated_data.pop('remove_icon', None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        remove_icon = bool(validated_data.pop('remove_icon', False))
+        icon_was_sent = 'icon' in validated_data
+        icon_file = validated_data.pop('icon', None) if icon_was_sent else None
+
+        instance = super().update(instance, validated_data)
+
+        if remove_icon:
+            if instance.icon:
+                instance.icon.delete(save=False)
+            instance.icon = None
+            instance.save(update_fields=['icon'])
+        elif icon_was_sent and icon_file is not None:
+            instance.icon = icon_file
+            instance.save(update_fields=['icon'])
+
+        return instance
 
 
 class HomePromotionSerializer(serializers.ModelSerializer):

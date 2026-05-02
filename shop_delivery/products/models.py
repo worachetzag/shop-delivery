@@ -7,6 +7,13 @@ class Category(models.Model):
     """หมวดหมู่สินค้า"""
     name = models.CharField(max_length=100, verbose_name="ชื่อหมวดหมู่")
     description = models.TextField(blank=True, verbose_name="คำอธิบาย")
+    icon = models.ImageField(
+        upload_to='categories/',
+        blank=True,
+        null=True,
+        verbose_name="ไอคอนหมวดหมู่",
+        help_text="ถ้าว่าง หน้าลูกค้าจะใช้อิโมจิตามชื่อหมวดอัตโนมัติ",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

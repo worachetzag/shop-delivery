@@ -1,6 +1,6 @@
 import { resolveMediaUrl } from './media';
 
-/** อิโมจิและโทนสีสำหรับหมวด — API ไม่มีรูปหมวด */
+/** อิโมจิค่าเริ่มต้น — ถ้า API ส่ง icon_image (แอดมินอัปโหลด) จะใช้รูปแทน */
 export const CATEGORY_ALL_EMOJI = '🛒';
 
 const FALLBACK_EMOJI = ['🛒', '📦', '🏷️', '✨', '🌿', '🥫', '🧃', '🍚'];

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import ApiPaginationBar from '../components/ApiPaginationBar';
+import { resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
 
 const ADMIN_ORDERS_PAGE_SIZE = 15;
@@ -359,6 +360,11 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     is_available: true,
     is_featured: false,
   });
+  const categoryCreateIconRef = useRef(null);
+  const categoryEditIconRef = useRef(null);
+  const [categoryEditRemoveIcon, setCategoryEditRemoveIcon] = useState(false);
+  const [categoryEditIconPreviewUrl, setCategoryEditIconPreviewUrl] = useState(null);
+
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: '',
@@ -367,6 +373,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     id: null,
     name: '',
     description: '',
+    icon_image: null,
   });
   const [productEditForm, setProductEditForm] = useState({
     id: null,
@@ -688,29 +695,48 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     setCategoryForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const clearCategoryEditIconDraft = useCallback(() => {
+    setCategoryEditIconPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    if (categoryEditIconRef.current) categoryEditIconRef.current.value = '';
+  }, []);
+
+  const handleCategoryEditIconFileChange = (e) => {
+    const file = e.target.files?.[0];
+    setCategoryEditIconPreviewUrl((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return file ? URL.createObjectURL(file) : null;
+    });
+  };
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     setSavingCategory(true);
     try {
       const token = getAdminToken();
+      const fd = new FormData();
+      fd.append('name', categoryForm.name.trim());
+      fd.append('description', categoryForm.description.trim());
+      const iconFile = categoryCreateIconRef.current?.files?.[0];
+      if (iconFile) fd.append('icon', iconFile);
+
       const response = await fetch(`${config.API_BASE_URL}products/admin/categories/`, {
         method: 'POST',
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          name: categoryForm.name.trim(),
-          description: categoryForm.description.trim(),
-        }),
+        body: fd,
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || 'เพิ่มหมวดหมู่ไม่สำเร็จ');
       }
       setCategoryForm({ name: '', description: '' });
+      if (categoryCreateIconRef.current) categoryCreateIconRef.current.value = '';
       await loadCategories();
       popup.info('เพิ่มหมวดหมู่สำเร็จ');
     } catch (error) {
@@ -721,11 +747,14 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   };
 
   const startEditCategory = (category) => {
+    clearCategoryEditIconDraft();
+    setCategoryEditRemoveIcon(false);
     setEditingCategory(category.id);
     setCategoryEditForm({
       id: category.id,
       name: category.name || '',
       description: category.description || '',
+      icon_image: category.icon_image || null,
     });
   };
 
@@ -735,18 +764,21 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     setSavingCategoryUpdate(true);
     try {
       const token = getAdminToken();
+      const fd = new FormData();
+      fd.append('name', categoryEditForm.name.trim());
+      fd.append('description', categoryEditForm.description.trim());
+      const iconFile = categoryEditIconRef.current?.files?.[0];
+      if (iconFile && !categoryEditRemoveIcon) fd.append('icon', iconFile);
+      if (categoryEditRemoveIcon) fd.append('remove_icon', 'true');
+
       const response = await fetch(`${config.API_BASE_URL}products/admin/categories/${categoryEditForm.id}/`, {
         method: 'PUT',
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          name: categoryEditForm.name.trim(),
-          description: categoryEditForm.description.trim(),
-        }),
+        body: fd,
       });
       const data = await response.json();
       if (!response.ok) {
@@ -754,7 +786,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       }
       await loadCategories();
       setEditingCategory(null);
-      setCategoryEditForm({ id: null, name: '', description: '' });
+      clearCategoryEditIconDraft();
+      setCategoryEditRemoveIcon(false);
+      setCategoryEditForm({ id: null, name: '', description: '', icon_image: null });
       popup.info('แก้ไขหมวดหมู่สำเร็จ');
     } catch (error) {
       popup.error(error.message || 'แก้ไขหมวดหมู่ไม่สำเร็จ');
@@ -1953,6 +1987,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
           <div className="products-section">
             <form className="product-form" onSubmit={handleCreateCategory}>
               <h3>เพิ่มหมวดหมู่สินค้า</h3>
+              <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.88rem', maxWidth: '720px' }}>
+                ไม่เลือกรูปได้ — หน้าลูกค้าจะใช้อิโมจิตามชื่อหมวดอัตโนมัติ ถ้าอัปโหลดรูปจะใช้เป็นไอคอนในแถบหมวดหมู่แทน
+              </p>
               <div className="product-form-grid category-form-grid">
                 <input
                   name="name"
@@ -1967,6 +2004,10 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                   onChange={handleCategoryInputChange}
                   placeholder="คำอธิบายหมวดหมู่ (ไม่บังคับ)"
                 />
+                <label className="category-icon-upload-label">
+                  <span className="form-label">ไอคอนแถบหมวด (ไม่บังคับ)</span>
+                  <input ref={categoryCreateIconRef} type="file" accept="image/*" className="form-input" />
+                </label>
               </div>
               <button type="submit" className="btn-primary" disabled={savingCategory}>
                 {savingCategory ? 'กำลังบันทึก...' : '➕ เพิ่มหมวดหมู่'}
@@ -1991,11 +2032,59 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                     onChange={(e) => setCategoryEditForm((prev) => ({ ...prev, description: e.target.value }))}
                     placeholder="คำอธิบายหมวดหมู่ (ไม่บังคับ)"
                   />
+                  <div className="category-edit-icon-block">
+                    <span className="form-label">ไอคอนแถบหมวด</span>
+                    {!categoryEditRemoveIcon && (categoryEditIconPreviewUrl || categoryEditForm.icon_image) ? (
+                      <img
+                        src={categoryEditIconPreviewUrl || resolveMediaUrl(categoryEditForm.icon_image)}
+                        alt=""
+                        className="category-edit-icon-preview"
+                      />
+                    ) : (
+                      <p className="muted" style={{ margin: '4px 0', fontSize: '0.85rem' }}>
+                        {categoryEditRemoveIcon ? 'จะใช้อิโมจิบนหน้าลูกค้าหลังบันทึก' : 'ยังไม่มีรูป — ใช้อิโมจิอัตโนมัติ'}
+                      </p>
+                    )}
+                    <input
+                      ref={categoryEditIconRef}
+                      type="file"
+                      accept="image/*"
+                      className="form-input"
+                      disabled={categoryEditRemoveIcon}
+                      onChange={handleCategoryEditIconFileChange}
+                    />
+                    <label className="category-remove-icon-check">
+                      <input
+                        type="checkbox"
+                        checked={categoryEditRemoveIcon}
+                        onChange={(e) => {
+                          setCategoryEditRemoveIcon(e.target.checked);
+                          if (e.target.checked) {
+                            setCategoryEditIconPreviewUrl((old) => {
+                              if (old) URL.revokeObjectURL(old);
+                              return null;
+                            });
+                            if (categoryEditIconRef.current) categoryEditIconRef.current.value = '';
+                          }
+                        }}
+                      />
+                      <span>ลบรูปไอคอน (กลับไปใช้อิโมจิในหน้าลูกค้า)</span>
+                    </label>
+                  </div>
                   <div className="personnel-form-actions">
                     <button type="submit" className="btn-primary" disabled={savingCategoryUpdate}>
                       {savingCategoryUpdate ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
                     </button>
-                    <button type="button" className="btn-secondary" onClick={() => setEditingCategory(null)}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        setEditingCategory(null);
+                        clearCategoryEditIconDraft();
+                        setCategoryEditRemoveIcon(false);
+                        setCategoryEditForm({ id: null, name: '', description: '', icon_image: null });
+                      }}
+                    >
                       ยกเลิก
                     </button>
                   </div>
@@ -2061,6 +2150,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                   <table>
                     <thead>
                       <tr>
+                        <th>ไอคอน</th>
                         <th>ชื่อหมวดหมู่</th>
                         <th>คำอธิบาย</th>
                         <th>จัดการ</th>
@@ -2069,6 +2159,17 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                     <tbody>
                       {categories.map((category) => (
                         <tr key={category.id}>
+                          <td className="category-admin-icon-cell">
+                            {category.icon_image ? (
+                              <img
+                                src={resolveMediaUrl(category.icon_image)}
+                                alt=""
+                                className="category-admin-icon-thumb"
+                              />
+                            ) : (
+                              <span className="muted">อิโมจิ</span>
+                            )}
+                          </td>
                           <td>{category.name}</td>
                           <td>{category.description || '-'}</td>
                           <td className="product-actions-cell">

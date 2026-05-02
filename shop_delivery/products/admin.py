@@ -5,9 +5,13 @@ from .models import Category, Product, PurchaseOrder, PurchaseOrderItem, StockMo
 # Category Admin
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at')
+    list_display = ('name', 'has_icon', 'created_at')
     search_fields = ('name',)
     readonly_fields = ('created_at',)
+
+    @admin.display(description='ไอคอน', boolean=True)
+    def has_icon(self, obj):
+        return bool(obj.icon)
 
 
 # Product Admin

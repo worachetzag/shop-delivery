@@ -213,6 +213,56 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.category-form-grid .category-icon-upload-label {
+  grid-column: 1 / -1;
+}
+
+.category-icon-upload-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-edit-icon-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.category-edit-icon-preview {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #e8ebf3;
+}
+
+.category-remove-icon-check {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.category-remove-icon-check input {
+  margin-top: 3px;
+}
+
+.category-admin-icon-cell {
+  vertical-align: middle;
+}
+
+.category-admin-icon-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e8ebf3;
+}
+
 .product-form-grid input,
 .product-form-grid select,
 .product-form textarea {

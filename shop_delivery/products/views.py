@@ -486,6 +486,7 @@ class AdminCategoryListCreateView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     pagination_class = None
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ('name', 'description')
@@ -522,6 +523,7 @@ class AdminCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def update(self, request, *args, **kwargs):
         category = self.get_object()
