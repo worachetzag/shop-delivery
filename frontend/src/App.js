@@ -1,5 +1,13 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 import Header from './components/Header';
 import CustomerViewportChrome from './components/CustomerViewportChrome';
 import AdminHeader from './components/AdminHeader';
@@ -35,60 +43,26 @@ import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import AdminOverviewPage from './pages/AdminOverviewPage';
 import { PopupProvider } from './components/PopupProvider';
 import config from './config';
+import {
+  LIFF_PAGE_ROUTES,
+  resolveCustomerDeepLink,
+  stripCustomerRoutingParams,
+} from './utils/customerDeepLink';
 import './App.css';
 
-/** Rich Menu / LIFF: ใช้ ?page=products (คีย์ตัวพิมพ์เล็ก) เมื่อ LINE เปิดมาที่ endpoint แค่ /customer — path เต็มอาจถูกตัด */
-const LIFF_PAGE_ROUTES = {
-  home: '/customer',
-  products: '/customer/products',
-  cart: '/customer/cart',
-  checkout: '/customer/checkout',
-  orders: '/customer/orders',
-  tracking: '/customer/orders',
-  profile: '/customer/profile',
-  login: '/customer/login',
-};
+/** Navigate ที่เก็บ ?query และ #hash — LINE เปิดที่ / หรือ /liff พร้อม ?page= ไม่ให้หายไประหว่าง redirect */
+function NavigatePreserveSearch({ to }) {
+  const { search, hash } = useLocation();
+  return <Navigate to={`${to}${search || ''}${hash || ''}`} replace />;
+}
 
-/**
- * LINE หลายครั้งไม่ส่ง ?page= ตรงๆ หลัง redirect — ใส่ใน `liff.state` แทน (ดูเอกสาร Opening a LIFF app / primary redirect)
- */
-function resolveLiffRichMenuPath(search) {
-  const params = new URLSearchParams(search);
-  const routeForKey = (key) => {
-    const k = (key || '').trim().toLowerCase();
-    return k ? LIFF_PAGE_ROUTES[k] || null : null;
-  };
-
-  const direct = routeForKey(params.get('page'));
-  if (direct) return direct;
-
-  const rawState = params.get('liff.state');
-  if (!rawState) return null;
-
-  let decoded = rawState;
-  try {
-    decoded = decodeURIComponent(rawState);
-  } catch {
-    return null;
-  }
-
-  const noHash = decoded.split('#')[0];
-  const qIdx = noHash.indexOf('?');
-  const pathPart = qIdx >= 0 ? noHash.slice(0, qIdx) : noHash;
-  let queryPart = qIdx >= 0 ? noHash.slice(qIdx + 1) : '';
-  if (!queryPart && /[=]/.test(pathPart) && !pathPart.includes('/')) {
-    queryPart = pathPart;
-  }
-
-  const fromQuery = routeForKey(new URLSearchParams(queryPart).get('page'));
-  if (fromQuery) return fromQuery;
-
-  const segments = pathPart.replace(/^\/+/, '').split('/').filter(Boolean);
-  const lastSeg = segments[segments.length - 1] || '';
-  const fromPath = routeForKey(lastSeg);
-  if (fromPath) return fromPath;
-
-  return null;
+/** LIFF URL `https://liff.line.me/<id>/<segment>` — segment แปลงเป็นหน้าลูกค้า */
+function LiffSegmentNavigate() {
+  const { segment } = useParams();
+  const loc = useLocation();
+  const key = (segment || '').trim().toLowerCase();
+  const toBase = LIFF_PAGE_ROUTES[key] || '/customer';
+  return <Navigate to={`${toBase}${loc.search}${loc.hash || ''}`} replace />;
 }
 
 function AppContent() {
@@ -107,20 +81,21 @@ function AppContent() {
   const [routeLoading, setRouteLoading] = useState(false);
   const previousPathRef = useRef(location.pathname + location.search);
 
-  /** Rich Menu: รองรับทั้ง ?page= และค่าที่ LINE ย้ายไปไว้ใน liff.state */
+  /** Rich Menu / LIFF: ?page=, liff.state, hash #page=, ?next= */
   useLayoutEffect(() => {
-    const route = resolveLiffRichMenuPath(location.search);
-    if (!route) return;
+    const dest = resolveCustomerDeepLink(location.pathname, location.search, location.hash);
+    if (!dest) return;
 
-    const params = new URLSearchParams(location.search);
-    params.delete('page');
-    params.delete('liff.state');
-    const qs = params.toString();
-    const dest = `${route}${qs ? `?${qs}` : ''}`;
-    const current = `${location.pathname}${location.search}`;
-    if (dest === current) return;
+    try {
+      const nextUrl = new URL(dest, window.location.origin);
+      const curUrl = new URL(`${location.pathname}${location.search}`, window.location.origin);
+      if (nextUrl.pathname === curUrl.pathname && nextUrl.search === curUrl.search) return;
+    } catch {
+      const current = `${location.pathname}${location.search}`;
+      if (dest === current) return;
+    }
     navigate(dest, { replace: true });
-  }, [location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, location.hash, navigate]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -148,8 +123,7 @@ function AppContent() {
     params.delete('username');
     params.delete('user_role');
     params.delete('login');
-    params.delete('page');
-    params.delete('liff.state');
+    stripCustomerRoutingParams(params);
     const cleanedSearch = params.toString();
     const nextPath = `${location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
 
@@ -181,12 +155,26 @@ function AppContent() {
       return;
     }
 
-    if (
-      userRole === 'customer'
-      && !location.pathname.startsWith('/customer')
-      && !location.pathname.startsWith('/login')
-    ) {
-      navigate('/customer', { replace: true });
+    /**
+     * ลูกค้า: เด้งกลับร้านเฉพาะ path ที่ไม่ใช่หน้าลูกค้า
+     * ห้ามบล็อก /liff/*, /products, /cart — ไม่งั้น LIFF/Rich Menu เปิดมาแล้วโดน replace เป็น /customer ก่อน Route จะ redirect
+     */
+    if (userRole === 'customer') {
+      const p = location.pathname;
+      const customerFacing =
+        p.startsWith('/customer')
+        || p.startsWith('/login')
+        || p.startsWith('/liff')
+        || p.startsWith('/products')
+        || p === '/cart'
+        || p === '/checkout'
+        || p === '/orders'
+        || p.startsWith('/orders/')
+        || p === '/profile'
+        || p.startsWith('/tracking/');
+      if (!customerFacing) {
+        navigate('/customer', { replace: true });
+      }
     }
   }, [location.pathname, navigate]);
 
@@ -262,15 +250,9 @@ function AppContent() {
       <main className="main-content">
         <Routes>
           {/* Customer Routes (canonical) */}
-          <Route path="/" element={<Navigate to="/customer" replace />} />
-          <Route path="/liff" element={<Navigate to="/customer" replace />} />
-          <Route path="/liff/products" element={<Navigate to="/customer/products" replace />} />
-          <Route path="/liff/cart" element={<Navigate to="/customer/cart" replace />} />
-          <Route path="/liff/checkout" element={<Navigate to="/customer/checkout" replace />} />
-          <Route path="/liff/orders" element={<Navigate to="/customer/orders" replace />} />
-          <Route path="/liff/tracking" element={<Navigate to="/customer/orders" replace />} />
-          <Route path="/liff/profile" element={<Navigate to="/customer/profile" replace />} />
-          <Route path="/liff/login" element={<Navigate to="/customer/login" replace />} />
+          <Route path="/" element={<NavigatePreserveSearch to="/customer" />} />
+          <Route path="/liff" element={<NavigatePreserveSearch to="/customer" />} />
+          <Route path="/liff/:segment" element={<LiffSegmentNavigate />} />
           <Route path="/customer" element={<Home />} />
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/products/:productId" element={<ProductDetail />} />
@@ -325,11 +307,11 @@ function AppContent() {
           <Route path="/customer/login" element={<Login />} />
 
           {/* Legacy customer URLs -> canonical */}
-          <Route path="/products" element={<Navigate to="/customer/products" replace />} />
+          <Route path="/products" element={<NavigatePreserveSearch to="/customer/products" />} />
           <Route path="/products/:productId" element={<ProductDetail />} />
-          <Route path="/cart" element={<Navigate to="/customer/cart" replace />} />
-          <Route path="/checkout" element={<Navigate to="/customer/checkout" replace />} />
-          <Route path="/orders" element={<Navigate to="/customer/orders" replace />} />
+          <Route path="/cart" element={<NavigatePreserveSearch to="/customer/cart" />} />
+          <Route path="/checkout" element={<NavigatePreserveSearch to="/customer/checkout" />} />
+          <Route path="/orders" element={<NavigatePreserveSearch to="/customer/orders" />} />
           <Route
             path="/orders/:orderId"
             element={(
@@ -346,8 +328,8 @@ function AppContent() {
               </ProtectedRoute>
             )}
           />
-          <Route path="/profile" element={<Navigate to="/customer/profile" replace />} />
-          <Route path="/login" element={<Navigate to="/customer/login" replace />} />
+          <Route path="/profile" element={<NavigatePreserveSearch to="/customer/profile" />} />
+          <Route path="/login" element={<NavigatePreserveSearch to="/customer/login" />} />
           
           {/* Driver Routes */}
           <Route path="/driver/login" element={<DriverLogin />} />

@@ -173,7 +173,11 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireDriver = false,
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+    const withNext =
+      !requireAdmin && !requireDriver
+        ? `${redirectTo}${redirectTo.includes('?') ? '&' : '?'}next=${encodeURIComponent(`${location.pathname}${location.search}`)}`
+        : redirectTo;
+    return <Navigate to={withNext} replace state={{ from: location }} />;
   }
 
   const userRole =
