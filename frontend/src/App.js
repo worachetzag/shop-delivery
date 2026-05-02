@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import CustomerViewportChrome from './components/CustomerViewportChrome';
@@ -37,6 +37,7 @@ import { PopupProvider } from './components/PopupProvider';
 import config from './config';
 import './App.css';
 
+/** Rich Menu / LIFF: ใช้ ?page=products (คีย์ตัวพิมพ์เล็ก) เมื่อ LINE เปิดมาที่ endpoint แค่ /customer — path เต็มอาจถูกตัด */
 const LIFF_PAGE_ROUTES = {
   home: '/customer',
   products: '/customer/products',
@@ -64,16 +65,29 @@ function AppContent() {
   const [routeLoading, setRouteLoading] = useState(false);
   const previousPathRef = useRef(location.pathname + location.search);
 
+  /** Rich Menu แนะนำ: .../liff-id?page=products — แม้ pathname จะเหลือแค่ /customer ก็ยังไปหน้าที่ถูก */
+  useLayoutEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageKey = (params.get('page') || '').toLowerCase();
+    const route = LIFF_PAGE_ROUTES[pageKey];
+    if (!route) return;
+
+    params.delete('page');
+    const qs = params.toString();
+    const dest = `${route}${qs ? `?${qs}` : ''}`;
+    const current = `${location.pathname}${location.search}`;
+    if (dest === current) return;
+    navigate(dest, { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const username = params.get('username');
     const userRoleFromUrl = params.get('user_role');
     const loginStatus = params.get('login');
-    const liffPage = (params.get('page') || '').toLowerCase();
-    const liffRoute = LIFF_PAGE_ROUTES[liffPage];
 
-    if (!token && !loginStatus && !liffRoute) {
+    if (!token && !loginStatus) {
       return;
     }
 
@@ -94,8 +108,7 @@ function AppContent() {
     params.delete('login');
     params.delete('page');
     const cleanedSearch = params.toString();
-    const targetPathname = liffRoute || location.pathname;
-    const nextPath = `${targetPathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
+    const nextPath = `${location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
 
     if (loginStatus === 'success') {
       navigate(nextPath === '/' ? '/customer' : nextPath, { replace: true });

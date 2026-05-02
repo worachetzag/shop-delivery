@@ -61,6 +61,23 @@ LINE_PAY_MERCHANT_ID=your-line-pay-merchant-id
 - **อัปเดตสถานะ** - อัปเดตสถานะการจัดส่ง
 - **ติดต่อลูกค้า** - ติดต่อลูกค้าเมื่อจำเป็น
 
+### Rich Menu / ลิงก์ LIFF (ลูกค้า)
+
+ใน LINE WebView บางครั้ง **path หลัง LIFF ID** (เช่น `/customer/products`) ไม่ถูกส่งต่อไปยังเว็บ — ทุกปุ่มจึงเปิดมาที่หน้าแรก (`/customer`) เหมือนกัน
+
+**แนะนำ:** ตั้งลิงก์ปุ่ม Rich Menu เป็นรูปแบบ **`?page=`** (คีย์เป็นตัวพิมพ์เล็ก):
+
+| ปุ่ม | ตัวอย่าง LIFF URL |
+|------|-------------------|
+| หน้าแรก | `https://liff.line.me/<LIFF_ID>?page=home` |
+| สินค้า | `https://liff.line.me/<LIFF_ID>?page=products` |
+| ตะกร้า | `https://liff.line.me/<LIFF_ID>?page=cart` |
+| ออเดอร์ | `https://liff.line.me/<LIFF_ID>?page=orders` |
+
+คีย์อื่นที่แอปรองรับ: `checkout`, `tracking`, `profile`, `login`
+
+ถ้าใช้ path เต็ม (`.../customer/products`) แล้วทำงานถูกต้องในเครื่องคุณก็ใช้ต่อได้ — แต่ถ้าทุกปุ่มไปหน้าแรก ให้เปลี่ยนมาใช้ `?page=` ตามตาราง (การซิงก์ทำใน `App.js` ด้วย `useLayoutEffect`)
+
 ## 🔗 API Endpoints
 
 ### LINE Bot API

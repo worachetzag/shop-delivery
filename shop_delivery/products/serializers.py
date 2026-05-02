@@ -258,7 +258,23 @@ class StockMovementSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_unit = serializers.CharField(source='product.unit_label', read_only=True)
     movement_label = serializers.CharField(source='get_movement_type_display', read_only=True)
-    actor_name = serializers.CharField(source='created_by.username', read_only=True)
+    actor_name = serializers.SerializerMethodField()
+    actor_display = serializers.SerializerMethodField()
+
+    def get_actor_name(self, obj):
+        u = getattr(obj, 'created_by', None)
+        if not u:
+            return ''
+        return getattr(u, 'username', '') or ''
+
+    def get_actor_display(self, obj):
+        u = getattr(obj, 'created_by', None)
+        if not u:
+            return ''
+        full = (u.get_full_name() or '').strip()
+        if full:
+            return full
+        return getattr(u, 'username', '') or ''
 
     class Meta:
         model = StockMovement
@@ -268,7 +284,7 @@ class StockMovementSerializer(serializers.ModelSerializer):
             'quantity_change', 'quantity_before', 'quantity_after',
             'reserved_before', 'reserved_after', 'unit_cost',
             'source_type', 'source_id', 'reference', 'note',
-            'actor_name', 'created_at',
+            'actor_name', 'actor_display', 'created_at',
         ]
 
 

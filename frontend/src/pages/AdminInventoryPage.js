@@ -207,6 +207,17 @@ const AdminInventoryPage = ({ section = 'all' }) => {
     [movements]
   );
 
+  /** แสดงชื่อผู้ทำเฉพาะปรับสต็อกมือ / PO / รับเข้า — รายการจากออเดอร์ขายไม่แสดง (ตามเดิม) */
+  const movementStaffLabel = (m) => {
+    const t = String(m?.movement_type || '');
+    const st = String(m?.source_type || '').toLowerCase();
+    if (t.startsWith('sale_') || st === 'order') {
+      return null;
+    }
+    const label = String(m?.actor_display || m?.actor_name || '').trim();
+    return label || null;
+  };
+
   if (loadingPage) {
     return (
       <div className="admin-dashboard" style={{ padding: 16 }}>
@@ -354,7 +365,7 @@ const AdminInventoryPage = ({ section = 'all' }) => {
         <h3>ประวัติการเคลื่อนไหวสต็อก</h3>
         <table>
           <thead>
-            <tr><th>เวลา</th><th>สินค้า</th><th>ประเภท</th><th>จำนวน</th><th>ก่อน/หลัง</th><th>ที่มา</th></tr>
+            <tr><th>เวลา</th><th>สินค้า</th><th>ประเภท</th><th>ผู้ทำรายการ</th><th>จำนวน</th><th>ก่อน/หลัง</th><th>ที่มา</th></tr>
           </thead>
           <tbody>
             {visibleMovements.map((m) => (
@@ -362,6 +373,7 @@ const AdminInventoryPage = ({ section = 'all' }) => {
                 <td>{new Date(m.created_at).toLocaleString('th-TH')}</td>
                 <td>{m.product_name}</td>
                 <td>{m.movement_label}</td>
+                <td>{movementStaffLabel(m) ?? '—'}</td>
                 <td>{m.quantity_change}</td>
                 <td>{m.quantity_before} / {m.quantity_after}</td>
                 <td>
