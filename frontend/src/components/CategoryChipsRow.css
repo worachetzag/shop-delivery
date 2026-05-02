@@ -1,4 +1,4 @@
-/* แถบเลือกหมวดบนหน้าแรก — ไอคอนสติกเกอร์เหมือน CustomerCategoryStrip (ไม่มีแคปซูลขาว) */
+/* แถบเลือกหมวดหน้าแรก — กล่องข้อความโค้ง (ไม่มีไอคอน) */
 .category-chips-scroll {
   position: relative;
   overflow-x: auto;
@@ -41,133 +41,56 @@
 .category-chips-track {
   display: flex;
   flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: 0.55rem;
-  min-height: 0;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
 }
 
 .category-chip {
   flex-shrink: 0;
   scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  width: 4.35rem;
-  min-width: 4.35rem;
-  max-width: 4.85rem;
+  justify-content: center;
   appearance: none;
-  border: none;
   margin: 0;
-  padding: 0;
-  background: transparent;
+  padding: 0.52rem 1.05rem;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft, #e2e8f0);
+  background: #fff;
   color: var(--text-primary, #334155);
+  font-size: 0.8125rem;
+  font-weight: 600;
   font-family: inherit;
+  line-height: 1.25;
   cursor: pointer;
-  text-align: center;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.14s ease;
+  white-space: nowrap;
+  max-width: min(220px, 78vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .category-chip:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 .category-chip:focus-visible {
   outline: 2px solid var(--brand-primary, #00a651);
-  outline-offset: 4px;
-  border-radius: 10px;
+  outline-offset: 2px;
 }
 
-.category-chip-icon-wrap {
-  box-sizing: border-box;
-  width: 3.15rem;
-  height: 3.15rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.32rem;
-  background: transparent;
-  transition: transform 0.18s ease;
-}
-
-.category-chip:nth-child(odd) .category-chip-icon {
-  transform: rotate(-3deg);
-}
-
-.category-chip:nth-child(even) .category-chip-icon {
-  transform: rotate(2.5deg);
-}
-
-.category-chip.is-active .category-chip-icon-wrap {
-  transform: translateY(-2px);
-}
-
-.category-chip.is-active .category-chip-icon:not(:has(img)) {
-  transform: scale(1.1) rotate(0deg);
-  filter:
-    saturate(1.22)
-    contrast(1.08)
-    drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.92))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.65))
-    drop-shadow(0 4px 10px rgba(15, 23, 42, 0.18));
-}
-
-.category-chip.is-active .category-chip-icon:has(img) {
-  transform: scale(1.1) rotate(0deg);
-}
-
-.category-chip.is-active .category-chip-icon-image {
-  filter:
-    drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.92))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55))
-    drop-shadow(0 5px 12px rgba(15, 23, 42, 0.2));
-}
-
-.category-chip-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.55rem;
-  height: 2.55rem;
-  font-size: 1.72rem;
-  line-height: 1;
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  transition: transform 0.18s ease, filter 0.18s ease;
-}
-
-.category-chip-icon:not(:has(img)) {
-  filter:
-    saturate(1.2)
-    contrast(1.1)
-    drop-shadow(0 0 0 0.85px rgba(255, 255, 255, 0.95))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55))
-    drop-shadow(0 3px 8px rgba(15, 23, 42, 0.14));
-}
-
-.category-chip-icon-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  transition: filter 0.18s ease;
-  filter:
-    drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.88))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5))
-    drop-shadow(0 4px 10px rgba(15, 23, 42, 0.15));
-}
-
-.category-chip-label {
-  font-size: 0.69rem;
-  font-weight: 700;
-  line-height: 1.2;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-
-.category-chip.is-active .category-chip-label {
-  color: var(--brand-primary-strong, #047857);
-  font-weight: 800;
+.category-chip.is-active {
+  background: var(--brand-primary, #00a651);
+  color: #fff;
+  border-color: var(--brand-primary, #00a651);
+  box-shadow: 0 3px 12px rgba(0, 142, 66, 0.28);
 }

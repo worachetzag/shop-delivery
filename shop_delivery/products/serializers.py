@@ -63,11 +63,9 @@ class HomePromotionSerializer(serializers.ModelSerializer):
     def get_banner_image(self, obj):
         if not obj.banner_image:
             return None
-        request = self.context.get('request')
-        url = obj.banner_image.url
-        if request:
-            return request.build_absolute_uri(url)
-        return url
+        # ส่ง path ของไฟล์ (หรือ URL เต็มจาก storage ภายนอก) — ไม่ใช้ build_absolute_uri
+        # เพราะ Host จาก proxy/LIFF ทำให้ absolute URL ผิดโดเมน → รูปแบนเนอร์ 404
+        return obj.banner_image.url
 
 
 class HomePromotionAdminSerializer(serializers.ModelSerializer):

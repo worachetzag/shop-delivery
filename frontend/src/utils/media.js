@@ -23,6 +23,48 @@ function backendOriginForMediaUrls() {
   }
 }
 
+/**
+ * บังคับให้ทุก URL ภายใต้ /media/ ใช้ origin เดียวกับ API (จาก REACT_APP_API_BASE_URL)
+ * แก้ 404 เมื่อ JSON มี absolute URL จากโฮสต์ผิด หรือต่อ path บนโดเมนหน้าเว็บคนละตัวกับ backend
+ */
+function normalizeMediaUrlForApiOrigin(input) {
+  const s = String(input || '').trim();
+  if (!s) return s;
+  try {
+    const origin = backendOriginForMediaUrls();
+    let pathname = '';
+    let search = '';
+    let hash = '';
+
+    if (/^https?:\/\//i.test(s)) {
+      const u = new URL(s);
+      pathname = u.pathname;
+      search = u.search;
+      hash = u.hash;
+      if (!pathname.startsWith('/media/')) {
+        return s;
+      }
+      return `${origin}${pathname}${search}${hash}`;
+    }
+    if (s.startsWith('//')) {
+      const u = new URL(`https:${s}`);
+      pathname = u.pathname;
+      search = u.search;
+      hash = u.hash;
+      if (!pathname.startsWith('/media/')) {
+        return s;
+      }
+      return `${origin}${pathname}${search}${hash}`;
+    }
+    if (s.startsWith('/media/')) {
+      return new URL(s, `${origin}/`).toString();
+    }
+    return s;
+  } catch {
+    return s;
+  }
+}
+
 export const PLACEHOLDER_IMAGES = {
   sm: 'https://via.placeholder.com/80x80/f8f9fa/6c757d?text=No+Image',
   md: 'https://via.placeholder.com/100x100/f8f9fa/6c757d?text=No+Image',
@@ -36,6 +78,9 @@ export function resolveMediaUrl(rawUrl, fallback = PLACEHOLDER_IMAGES.md) {
   if (!rawUrl) return fallback;
   if (typeof rawUrl === 'string') url = rawUrl.trim();
   else if (typeof rawUrl === 'object' && typeof rawUrl.url === 'string') url = rawUrl.url.trim();
+  if (!url) return fallback;
+
+  url = normalizeMediaUrlForApiOrigin(url);
   if (!url) return fallback;
 
   if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
