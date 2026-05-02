@@ -8,6 +8,7 @@ import './Products.css';
 import { usePopup } from '../components/PopupProvider';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
+import CustomerServiceHoursStrip from '../components/CustomerServiceHoursStrip';
 import { PRODUCT_SORT_OPTIONS_STANDARD, apiOrderingForSortKey } from '../utils/productSort';
 
 const PAGE_SIZE = 12;
@@ -62,6 +63,30 @@ const Products = () => {
       return qs ? `/customer/products?${qs}` : '/customer/products';
     },
     [searchParams],
+  );
+
+  /** ทั้งหมด | ลดราคา | แนะนำ — เก็บ category_id จาก URL ไว้ */
+  const setQuickFilter = useCallback(
+    (mode) => {
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          if (mode === 'all') {
+            sp.delete('on_sale');
+            sp.delete('featured');
+          } else if (mode === 'sale') {
+            sp.set('on_sale', 'true');
+            sp.delete('featured');
+          } else if (mode === 'featured') {
+            sp.set('featured', 'true');
+            sp.delete('on_sale');
+          }
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
   );
 
   useEffect(() => {
@@ -208,6 +233,7 @@ const Products = () => {
           <div className="page-header">
             <h1 className="page-title">สินค้าทั้งหมด</h1>
           </div>
+          <CustomerServiceHoursStrip compact />
           <div className="results-section">
             <div className="results-header">
               <p className="results-count">กำลังโหลดสินค้า...</p>
@@ -236,6 +262,8 @@ const Products = () => {
           <h1 className="page-title">สินค้าทั้งหมด</h1>
         </div>
 
+        <CustomerServiceHoursStrip compact />
+
         <div className="filters-section">
           <div className="search-box">
             <input
@@ -245,6 +273,30 @@ const Products = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="form-input"
             />
+          </div>
+
+          <div className="products-quick-filters" role="group" aria-label="กรองสินค้า">
+            <button
+              type="button"
+              className={`products-filter-chip ${!onSaleOnly && !featuredOnly ? 'is-active' : ''}`}
+              onClick={() => setQuickFilter('all')}
+            >
+              ทั้งหมด
+            </button>
+            <button
+              type="button"
+              className={`products-filter-chip products-filter-chip--sale ${onSaleOnly ? 'is-active' : ''}`}
+              onClick={() => setQuickFilter('sale')}
+            >
+              ลดราคา
+            </button>
+            <button
+              type="button"
+              className={`products-filter-chip products-filter-chip--featured ${featuredOnly ? 'is-active' : ''}`}
+              onClick={() => setQuickFilter('featured')}
+            >
+              แนะนำ
+            </button>
           </div>
 
           {categories.length > 0 ? (
@@ -258,14 +310,6 @@ const Products = () => {
               noOuterContainer
             />
           ) : null}
-
-          {(featuredOnly || onSaleOnly) && (
-            <div className="products-filter-banners">
-              <Link to="/customer/products" className="products-filter-clear-link">
-                ดูสินค้าทั้งหมด
-              </Link>
-            </div>
-          )}
 
           <div className="filters filters-sort-only">
             <CustomerProductSortDropdown

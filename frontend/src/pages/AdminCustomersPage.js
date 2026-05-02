@@ -7,6 +7,21 @@ import './AdminDashboard.css';
 
 const PAGE_SIZE = 20;
 
+const CUSTOMER_ORDERINGS = new Set([
+  '-order_count',
+  'order_count',
+  '-last_order_at',
+  'last_order_at',
+  '-total_spent_delivered',
+  'total_spent_delivered',
+  'user__username',
+  '-user__username',
+  'phone_number',
+  '-phone_number',
+  'id',
+  '-id',
+]);
+
 function formatBaht(value) {
   const n = Number(value);
   if (Number.isNaN(n)) return '—';
@@ -39,6 +54,7 @@ const AdminCustomersPage = () => {
   const [page, setPage] = useState(1);
   const [draftQ, setDraftQ] = useState('');
   const [appliedQ, setAppliedQ] = useState('');
+  const [ordering, setOrdering] = useState('-order_count');
   const [loading, setLoading] = useState(true);
   const [payload, setPayload] = useState({ results: [], count: 0 });
 
@@ -56,6 +72,8 @@ const AdminCustomersPage = () => {
     try {
       const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE) });
       if (appliedQ.trim()) params.set('q', appliedQ.trim());
+      const ord = CUSTOMER_ORDERINGS.has(ordering) ? ordering : '-order_count';
+      if (ord !== '-order_count') params.set('ordering', ord);
       const res = await fetch(`${config.API_BASE_URL}accounts/admin/customers/?${params}`, {
         headers: authHeaders,
         credentials: 'include',
@@ -74,7 +92,7 @@ const AdminCustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, appliedQ, authHeaders]);
+  }, [page, appliedQ, ordering, authHeaders]);
 
   useEffect(() => {
     loadList();
@@ -113,13 +131,40 @@ const AdminCustomersPage = () => {
           <button type="submit" className="btn-primary">
             ค้นหา
           </button>
-          {(appliedQ || draftQ) && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+            <span className="muted">เรียงตาม</span>
+            <select
+              className="form-input"
+              style={{ minWidth: 200, padding: '6px 10px' }}
+              value={ordering}
+              onChange={(e) => {
+                setOrdering(e.target.value);
+                setPage(1);
+              }}
+              aria-label="เรียงลำดับลูกค้า"
+            >
+              <option value="-order_count">จำนวนออเดอร์มากสุดก่อน</option>
+              <option value="order_count">จำนวนออเดอร์น้อยสุดก่อน</option>
+              <option value="-last_order_at">ออเดอร์ล่าสุดก่อน</option>
+              <option value="last_order_at">ออเดอร์เก่าสุดก่อน</option>
+              <option value="-total_spent_delivered">ยอดซื้อสะสมสูงสุดก่อน</option>
+              <option value="total_spent_delivered">ยอดซื้อสะสมต่ำสุดก่อน</option>
+              <option value="user__username">Username A → Z</option>
+              <option value="-user__username">Username Z → A</option>
+              <option value="phone_number">เบอร์โทร A → Z</option>
+              <option value="-phone_number">เบอร์โทร Z → A</option>
+              <option value="-id">รหัสลูกค้ามากสุดก่อน</option>
+              <option value="id">รหัสลูกค้าน้อยสุดก่อน</option>
+            </select>
+          </label>
+          {(appliedQ || draftQ || ordering !== '-order_count') && (
             <button
               type="button"
               className="btn-secondary"
               onClick={() => {
                 setDraftQ('');
                 setAppliedQ('');
+                setOrdering('-order_count');
                 setPage(1);
               }}
             >

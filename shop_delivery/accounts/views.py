@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions
+from rest_framework import filters, generics, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -331,6 +331,18 @@ class StaffAuditLogListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = StaffAuditLogSerializer
     queryset = StaffAuditLog.objects.select_related('actor').all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = (
+        'summary',
+        'action',
+        'target_type',
+        'target_id',
+        'actor__username',
+        'actor__first_name',
+        'actor__last_name',
+    )
+    ordering_fields = ['id', 'created_at', 'action', 'ip_address']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         if not can_manage_staff_accounts(self.request.user):
@@ -1328,6 +1340,19 @@ class AdminCustomerListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardPagination
     serializer_class = AdminCustomerListSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = (
+        'id',
+        'last_order_at',
+        'order_count',
+        'total_spent_delivered',
+        'phone_number',
+        'date_of_birth',
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+    )
+    ordering = ['-order_count', '-last_order_at', '-id']
 
     def get_queryset(self):
         if not is_admin_user(self.request.user):
@@ -1343,7 +1368,6 @@ class AdminCustomerListView(generics.ListAPIView):
                 ),
                 last_order_at=Max('orders__created_at'),
             )
-            .order_by('-order_count', '-last_order_at', '-id')
         )
         q = (self.request.query_params.get('q') or '').strip()
         if q:

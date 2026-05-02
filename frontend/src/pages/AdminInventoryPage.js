@@ -1,7 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+
+const MOV_ORDERINGS = new Set(['-created_at', 'created_at', 'id', '-id', 'quantity_change', '-quantity_change', 'movement_type', '-movement_type']);
+const PO_ORDERINGS = new Set([
+  '-created_at',
+  'created_at',
+  'id',
+  '-id',
+  'updated_at',
+  '-updated_at',
+  'status',
+  '-status',
+  'reference',
+  '-reference',
+  'expected_date',
+  '-expected_date',
+]);
 
 const AdminInventoryPage = ({ section = 'all' }) => {
   const popup = usePopup();
@@ -13,6 +29,12 @@ const AdminInventoryPage = ({ section = 'all' }) => {
   const [suppliers, setSuppliers] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loadingPage, setLoadingPage] = useState(true);
+  const [movementSearch, setMovementSearch] = useState('');
+  const [movementOrdering, setMovementOrdering] = useState('-created_at');
+  const [debouncedMovementSearch, setDebouncedMovementSearch] = useState('');
+  const [poListSearch, setPoListSearch] = useState('');
+  const [poListOrdering, setPoListOrdering] = useState('-created_at');
+  const [debouncedPoListSearch, setDebouncedPoListSearch] = useState('');
   const [adjustForm, setAdjustForm] = useState({ product_id: '', quantity_change: '', note: '', reference: '' });
   const [supplierForm, setSupplierForm] = useState({ name: '', contact_name: '', phone: '' });
   const [poForm, setPoForm] = useState({
@@ -21,21 +43,46 @@ const AdminInventoryPage = ({ section = 'all' }) => {
     items: [{ product: '', ordered_quantity: '', unit_cost: '' }],
   });
 
-  const authHeaders = {
-    Authorization: `Token ${token}`,
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
-  };
+  const authHeaders = useMemo(
+    () => ({
+      Authorization: `Token ${token}`,
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    }),
+    [token],
+  );
 
-  const loadAll = async () => {
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedMovementSearch(movementSearch.trim()), 350);
+    return () => clearTimeout(id);
+  }, [movementSearch]);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedPoListSearch(poListSearch.trim()), 350);
+    return () => clearTimeout(id);
+  }, [poListSearch]);
+
+  const loadAll = useCallback(async () => {
     setLoadingPage(true);
     try {
+      const movParams = new URLSearchParams({ page_size: '50' });
+      const mq = debouncedMovementSearch;
+      if (mq) movParams.set('search', mq);
+      const movOrd = MOV_ORDERINGS.has(movementOrdering) ? movementOrdering : '-created_at';
+      if (movOrd !== '-created_at') movParams.set('ordering', movOrd);
+
+      const poParams = new URLSearchParams({ page_size: '30' });
+      const pq = debouncedPoListSearch;
+      if (pq) poParams.set('search', pq);
+      const poOrd = PO_ORDERINGS.has(poListOrdering) ? poListOrdering : '-created_at';
+      if (poOrd !== '-created_at') poParams.set('ordering', poOrd);
+
       const [overviewRes, productsRes, movementsRes, suppliersRes, poRes] = await Promise.all([
         fetch(`${config.API_BASE_URL}products/admin/inventory/overview/`, { headers: authHeaders, credentials: 'include' }),
         fetch(`${config.API_BASE_URL}products/admin/?page_size=500`, { headers: authHeaders, credentials: 'include' }),
-        fetch(`${config.API_BASE_URL}products/admin/inventory/movements/?page_size=50`, { headers: authHeaders, credentials: 'include' }),
+        fetch(`${config.API_BASE_URL}products/admin/inventory/movements/?${movParams}`, { headers: authHeaders, credentials: 'include' }),
         fetch(`${config.API_BASE_URL}products/admin/inventory/suppliers/`, { headers: authHeaders, credentials: 'include' }),
-        fetch(`${config.API_BASE_URL}products/admin/inventory/purchase-orders/?page_size=30`, { headers: authHeaders, credentials: 'include' }),
+        fetch(`${config.API_BASE_URL}products/admin/inventory/purchase-orders/?${poParams}`, { headers: authHeaders, credentials: 'include' }),
       ]);
       setOverview(await overviewRes.json());
       const productsJson = await productsRes.json();
@@ -51,11 +98,11 @@ const AdminInventoryPage = ({ section = 'all' }) => {
     } finally {
       setLoadingPage(false);
     }
-  };
+  }, [authHeaders, debouncedMovementSearch, movementOrdering, debouncedPoListSearch, poListOrdering, popup]);
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [loadAll]);
 
   const submitAdjustment = async (e) => {
     e.preventDefault();
@@ -328,6 +375,51 @@ const AdminInventoryPage = ({ section = 'all' }) => {
       {(section === 'all' || section === 'purchase-orders') && (
       <div className="products-manage-table" style={{ marginBottom: 20 }}>
         <h3>ใบสั่งซื้อล่าสุด</h3>
+        <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <input
+            type="search"
+            className="form-input"
+            style={{ minWidth: 200, flex: '1 1 160px' }}
+            placeholder="ค้นหาเลข PO หมายเหตุ ชื่อผู้จำหน่าย"
+            value={poListSearch}
+            onChange={(e) => setPoListSearch(e.target.value)}
+            aria-label="ค้นหาใบสั่งซื้อ"
+          />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
+            <span className="muted">เรียง</span>
+            <select
+              className="form-input"
+              style={{ minWidth: 180, padding: '6px 10px' }}
+              value={poListOrdering}
+              onChange={(e) => setPoListOrdering(e.target.value)}
+              aria-label="เรียงใบสั่งซื้อ"
+            >
+              <option value="-created_at">สร้างล่าสุดก่อน</option>
+              <option value="created_at">สร้างเก่าสุดก่อน</option>
+              <option value="-updated_at">อัปเดตล่าสุดก่อน</option>
+              <option value="updated_at">อัปเดตเก่าสุดก่อน</option>
+              <option value="reference">เลขอ้างอิง A → Z</option>
+              <option value="-reference">เลขอ้างอิง Z → A</option>
+              <option value="status">สถานะ (ตามระบบ)</option>
+              <option value="-status">สถานะ (กลับด้าน)</option>
+              <option value="expected_date">กำหนดรับ (ตามระบบ)</option>
+              <option value="-expected_date">กำหนดรับ (กลับด้าน)</option>
+            </select>
+          </label>
+          {(poListSearch || debouncedPoListSearch || poListOrdering !== '-created_at') && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setPoListSearch('');
+                setDebouncedPoListSearch('');
+                setPoListOrdering('-created_at');
+              }}
+            >
+              ล้าง
+            </button>
+          )}
+        </div>
         <table>
           <thead>
             <tr><th>PO</th><th>ผู้จำหน่าย</th><th>สถานะ</th><th>รายการ</th><th>จัดการ</th></tr>
@@ -363,6 +455,49 @@ const AdminInventoryPage = ({ section = 'all' }) => {
       {(section === 'all' || section === 'movements') && (
       <div className="products-manage-table">
         <h3>ประวัติการเคลื่อนไหวสต็อก</h3>
+        <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <input
+            type="search"
+            className="form-input"
+            style={{ minWidth: 200, flex: '1 1 160px' }}
+            placeholder="ค้นหาสินค้า อ้างอิง หมายเหตุ ที่มา"
+            value={movementSearch}
+            onChange={(e) => setMovementSearch(e.target.value)}
+            aria-label="ค้นหาประวัติสต็อก"
+          />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
+            <span className="muted">เรียง</span>
+            <select
+              className="form-input"
+              style={{ minWidth: 180, padding: '6px 10px' }}
+              value={movementOrdering}
+              onChange={(e) => setMovementOrdering(e.target.value)}
+              aria-label="เรียงประวัติสต็อก"
+            >
+              <option value="-created_at">เวลาล่าสุดก่อน</option>
+              <option value="created_at">เวลาเก่าสุดก่อน</option>
+              <option value="-id">รหัสมากสุดก่อน</option>
+              <option value="id">รหัสน้อยสุดก่อน</option>
+              <option value="quantity_change">จำนวนเปลี่ยน (ตามระบบ)</option>
+              <option value="-quantity_change">จำนวนเปลี่ยน (กลับด้าน)</option>
+              <option value="movement_type">ประเภท (ตามระบบ)</option>
+              <option value="-movement_type">ประเภท (กลับด้าน)</option>
+            </select>
+          </label>
+          {(movementSearch || debouncedMovementSearch || movementOrdering !== '-created_at') && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setMovementSearch('');
+                setDebouncedMovementSearch('');
+                setMovementOrdering('-created_at');
+              }}
+            >
+              ล้าง
+            </button>
+          )}
+        </div>
         <table>
           <thead>
             <tr><th>เวลา</th><th>สินค้า</th><th>ประเภท</th><th>ผู้ทำรายการ</th><th>จำนวน</th><th>ก่อน/หลัง</th><th>ที่มา</th></tr>

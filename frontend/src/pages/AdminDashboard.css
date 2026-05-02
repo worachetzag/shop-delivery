@@ -755,3 +755,108 @@ button.danger {
   border-color: #b45309;
 }
 
+/* แผงตัวกรองรายการสินค้าแอดมิน — ค้นหา / เรียง / กรองสต็อก */
+.admin-products-filter-panel {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafbfc;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.admin-products-filter-panel__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.65rem;
+}
+
+.admin-products-filter-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.admin-products-filter-panel__search {
+  min-width: 220px;
+  flex: 1 1 200px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.admin-products-filter-panel__category {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.admin-products-filter-panel__category-select {
+  min-width: 160px;
+  max-width: min(260px, 100%);
+  padding: 6px 10px;
+  font-size: 0.88rem;
+}
+
+.admin-products-filter-panel__stock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-products-filter-panel__stock-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-right: 0.15rem;
+  flex-shrink: 0;
+}
+
+/* หัวตารางสินค้าแอดมิน — คลิกเรียงลำดับ */
+.products-manage-table .admin-products-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+}
+
+.products-manage-table .admin-products-sort-btn:hover {
+  color: var(--brand-primary, #00a651);
+}
+
+.products-manage-table .admin-products-sort-btn:focus-visible {
+  outline: 2px solid var(--brand-primary, #00a651);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.products-manage-table .admin-products-sort-caret {
+  font-weight: 700;
+  color: var(--brand-primary, #00a651);
+  font-size: 0.72rem;
+  line-height: 1;
+  min-width: 0.65rem;
+}
+
+.products-manage-table th.admin-products-th-static {
+  font-weight: 600;
+  color: #475569;
+}
+

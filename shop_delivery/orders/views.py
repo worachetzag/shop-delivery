@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, status
+from rest_framework import filters, generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -414,6 +414,9 @@ class OrderListView(generics.ListAPIView):
     """รายการคำสั่งซื้อของลูกค้า"""
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['id', 'created_at', 'updated_at', 'order_number', 'total_amount', 'status']
+    ordering = ['-created_at']
 
     def _is_admin_user(self, user):
         return _is_admin_user(user)
@@ -426,7 +429,7 @@ class OrderListView(generics.ListAPIView):
                 base = Order.objects.filter(customer=customer)
             else:
                 return Order.objects.none()
-        qs = base.order_by('-created_at').prefetch_related(
+        qs = base.prefetch_related(
             'items__product',
             'driver_assignment__driver__driver_profile',
         )

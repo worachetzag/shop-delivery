@@ -470,7 +470,7 @@ function AppContent() {
             path="/admin/store-settings/location"
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
-                <AdminStoreSettingsPage section="location" />
+                <Navigate to="/admin/store-settings/store" replace />
               </ProtectedRoute>
             )}
           />

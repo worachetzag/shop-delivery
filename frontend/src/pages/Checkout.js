@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
@@ -8,6 +8,7 @@ import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import CustomerInlineBack from '../components/CustomerInlineBack';
 import AddressPicker from '../components/AddressPicker';
 import { clampPhoneTen, formatMobileTenDisplay } from '../utils/thaiFormInputs';
+import { getServiceHoursStatus } from '../utils/serviceHours';
 import './Checkout.css';
 
 const FALLBACK_IMAGE = PLACEHOLDER_IMAGES.md;
@@ -99,6 +100,15 @@ const Checkout = () => {
 
   const [storeOrigin, setStoreOrigin] = useState({ latitude: null, longitude: null });
   const [storeListing, setStoreListing] = useState({ name: '', address: '' });
+  /** จาก GET orders/store-location/ — ใช้บังคับช่วงเปิดรับคำสั่ง */
+  const [serviceHours, setServiceHours] = useState(null);
+  /** รีเฟรชสถานะเปิด/ปิดทุกนาที (ข้ามเที่ยงคืน) */
+  const [hoursTick, setHoursTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setHoursTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const geocodeAddressForCheckout = async (addr) => {
     const token = localStorage.getItem('auth_token');
@@ -146,6 +156,7 @@ const Checkout = () => {
           name: (payload.name || '').trim(),
           address: (payload.address || '').trim(),
         });
+        setServiceHours(payload.service_hours ?? data?.service_hours ?? null);
       } catch (e) {
         setStoreOrigin({ latitude: null, longitude: null });
         setStoreListing({ name: '', address: '' });
@@ -425,6 +436,12 @@ const Checkout = () => {
       issues.push(deliveryFeeError || 'รอให้ระบบคำนวณค่าส่งให้เสร็จก่อน');
     }
 
+    const submitMode = fulfillmentMode === 'pickup' ? 'pickup' : 'delivery';
+    const submitHours = getServiceHoursStatus(serviceHours, submitMode);
+    if (!submitHours.open && submitHours.message) {
+      issues.push(submitHours.message);
+    }
+
     if (issues.length) {
       popup.error(`ข้อมูลยังไม่ครบ: ${issues.join(' · ')}`);
       const goProfile = await popup.confirm(
@@ -534,8 +551,16 @@ const Checkout = () => {
 
         window.location.href = '/customer/orders';
       } else {
-        const error = await response.json();
-        throw new Error(error.detail || error.error || 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
+        const error = await response.json().catch(() => ({}));
+        let msg =
+          (typeof error.detail === 'string' && error.detail) ||
+          error.error ||
+          (Array.isArray(error.non_field_errors) && error.non_field_errors[0]) ||
+          (Array.isArray(error.detail) && error.detail[0]);
+        if (!msg && error.order_type) {
+          msg = Array.isArray(error.order_type) ? error.order_type[0] : error.order_type;
+        }
+        throw new Error(msg || 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
       }
     } catch (error) {
       console.error('Error submitting order:', error);
@@ -577,6 +602,12 @@ const Checkout = () => {
     }
   };
 
+  const fulfillmentServiceMode = fulfillmentMode === 'pickup' ? 'pickup' : 'delivery';
+  const hoursStatus = useMemo(
+    () => getServiceHoursStatus(serviceHours, fulfillmentServiceMode),
+    [serviceHours, fulfillmentServiceMode, hoursTick],
+  );
+
   if (loading) {
     return (
       <div className="loading">
@@ -605,10 +636,13 @@ const Checkout = () => {
     fulfillmentMode === 'pickup'
       ? true
       : deliveryFeeEstimate != null && !deliveryFeeError && !loadingDeliveryFeeEstimate;
+
   const canSubmitOrder =
-    fulfillmentMode === 'pickup'
-      ? Boolean(paymentMethod) && hasDeliveryFeeReady && !submitting && !createdOrderId
-      : Boolean(paymentMethod) && hasDeliveryFeeReady && !submitting && !createdOrderId;
+    Boolean(paymentMethod) &&
+    hasDeliveryFeeReady &&
+    !submitting &&
+    !createdOrderId &&
+    hoursStatus.open;
 
   return (
     <div className="checkout-page">
@@ -638,6 +672,11 @@ const Checkout = () => {
                   รับที่ร้าน
                 </button>
               </div>
+              {!hoursStatus.open && hoursStatus.message ? (
+                <div className="checkout-hours-alert" role="alert">
+                  {hoursStatus.message}
+                </div>
+              ) : null}
             </div>
 
             {/* Order Summary */}

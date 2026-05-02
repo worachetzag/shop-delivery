@@ -2,8 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
 import { usePopup } from '../components/PopupProvider';
+import './AdminDashboard.css';
 
 const PAGE_SIZE = 20;
+
+const AUDIT_ORDERINGS = new Set(['-created_at', 'created_at', 'id', '-id', 'action', '-action', 'ip_address', '-ip_address']);
 
 function formatDetail(detail) {
   if (!detail || typeof detail !== 'object') return '—';
@@ -35,6 +38,9 @@ const AdminAuditLogPage = () => {
   const [rows, setRows] = useState([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [searchDraft, setSearchDraft] = useState('');
+  const [searchApplied, setSearchApplied] = useState('');
+  const [ordering, setOrdering] = useState('-created_at');
 
   const load = useCallback(async (p = 1) => {
     const token = localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
@@ -45,8 +51,14 @@ const AdminAuditLogPage = () => {
     setLoading(true);
     try {
       const base = `${config.API_BASE_URL}accounts/admin/audit-log/`;
-      const sep = base.includes('?') ? '&' : '?';
-      const fullUrl = `${base}${sep}page=${p}&page_size=${PAGE_SIZE}`;
+      const params = new URLSearchParams();
+      params.set('page', String(p));
+      params.set('page_size', String(PAGE_SIZE));
+      const q = searchApplied.trim();
+      if (q) params.set('search', q);
+      const ord = AUDIT_ORDERINGS.has(ordering) ? ordering : '-created_at';
+      if (ord !== '-created_at') params.set('ordering', ord);
+      const fullUrl = `${base}?${params.toString()}`;
 
       const res = await fetch(fullUrl, {
         headers: {
@@ -78,11 +90,16 @@ const AdminAuditLogPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [popup]);
+  }, [popup, searchApplied, ordering]);
 
   useEffect(() => {
     load(1);
   }, [load]);
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    setSearchApplied(searchDraft.trim());
+  };
 
   return (
     <div style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto', marginTop: '72px' }}>
@@ -92,6 +109,60 @@ const AdminAuditLogPage = () => {
         ผู้จำหน่ายและใบสั่งซื้อ ปรับสต็อกมือ การเปลี่ยนสถานะคำสั่งซื้อ การตรวจสลิป การมอบหมายคนขับ
         การเพิ่ม/แก้ไข/ลบบัญชีพนักงานและคนขับ — เห็นได้เฉพาะเจ้าของร้าน
       </p>
+
+      <form
+        onSubmit={submitSearch}
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 8,
+          alignItems: 'center',
+        }}
+      >
+        <input
+          type="search"
+          className="form-input"
+          style={{ minWidth: 260, flex: '1 1 220px', padding: '8px 10px', borderRadius: 8, border: '1px solid #ccc' }}
+          placeholder="ค้นหาในสรุป การกระทำ ผู้ทำ IP เป้าหมาย…"
+          value={searchDraft}
+          onChange={(e) => setSearchDraft(e.target.value)}
+        />
+        <button type="submit" className="btn-primary" style={{ padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+          ค้นหา
+        </button>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+          <span style={{ color: '#555' }}>เรียงตาม</span>
+          <select
+            value={ordering}
+            onChange={(e) => setOrdering(e.target.value)}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ccc' }}
+            aria-label="เรียงประวัติ"
+          >
+            <option value="-created_at">เวลาล่าสุดก่อน</option>
+            <option value="created_at">เวลาเก่าสุดก่อน</option>
+            <option value="-id">รหัสมากสุดก่อน</option>
+            <option value="id">รหัสน้อยสุดก่อน</option>
+            <option value="action">การกระทำ (ตามระบบ)</option>
+            <option value="-action">การกระทำ (กลับด้าน)</option>
+            <option value="ip_address">IP (ตามระบบ)</option>
+            <option value="-ip_address">IP (กลับด้าน)</option>
+          </select>
+        </label>
+        {(searchApplied || searchDraft || ordering !== '-created_at') && (
+          <button
+            type="button"
+            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #bbb', background: '#fff', cursor: 'pointer' }}
+            onClick={() => {
+              setSearchDraft('');
+              setSearchApplied('');
+              setOrdering('-created_at');
+            }}
+          >
+            ล้าง
+          </button>
+        )}
+      </form>
 
       {loading ? (
         <p>กำลังโหลด...</p>

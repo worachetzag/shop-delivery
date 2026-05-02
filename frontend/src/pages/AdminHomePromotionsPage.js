@@ -5,6 +5,21 @@ import { AdminBackLink } from '../components/AdminBackButton';
 import { resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
 
+const HOME_PROMO_ORDERINGS = new Set([
+  'sort_order',
+  '-sort_order',
+  'id',
+  '-id',
+  'title',
+  '-title',
+  'created_at',
+  '-created_at',
+  'is_active',
+  '-is_active',
+  'updated_at',
+  '-updated_at',
+]);
+
 const LINK_TARGET_OPTIONS = [
   { value: 'none', label: 'ไม่มีลิงก์ (แสดงประกาศอย่างเดียว)' },
   { value: 'shop', label: 'ไปหน้ารวมสินค้าทั้งหมด' },
@@ -65,6 +80,9 @@ const AdminHomePromotionsPage = () => {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm());
+  const [listSearchDraft, setListSearchDraft] = useState('');
+  const [listSearch, setListSearch] = useState('');
+  const [listOrdering, setListOrdering] = useState('sort_order');
 
   const getToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
 
@@ -103,7 +121,13 @@ const AdminHomePromotionsPage = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${config.API_BASE_URL}products/admin/home-promotions/`, {
+      const params = new URLSearchParams();
+      const q = listSearch.trim();
+      if (q) params.set('search', q);
+      const ord = HOME_PROMO_ORDERINGS.has(listOrdering) ? listOrdering : 'sort_order';
+      if (ord !== 'sort_order') params.set('ordering', ord);
+      const qs = params.toString();
+      const res = await fetch(`${config.API_BASE_URL}products/admin/home-promotions/${qs ? `?${qs}` : ''}`, {
         headers: {
           Authorization: `Token ${getToken()}`,
           'Content-Type': 'application/json',
@@ -121,7 +145,7 @@ const AdminHomePromotionsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [popup]);
+  }, [popup, listSearch, listOrdering]);
 
   useEffect(() => {
     loadMeta();
@@ -130,6 +154,8 @@ const AdminHomePromotionsPage = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const applyListSearch = () => setListSearch(listSearchDraft.trim());
 
   const resetForm = () => {
     setEditingId(null);
@@ -493,6 +519,68 @@ const AdminHomePromotionsPage = () => {
             ) : null}
           </div>
         </form>
+
+        <div
+          style={{
+            marginBottom: 14,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            alignItems: 'center',
+          }}
+        >
+          <input
+            type="search"
+            className="form-input"
+            style={{ minWidth: 220, flex: '1 1 180px' }}
+            placeholder="ค้นหาหัวข้อ คำอธิบาย ป้ายลิงก์…"
+            value={listSearchDraft}
+            onChange={(e) => setListSearchDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyListSearch();
+            }}
+            aria-label="ค้นหาการ์ดโปรโมชั่น"
+          />
+          <button type="button" className="btn-primary" onClick={applyListSearch}>
+            ค้นหา
+          </button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+            <span className="muted">เรียงตาม</span>
+            <select
+              className="form-input"
+              style={{ minWidth: 200, padding: '6px 10px' }}
+              value={listOrdering}
+              onChange={(e) => setListOrdering(e.target.value)}
+              aria-label="เรียงลำดับการ์ด"
+            >
+              <option value="sort_order">ลำดับแสดง (น้อยขึ้นก่อน)</option>
+              <option value="-sort_order">ลำดับแสดง (มากขึ้นก่อน)</option>
+              <option value="-id">เพิ่มล่าสุดก่อน (รหัสมากสุดก่อน)</option>
+              <option value="id">เพิ่มเก่าสุดก่อน</option>
+              <option value="title">หัวข้อ A → Z</option>
+              <option value="-title">หัวข้อ Z → A</option>
+              <option value="-created_at">สร้างเมื่อ — ใหม่สุดก่อน</option>
+              <option value="created_at">สร้างเมื่อ — เก่าสุดก่อน</option>
+              <option value="-is_active">เปิดใช้ก่อน</option>
+              <option value="is_active">ปิดใช้ก่อน</option>
+              <option value="-updated_at">แก้ล่าสุดก่อน</option>
+              <option value="updated_at">แก้เก่าสุดก่อน</option>
+            </select>
+          </label>
+          {(listSearch || listSearchDraft || listOrdering !== 'sort_order') && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setListSearchDraft('');
+                setListSearch('');
+                setListOrdering('sort_order');
+              }}
+            >
+              ล้างตัวกรอง
+            </button>
+          )}
+        </div>
 
         {loading ? (
           <p>กำลังโหลด...</p>

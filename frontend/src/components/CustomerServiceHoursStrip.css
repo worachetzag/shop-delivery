@@ -1,0 +1,92 @@
+.customer-service-hours-strip {
+  margin-bottom: var(--space-4, 16px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  box-shadow: var(--shadow-soft, 0 4px 14px rgba(15, 23, 42, 0.06));
+}
+
+.customer-service-hours-strip--compact {
+  margin-bottom: var(--space-3, 12px);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+}
+
+.customer-service-hours-strip__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 var(--space-2, 8px);
+  letter-spacing: 0.02em;
+}
+
+.customer-service-hours-strip__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2, 8px);
+}
+
+.customer-service-hours-strip__list li {
+  display: grid;
+  gap: 4px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 8px);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(254, 215, 170, 0.7);
+}
+
+.customer-service-hours-strip__list li.is-open {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(236, 253, 245, 0.85);
+}
+
+.customer-service-hours-strip__list li.is-closed {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.customer-service-hours-strip__label {
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  font-size: 0.8rem;
+}
+
+.customer-service-hours-strip__state {
+  color: var(--text-secondary, #475569);
+  font-size: 0.84rem;
+}
+
+.customer-service-hours-strip__list li.is-open .customer-service-hours-strip__state {
+  color: #047857;
+  font-weight: 600;
+}
+
+.customer-service-hours-strip__list li.is-closed .customer-service-hours-strip__state {
+  color: #b91c1c;
+}
+
+.customer-service-hours-strip__hint {
+  margin: var(--space-2, 8px) 0 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.4;
+}
+
+.customer-service-hours-strip--compact .customer-service-hours-strip__title {
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+.customer-service-hours-strip--compact .customer-service-hours-strip__list li {
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
+.customer-service-hours-strip--compact .customer-service-hours-strip__hint {
+  font-size: 0.72rem;
+  margin-top: 6px;
+}

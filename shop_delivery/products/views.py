@@ -3,7 +3,7 @@ from django.db.models import F, IntegerField, Q, Sum, Value
 from django.db.models import ExpressionWrapper
 from django.db.models.functions import Greatest
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions, status
+from rest_framework import filters, generics, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -298,9 +298,11 @@ class AdminHomePromotionListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStoreAdminOrSuperAdmin]
     pagination_class = None
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-
-    def get_queryset(self):
-        return HomePromotion.objects.all().order_by('sort_order', 'id')
+    queryset = HomePromotion.objects.all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ('title', 'description', 'link_label', 'link_url')
+    ordering_fields = ('id', 'sort_order', 'title', 'created_at', 'is_active', 'updated_at')
+    ordering = ('sort_order', 'id')
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -361,11 +363,29 @@ class AdminProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.all().select_related('category').order_by('-id')
     serializer_class = ProductSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ('name', 'description', 'category__name')
+    ordering_fields = (
+        'id',
+        'name',
+        'price',
+        'compare_at_price',
+        'created_at',
+        'stock_quantity',
+        'reserved_quantity',
+        'category__name',
+        'is_available',
+        'is_featured',
+    )
+    ordering = ('-id',)
 
     def get_queryset(self):
-        qs = Product.objects.all().select_related('category').order_by('-id')
+        qs = Product.objects.all().select_related('category')
         if self.request.method != 'GET':
-            return qs
+            return qs.order_by('-id')
+        raw_cat = (self.request.query_params.get('category_id') or '').strip()
+        if raw_cat.isdigit():
+            qs = qs.filter(category_id=int(raw_cat))
         stock_filter = self.request.query_params.get('stock_filter', 'all')
         return _admin_product_list_queryset_filtered(qs, stock_filter)
 
@@ -463,10 +483,14 @@ class AdminProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class AdminCategoryListCreateView(generics.ListCreateAPIView):
     """Admin category list/create."""
-    queryset = Category.objects.all().order_by('name')
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
     pagination_class = None
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ('name', 'description')
+    ordering_fields = ('id', 'name', 'created_at')
+    ordering = ('name',)
 
     def create(self, request, *args, **kwargs):
         name = (request.data.get('name') or '').strip()
@@ -598,6 +622,10 @@ class AdminStockMovementListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStoreAdminOrSuperAdmin]
     serializer_class = StockMovementSerializer
     queryset = StockMovement.objects.select_related('product', 'created_by').all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ('product__name', 'reference', 'source_id', 'note', 'movement_type', 'source_type')
+    ordering_fields = ('id', 'created_at', 'quantity_change', 'movement_type')
+    ordering = ('-created_at', '-id')
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -667,6 +695,10 @@ class AdminSupplierListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStoreAdminOrSuperAdmin]
     queryset = Supplier.objects.all()
     pagination_class = None
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ('name', 'contact_name', 'phone', 'email', 'address')
+    ordering_fields = ('id', 'name', 'created_at', 'is_active', 'phone')
+    ordering = ('name',)
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -744,6 +776,10 @@ class AdminPurchaseOrderListCreateView(generics.ListCreateAPIView):
     serializer_class = PurchaseOrderSerializer
     permission_classes = [IsStoreAdminOrSuperAdmin]
     queryset = PurchaseOrder.objects.select_related('supplier', 'created_by').prefetch_related('items__product')
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ('reference', 'notes', 'supplier__name')
+    ordering_fields = ('id', 'created_at', 'updated_at', 'status', 'reference', 'expected_date')
+    ordering = ('-created_at',)
 
     def get_queryset(self):
         qs = super().get_queryset()

@@ -548,6 +548,17 @@
   line-height: 1.45;
 }
 
+.checkout-hours-alert {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .pickup-store-card {
   border: 1px solid var(--border-soft, #e5e7eb);
   border-radius: 12px;

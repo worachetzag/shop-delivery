@@ -10,6 +10,64 @@ const ADMIN_PRODUCTS_PAGE_SIZE = 20;
 
 const ADMIN_PRODUCTS_STOCK_FILTERS = new Set(['all', 'low', 'out', 'promo', 'featured']);
 
+const ADMIN_ORDER_ORDERINGS = new Set([
+  '-created_at',
+  'created_at',
+  'id',
+  '-id',
+  'order_number',
+  '-order_number',
+  'total_amount',
+  '-total_amount',
+  'status',
+  '-status',
+  'updated_at',
+  '-updated_at',
+]);
+
+const ADMIN_CATEGORY_ORDERINGS = new Set(['id', '-id', 'name', '-name', 'created_at', '-created_at']);
+
+const ADMIN_PRODUCTS_ORDERINGS = new Set([
+  'id',
+  '-id',
+  'name',
+  '-name',
+  'price',
+  '-price',
+  'compare_at_price',
+  '-compare_at_price',
+  'created_at',
+  '-created_at',
+  'stock_quantity',
+  '-stock_quantity',
+  'reserved_quantity',
+  '-reserved_quantity',
+  'category__name',
+  '-category__name',
+  'is_available',
+  '-is_available',
+  'is_featured',
+  '-is_featured',
+]);
+
+/** เรียงครั้งแรกเป็นจากมาก→น้อย / true ก่อน */
+const ADMIN_PRODUCT_SORT_FIRST_DESC_FIELDS = new Set([
+  'price',
+  'compare_at_price',
+  'stock_quantity',
+  'reserved_quantity',
+  'id',
+  'created_at',
+  'is_available',
+  'is_featured',
+]);
+
+function adminProductSortCaret(ordering, field) {
+  if (ordering === field) return '↑';
+  if (ordering === `-${field}`) return '↓';
+  return '';
+}
+
 function getProductAvailableQty(product) {
   if (product.available_quantity != null && product.available_quantity !== '') {
     return Math.max(0, Number(product.available_quantity));
@@ -63,6 +121,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const isAdminProductsListRoute = location.pathname === '/admin/products';
+  const isAdminCategoriesListRoute = location.pathname === '/admin/categories';
   const productsPage = useMemo(() => {
     if (!isAdminProductsListRoute) return 1;
     const raw = parseInt(searchParams.get('page') || '1', 10);
@@ -73,6 +132,39 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     const s = searchParams.get('stock') || 'all';
     return ADMIN_PRODUCTS_STOCK_FILTERS.has(s) ? s : 'all';
   }, [isAdminProductsListRoute, searchParams]);
+  const productsSearch = useMemo(() => {
+    if (!isAdminProductsListRoute) return '';
+    return (searchParams.get('search') || '').trim();
+  }, [isAdminProductsListRoute, searchParams]);
+  const productsOrdering = useMemo(() => {
+    if (!isAdminProductsListRoute) return '-id';
+    const o = (searchParams.get('ordering') || '-id').trim();
+    return ADMIN_PRODUCTS_ORDERINGS.has(o) ? o : '-id';
+  }, [isAdminProductsListRoute, searchParams]);
+  const productsCategoryFilter = useMemo(() => {
+    if (!isAdminProductsListRoute) return '';
+    const raw = (searchParams.get('category_id') || '').trim();
+    return /^\d+$/.test(raw) ? raw : '';
+  }, [isAdminProductsListRoute, searchParams]);
+  const ordersOrdering = useMemo(() => {
+    const onOrdersTab =
+      forcedTab === 'orders' ||
+      location.pathname === '/admin/orders' ||
+      location.pathname === '/admin/dashboard' ||
+      location.pathname === '/admin';
+    if (!onOrdersTab) return '-created_at';
+    const o = (searchParams.get('ordering') || '-created_at').trim();
+    return ADMIN_ORDER_ORDERINGS.has(o) ? o : '-created_at';
+  }, [forcedTab, location.pathname, searchParams]);
+  const categoriesSearch = useMemo(() => {
+    if (!isAdminCategoriesListRoute) return '';
+    return (searchParams.get('search') || '').trim();
+  }, [isAdminCategoriesListRoute, searchParams]);
+  const categoriesOrdering = useMemo(() => {
+    if (!isAdminCategoriesListRoute) return 'name';
+    const o = (searchParams.get('ordering') || 'name').trim();
+    return ADMIN_CATEGORY_ORDERINGS.has(o) ? o : 'name';
+  }, [isAdminCategoriesListRoute, searchParams]);
   const adminProductsReturnSearch = useMemo(
     () => (location.search && location.search.startsWith('?') ? location.search : ''),
     [location.search],
@@ -110,6 +202,102 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     },
     [setSearchParams],
   );
+
+  const handleProductsCategoryFilterChange = useCallback(
+    (categoryIdValue) => {
+      const raw = String(categoryIdValue ?? '').trim();
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          sp.delete('page');
+          if (!raw || raw === '') sp.delete('category_id');
+          else sp.set('category_id', raw);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const handleProductsOrderingChange = useCallback(
+    (orderingValue) => {
+      const o = ADMIN_PRODUCTS_ORDERINGS.has(orderingValue) ? orderingValue : '-id';
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          sp.delete('page');
+          if (!o || o === '-id') sp.delete('ordering');
+          else sp.set('ordering', o);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const toggleProductsTableSort = useCallback(
+    (field) => {
+      const asc = field;
+      const desc = `-${field}`;
+      const cur = productsOrdering;
+      let next;
+      if (cur === asc) next = desc;
+      else if (cur === desc) next = asc;
+      else next = ADMIN_PRODUCT_SORT_FIRST_DESC_FIELDS.has(field) ? desc : asc;
+      handleProductsOrderingChange(next);
+    },
+    [productsOrdering, handleProductsOrderingChange],
+  );
+
+  const isOrdersListUrlContext = useMemo(
+    () =>
+      forcedTab === 'orders' ||
+      location.pathname === '/admin/orders' ||
+      location.pathname === '/admin/dashboard' ||
+      location.pathname === '/admin',
+    [forcedTab, location.pathname],
+  );
+
+  const ordersQuerySearch = useMemo(() => {
+    if (!isOrdersListUrlContext) return '';
+    return (searchParams.get('q') || '').trim();
+  }, [isOrdersListUrlContext, searchParams]);
+
+  const handleOrdersOrderingChange = useCallback(
+    (orderingValue) => {
+      const o = ADMIN_ORDER_ORDERINGS.has(orderingValue) ? orderingValue : '-created_at';
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          if (!o || o === '-created_at') sp.delete('ordering');
+          else sp.set('ordering', o);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const handleCategoriesOrderingChange = useCallback(
+    (orderingValue) => {
+      const o = ADMIN_CATEGORY_ORDERINGS.has(orderingValue) ? orderingValue : 'name';
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          sp.delete('page');
+          if (!o || o === 'name') sp.delete('ordering');
+          else sp.set('ordering', o);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   const ordersCustomerIdFilter = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     const raw = (sp.get('customer_id') || '').trim();
@@ -132,11 +320,12 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const [ordersPage, setOrdersPage] = useState(1);
   const [ordersTotalCount, setOrdersTotalCount] = useState(0);
   const [ordersSearchDraft, setOrdersSearchDraft] = useState('');
-  const [ordersSearch, setOrdersSearch] = useState('');
   /** all | delivery | pickup — แยกจัดส่ง vs มารับที่ร้าน */
   const [ordersFulfillmentFilter, setOrdersFulfillmentFilter] = useState('all');
   const [products, setProducts] = useState([]);
   const [productsTotalCount, setProductsTotalCount] = useState(0);
+  const [productsSearchDraft, setProductsSearchDraft] = useState('');
+  const [categoriesSearchDraft, setCategoriesSearchDraft] = useState('');
   const [categories, setCategories] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -246,24 +435,106 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const [driverEditClearPhoto, setDriverEditClearPhoto] = useState(false);
   const selfStaffProfile = staffMembers.find((staff) => staff.username === currentUsername) || null;
 
+  const applyProductsSearch = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        const sp = new URLSearchParams(prev);
+        sp.delete('page');
+        const q = productsSearchDraft.trim();
+        if (!q) sp.delete('search');
+        else sp.set('search', q);
+        return sp;
+      },
+      { replace: true },
+    );
+  }, [productsSearchDraft, setSearchParams]);
+
+  const clearProductsListFilters = useCallback(() => {
+    setProductsSearchDraft('');
+    setSearchParams(
+      (prev) => {
+        const sp = new URLSearchParams(prev);
+        sp.delete('page');
+        sp.delete('search');
+        sp.delete('ordering');
+        sp.delete('stock');
+        sp.delete('category_id');
+        return sp;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+
+  const applyOrdersSearch = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        const sp = new URLSearchParams(prev);
+        const q = ordersSearchDraft.trim();
+        if (!q) sp.delete('q');
+        else sp.set('q', q);
+        return sp;
+      },
+      { replace: true },
+    );
+  }, [ordersSearchDraft, setSearchParams]);
+
+  const applyCategoriesSearch = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        const sp = new URLSearchParams(prev);
+        sp.delete('page');
+        const q = categoriesSearchDraft.trim();
+        if (!q) sp.delete('search');
+        else sp.set('search', q);
+        return sp;
+      },
+      { replace: true },
+    );
+  }, [categoriesSearchDraft, setSearchParams]);
+
+  const clearCategoriesListFilters = useCallback(() => {
+    setCategoriesSearchDraft('');
+    setSearchParams(
+      (prev) => {
+        const sp = new URLSearchParams(prev);
+        sp.delete('page');
+        sp.delete('search');
+        sp.delete('ordering');
+        return sp;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+
   useEffect(() => {
     if (activeTab === 'orders') {
       loadOrders();
     }
-  }, [activeTab, ordersPage, ordersSearch, ordersCustomerIdFilter, ordersFulfillmentFilter]);
+  }, [activeTab, ordersPage, ordersQuerySearch, ordersCustomerIdFilter, ordersFulfillmentFilter, ordersOrdering]);
 
   useEffect(() => {
     setOrdersPage(1);
-  }, [ordersSearch, ordersCustomerIdFilter, ordersFulfillmentFilter]);
+  }, [ordersQuerySearch, ordersCustomerIdFilter, ordersFulfillmentFilter, ordersOrdering]);
+
+  useEffect(() => {
+    if (activeTab !== 'orders') return;
+    setOrdersSearchDraft(ordersQuerySearch);
+  }, [activeTab, ordersQuerySearch]);
+
+  useEffect(() => {
+    if (activeTab === 'products' && isAdminProductsListRoute) {
+      setProductsSearchDraft(searchParams.get('search') || '');
+    }
+  }, [activeTab, isAdminProductsListRoute, searchParams]);
 
   useEffect(() => {
     if (activeTab === 'products') {
       loadProducts();
     }
-  }, [activeTab, productsPage, productsStockFilter]);
+  }, [activeTab, productsPage, productsStockFilter, productsSearch, productsOrdering, productsCategoryFilter]);
 
   useEffect(() => {
-    if (activeTab === 'products' || activeTab === 'categories') {
+    if (activeTab === 'products') {
       loadCategories();
     }
     if (activeTab === 'drivers') {
@@ -272,6 +543,18 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     }
     loadStats();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'categories') {
+      loadCategories();
+    }
+  }, [activeTab, categoriesSearch, categoriesOrdering]);
+
+  useEffect(() => {
+    if (activeTab === 'categories' && isAdminCategoriesListRoute) {
+      setCategoriesSearchDraft(searchParams.get('search') || '');
+    }
+  }, [activeTab, isAdminCategoriesListRoute, searchParams]);
 
   useEffect(() => {
     const nextDrafts = {};
@@ -288,14 +571,17 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         page: String(ordersPage),
         page_size: String(ADMIN_ORDERS_PAGE_SIZE),
       });
-      if (ordersSearch.trim()) {
-        params.set('q', ordersSearch.trim());
+      if (ordersQuerySearch.trim()) {
+        params.set('q', ordersQuerySearch.trim());
       }
       if (ordersCustomerIdFilter) {
         params.set('customer_id', ordersCustomerIdFilter);
       }
       if (ordersFulfillmentFilter === 'delivery' || ordersFulfillmentFilter === 'pickup') {
         params.set('order_type', ordersFulfillmentFilter);
+      }
+      if (ordersOrdering && ordersOrdering !== '-created_at') {
+        params.set('ordering', ordersOrdering);
       }
       const response = await fetch(`${config.API_BASE_URL}orders/list/?${params.toString()}`, {
         headers: {
@@ -333,6 +619,15 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       ) {
         params.set('stock_filter', productsStockFilter);
       }
+      if (productsSearch.trim()) {
+        params.set('search', productsSearch.trim());
+      }
+      if (productsOrdering && productsOrdering !== '-id') {
+        params.set('ordering', productsOrdering);
+      }
+      if (productsCategoryFilter) {
+        params.set('category_id', productsCategoryFilter);
+      }
       const response = await fetch(`${config.API_BASE_URL}products/admin/?${params.toString()}`, {
         headers: {
           Authorization: `Token ${token}`,
@@ -357,14 +652,27 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   const loadCategories = async () => {
     try {
       const token = getAdminToken();
-      const response = await fetch(`${config.API_BASE_URL}products/admin/categories/`, {
+      const params = new URLSearchParams();
+      if (activeTab === 'categories') {
+        if (categoriesSearch.trim()) {
+          params.set('search', categoriesSearch.trim());
+        }
+        if (categoriesOrdering && categoriesOrdering !== 'name') {
+          params.set('ordering', categoriesOrdering);
+        }
+      }
+      const q = params.toString();
+      const response = await fetch(
+        `${config.API_BASE_URL}products/admin/categories/${q ? `?${q}` : ''}`,
+        {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
         credentials: 'include',
-      });
+      },
+      );
       if (!response.ok) {
         throw new Error(`Failed to load categories: ${response.status}`);
       }
@@ -1141,31 +1449,57 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 onChange={(e) => setOrdersSearchDraft(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    setOrdersSearch(ordersSearchDraft);
+                    applyOrdersSearch();
                   }
                 }}
               />
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => setOrdersSearch(ordersSearchDraft)}
-              >
+              <button type="button" className="btn-primary" onClick={applyOrdersSearch}>
                 ค้นหา
               </button>
-              {(ordersSearch ||
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+                <span className="muted">เรียงตาม</span>
+                <select
+                  className="form-input"
+                  style={{ minWidth: 200, padding: '6px 10px' }}
+                  value={ordersOrdering}
+                  onChange={(e) => handleOrdersOrderingChange(e.target.value)}
+                  aria-label="เรียงลำดับคำสั่งซื้อ"
+                >
+                  <option value="-created_at">สั่งซื้อล่าสุดก่อน</option>
+                  <option value="created_at">สั่งซื้อเก่าสุดก่อน</option>
+                  <option value="-updated_at">อัปเดตล่าสุดก่อน</option>
+                  <option value="updated_at">อัปเดตเก่าสุดก่อน</option>
+                  <option value="-id">รหัสมากสุดก่อน</option>
+                  <option value="id">รหัสน้อยสุดก่อน</option>
+                  <option value="order_number">เลขคำสั่งซื้อ A → Z</option>
+                  <option value="-order_number">เลขคำสั่งซื้อ Z → A</option>
+                  <option value="total_amount">ยอดเงิน น้อย → มาก</option>
+                  <option value="-total_amount">ยอดเงิน มาก → น้อย</option>
+                  <option value="status">สถานะ (ตามระบบ)</option>
+                  <option value="-status">สถานะ (กลับด้าน)</option>
+                </select>
+              </label>
+              {(ordersQuerySearch ||
                 ordersSearchDraft ||
                 ordersCustomerIdFilter ||
-                ordersFulfillmentFilter !== 'all') && (
+                ordersFulfillmentFilter !== 'all' ||
+                ordersOrdering !== '-created_at') && (
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={() => {
                     setOrdersSearchDraft('');
-                    setOrdersSearch('');
                     setOrdersFulfillmentFilter('all');
-                    if (ordersCustomerIdFilter) {
-                      navigate('/admin/orders');
-                    }
+                    setSearchParams(
+                      (prev) => {
+                        const sp = new URLSearchParams(prev);
+                        sp.delete('q');
+                        sp.delete('ordering');
+                        sp.delete('customer_id');
+                        return sp;
+                      },
+                      { replace: true },
+                    );
                   }}
                 >
                   ล้าง
@@ -1334,52 +1668,106 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
             <div className="products-manage-table">
               <h3>จัดการสต็อกสินค้า</h3>
               <p className="products-row-click-hint" style={{ margin: '0 0 12px', color: '#666', fontSize: '14px' }}>
-                คลิกที่แถวสินค้า (ยกเว้นช่องสต็อก) เพื่อเปิดหน้าแก้ไข
+                คลิกที่แถวสินค้า (ยกเว้นช่องสต็อก) เพื่อเปิดหน้าแก้ไข ·{' '}
+                <span className="muted">เรียงลำดับจากหัวคอลัมน์ในตาราง (↑ / ↓)</span>
               </p>
-              <div
-                className="admin-product-stock-filters"
-                role="group"
-                aria-label="กรองสต็อกสินค้า"
-                style={{ marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
-              >
-                <button
-                  type="button"
-                  className={`admin-fulfillment-chip ${productsStockFilter === 'all' ? 'is-active' : ''}`}
-                  onClick={() => handleProductsStockFilterChange('all')}
+              <div className="admin-products-filter-panel">
+                <div className="admin-products-filter-panel__title">ตัวกรองและค้นหา</div>
+                <div className="admin-products-filter-panel__row">
+                  <label className="admin-products-filter-panel__category">
+                    <span className="muted">หมวดหมู่</span>
+                    <select
+                      className="form-input admin-products-filter-panel__category-select"
+                      value={
+                        productsCategoryFilter &&
+                        categories.some((c) => String(c.id) === productsCategoryFilter)
+                          ? productsCategoryFilter
+                          : ''
+                      }
+                      onChange={(e) => handleProductsCategoryFilterChange(e.target.value)}
+                      aria-label="กรองตามหมวดหมู่"
+                    >
+                      <option value="">ทุกหมวด</option>
+                      {[...categories]
+                        .sort((a, b) =>
+                          String(a.name || '').localeCompare(String(b.name || ''), 'th'),
+                        )
+                        .map((c) => (
+                          <option key={c.id} value={String(c.id)}>
+                            {c.name || `หมวด #${c.id}`}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <input
+                    type="search"
+                    className="form-input admin-products-filter-panel__search"
+                    placeholder="ค้นหาชื่อสินค้า คำอธิบาย หรือชื่อหมวด"
+                    value={productsSearchDraft}
+                    onChange={(e) => setProductsSearchDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applyProductsSearch();
+                    }}
+                    aria-label="ค้นหาสินค้า"
+                  />
+                  <button type="button" className="btn-primary" onClick={applyProductsSearch}>
+                    ค้นหา
+                  </button>
+                  {(productsSearch ||
+                    productsSearchDraft ||
+                    productsOrdering !== '-id' ||
+                    productsStockFilter !== 'all' ||
+                    productsCategoryFilter) && (
+                    <button type="button" className="btn-secondary" onClick={clearProductsListFilters}>
+                      ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
+                <div
+                  className="admin-products-filter-panel__stock"
+                  role="group"
+                  aria-label="กรองสต็อกและการแสดงผล"
                 >
-                  สินค้าทั้งหมด
-                </button>
-                <button
-                  type="button"
-                  className={`admin-fulfillment-chip admin-fulfillment-chip--pickup ${productsStockFilter === 'low' ? 'is-active' : ''}`}
-                  onClick={() => handleProductsStockFilterChange('low')}
-                >
-                  ใกล้หมด
-                </button>
-                <button
-                  type="button"
-                  className={`admin-fulfillment-chip ${productsStockFilter === 'out' ? 'is-active' : ''}`}
-                  onClick={() => handleProductsStockFilterChange('out')}
-                  style={{ borderColor: '#fecaca' }}
-                >
-                  สินค้าหมด
-                </button>
-                <button
-                  type="button"
-                  className={`admin-fulfillment-chip admin-fulfillment-chip--delivery ${productsStockFilter === 'promo' ? 'is-active' : ''}`}
-                  onClick={() => handleProductsStockFilterChange('promo')}
-                  title="สินค้าที่มีราคาก่อนลดสูงกว่าราคาขายจริง"
-                >
-                  สินค้าลดราคา
-                </button>
-                <button
-                  type="button"
-                  className={`admin-fulfillment-chip ${productsStockFilter === 'featured' ? 'is-active' : ''}`}
-                  onClick={() => handleProductsStockFilterChange('featured')}
-                  title="สินค้าที่ตั้งให้แสดงในหมวดแนะนำบนหน้าแรก"
-                >
-                  สินค้าแนะนำ
-                </button>
+                  <span className="admin-products-filter-panel__stock-label muted">แสดงเฉพาะ</span>
+                  <button
+                    type="button"
+                    className={`admin-fulfillment-chip ${productsStockFilter === 'all' ? 'is-active' : ''}`}
+                    onClick={() => handleProductsStockFilterChange('all')}
+                  >
+                    สินค้าทั้งหมด
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-fulfillment-chip admin-fulfillment-chip--pickup ${productsStockFilter === 'low' ? 'is-active' : ''}`}
+                    onClick={() => handleProductsStockFilterChange('low')}
+                  >
+                    ใกล้หมด
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-fulfillment-chip ${productsStockFilter === 'out' ? 'is-active' : ''}`}
+                    onClick={() => handleProductsStockFilterChange('out')}
+                    style={{ borderColor: '#fecaca' }}
+                  >
+                    สินค้าหมด
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-fulfillment-chip admin-fulfillment-chip--delivery ${productsStockFilter === 'promo' ? 'is-active' : ''}`}
+                    onClick={() => handleProductsStockFilterChange('promo')}
+                    title="สินค้าที่มีราคาก่อนลดสูงกว่าราคาขายจริง"
+                  >
+                    สินค้าลดราคา
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-fulfillment-chip ${productsStockFilter === 'featured' ? 'is-active' : ''}`}
+                    onClick={() => handleProductsStockFilterChange('featured')}
+                    title="สินค้าที่ตั้งให้แสดงในหมวดแนะนำบนหน้าแรก"
+                  >
+                    สินค้าแนะนำ
+                  </button>
+                </div>
               </div>
               {products.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '24px' }}>
@@ -1389,15 +1777,110 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 <table>
                   <thead>
                     <tr>
-                      <th>ชื่อสินค้า</th>
-                      <th>หมวดหมู่</th>
-                      <th>หน่วย</th>
-                      <th>ราคาขาย</th>
-                      <th>ราคาก่อนลด</th>
-                      <th>คงเหลือ</th>
-                      <th>จอง</th>
-                      <th>สต็อก</th>
-                      <th>สถานะ</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('name');
+                          }}
+                          aria-label="เรียงตามชื่อสินค้า"
+                        >
+                          ชื่อสินค้า{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'name')}</span>
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('category__name');
+                          }}
+                          aria-label="เรียงตามหมวดหมู่"
+                        >
+                          หมวดหมู่{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'category__name')}</span>
+                        </button>
+                      </th>
+                      <th scope="col" className="admin-products-th-static">
+                        หน่วย
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('price');
+                          }}
+                          aria-label="เรียงตามราคาขาย"
+                        >
+                          ราคาขาย{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'price')}</span>
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('compare_at_price');
+                          }}
+                          aria-label="เรียงตามราคาก่อนลด"
+                        >
+                          ราคาก่อนลด{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'compare_at_price')}</span>
+                        </button>
+                      </th>
+                      <th scope="col" className="admin-products-th-static" title="เรียงจากคอลัมน์สต็อกได้">
+                        คงเหลือ
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('reserved_quantity');
+                          }}
+                          aria-label="เรียงตามจำนวนจอง"
+                        >
+                          จอง{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'reserved_quantity')}</span>
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('stock_quantity');
+                          }}
+                          aria-label="เรียงตามจำนวนในคลัง"
+                        >
+                          สต็อก{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'stock_quantity')}</span>
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="admin-products-sort-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProductsTableSort('is_available');
+                          }}
+                          aria-label="เรียงตามเปิดขาย"
+                        >
+                          สถานะ{' '}
+                          <span className="admin-products-sort-caret">{adminProductSortCaret(productsOrdering, 'is_available')}</span>
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1523,6 +2006,55 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
             {!editingCategory && (
               <div className="products-manage-table">
                 <h3>รายการหมวดหมู่</h3>
+                <div
+                  style={{
+                    marginBottom: 14,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                    alignItems: 'center',
+                  }}
+                >
+                  <input
+                    type="search"
+                    className="form-input"
+                    style={{ minWidth: 240, flex: '1 1 200px' }}
+                    placeholder="ค้นหาชื่อหรือคำอธิบายหมวด"
+                    value={categoriesSearchDraft}
+                    onChange={(e) => setCategoriesSearchDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applyCategoriesSearch();
+                    }}
+                    aria-label="ค้นหาหมวดหมู่"
+                  />
+                  <button type="button" className="btn-primary" onClick={applyCategoriesSearch}>
+                    ค้นหา
+                  </button>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+                    <span className="muted">เรียงตาม</span>
+                    <select
+                      className="form-input"
+                      style={{ minWidth: 180, padding: '6px 10px' }}
+                      value={categoriesOrdering}
+                      onChange={(e) => handleCategoriesOrderingChange(e.target.value)}
+                      aria-label="เรียงลำดับหมวดหมู่"
+                    >
+                      <option value="name">ชื่อ ก → ฮ</option>
+                      <option value="-name">ชื่อ ฮ → ก</option>
+                      <option value="id">รหัสน้อยสุดก่อน</option>
+                      <option value="-id">รหัสมากสุดก่อน</option>
+                      <option value="created_at">สร้างเก่าสุดก่อน</option>
+                      <option value="-created_at">สร้างใหม่สุดก่อน</option>
+                    </select>
+                  </label>
+                  {(categoriesSearch ||
+                    categoriesSearchDraft ||
+                    categoriesOrdering !== 'name') && (
+                    <button type="button" className="btn-secondary" onClick={clearCategoriesListFilters}>
+                      ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
                 {categories.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '24px' }}>ยังไม่มีหมวดหมู่</div>
                 ) : (

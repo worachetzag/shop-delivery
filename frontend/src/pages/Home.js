@@ -4,6 +4,7 @@ import ProductCard from '../components/ProductCard';
 import CategoryChipsRow from '../components/CategoryChipsRow';
 import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
 import CustomerCategoryStrip from '../components/CustomerCategoryStrip';
+import CustomerServiceHoursStrip from '../components/CustomerServiceHoursStrip';
 import config from '../config';
 import { productsService } from '../services/api';
 import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
@@ -449,6 +450,10 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <div className="container">
+        <CustomerServiceHoursStrip />
+      </div>
 
       <CustomerCategoryStrip categories={categories} />
 

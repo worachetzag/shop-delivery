@@ -18,8 +18,9 @@ def get_delivery_origin_lat_lng():
 
 
 def get_store_location_payload():
-    """ข้อมูลสำหรับ API / แอป (แสดงแผนที่, คำนวณระยะ)"""
+    """ข้อมูลสำหรับ API / แอป (แสดงแผนที่, คำนวณระยะ, เวลาเปิดรับคำสั่ง)"""
     from .models import StoreLocation
+    from .service_hours import serialize_public_service_hours
 
     o_lat, o_lng = get_delivery_origin_lat_lng()
     loc = StoreLocation.objects.order_by('pk').first()
@@ -35,4 +36,5 @@ def get_store_location_payload():
         'latitude': o_lat,
         'longitude': o_lng,
         'source': source,
+        'service_hours': serialize_public_service_hours(),
     }

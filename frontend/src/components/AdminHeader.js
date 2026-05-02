@@ -65,7 +65,6 @@ function AdminNavSections({
         {openGroup === 'store' && (
           <div className="admin-nav-submenu">
             <Link to="/admin/store-settings/store" className={navLinkClass(isActivePath('/admin/store-settings/store'))}>ข้อมูลร้าน</Link>
-            <Link to="/admin/store-settings/location" className={navLinkClass(isActivePath('/admin/store-settings/location'))}>พิกัดร้าน</Link>
             <Link to="/admin/store-settings/payment" className={navLinkClass(isActivePath('/admin/store-settings/payment'))}>PromptPay</Link>
             <Link to="/admin/store-settings/delivery-fees" className={navLinkClass(isActivePath('/admin/store-settings/delivery-fees'))}>ค่าส่งตามระยะทาง</Link>
             <Link to="/admin/store-settings/hours" className={navLinkClass(isActivePath('/admin/store-settings/hours'))}>เวลาทำการ</Link>

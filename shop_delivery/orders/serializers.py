@@ -6,6 +6,7 @@ from rest_framework import serializers
 from decimal import Decimal
 from .delivery_pricing import fee_for_distance_km, haversine_distance_km, quantize_distance_km
 from .store_location import get_delivery_origin_lat_lng
+from .service_hours import is_order_type_allowed_now
 from .models import Order, OrderItem, DriverAssignment
 from products.models import Product
 from products.stock import apply_stock_movement
@@ -155,6 +156,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         order_type = data.get('order_type')
+        allowed_now, hours_err = is_order_type_allowed_now(order_type or '')
+        if not allowed_now:
+            raise serializers.ValidationError(hours_err)
+
         if order_type == 'pickup':
             data['delivery_distance'] = None
             digits_ok, phone_err = _normalize_thai_mobile_ten_digits(data.get('delivery_phone'))

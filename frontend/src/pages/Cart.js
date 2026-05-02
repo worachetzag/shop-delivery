@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { cartService } from '../services/api';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
+import CustomerServiceHoursStrip from '../components/CustomerServiceHoursStrip';
 import './Cart.css';
 
 const Cart = () => {
@@ -102,6 +103,8 @@ const Cart = () => {
         <div className="page-header">
           <h1 className="page-title">ตะกร้าสินค้า</h1>
         </div>
+
+        <CustomerServiceHoursStrip compact />
 
         <div className="cart-content">
           <div className="cart-items">

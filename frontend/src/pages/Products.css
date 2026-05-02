@@ -46,6 +46,54 @@
   border-radius: 10px;
 }
 
+/* ฟิลเตอร์ด่วน: ทั้งหมด / ลดราคา / แนะนำ */
+.products-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.products-filter-chip {
+  appearance: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.42rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.products-filter-chip:hover {
+  border-color: var(--brand-primary, #00a651);
+  color: var(--brand-primary, #00a651);
+}
+
+.products-filter-chip.is-active {
+  border-color: var(--brand-primary, #00a651);
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.products-filter-chip--sale.is-active {
+  border-color: #ea580c;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.products-filter-chip--featured.is-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
 .products-filter-banners {
   display: flex;
   flex-wrap: wrap;

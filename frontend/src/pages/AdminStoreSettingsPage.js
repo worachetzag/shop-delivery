@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import './AdminDashboard.css';
+import './AdminStoreSettingsPage.css';
 
 const emptyHours = {
   pickup: { start_time: '08:00', end_time: '20:00', is_active: true },
@@ -11,7 +13,7 @@ const defaultDeliveryFeeTiers = [
   { threshold_km: 3, fee_amount: 0 },
   { threshold_km: 5, fee_amount: 20 },
   { threshold_km: 10, fee_amount: 35 },
-  { threshold_km: '', fee_amount: 50 }, // แถวสุดท้าย (ช่วงสุดท้าย) เว้น threshold
+  { threshold_km: '', fee_amount: 50 },
 ];
 
 const toInputTime = (value) => (value ? String(value).slice(0, 5) : '');
@@ -79,7 +81,6 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
           const tiers = Array.isArray(data.delivery_fee_tiers) ? data.delivery_fee_tiers : [];
           if (!tiers.length) return defaultDeliveryFeeTiers;
 
-          // backend ส่ง threshold_km เป็น number หรือ null; frontend เก็บเป็น string สำหรับ input
           const mapped = tiers
             .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
             .map((t) => ({
@@ -87,7 +88,6 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
               fee_amount: t.fee_amount ?? 0,
             }));
 
-          // ให้มีแถวสุดท้ายแบบ open-ended เสมอ
           const hasOpenEnded = mapped.length && mapped[mapped.length - 1].threshold_km === '';
           if (!hasOpenEnded) {
             mapped.push({ threshold_km: '', fee_amount: mapped[mapped.length - 1]?.fee_amount ?? 0 });
@@ -130,8 +130,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
       const token = getToken();
       const alertRaw = String(form.store_location.low_stock_alert_quantity ?? '').trim();
       const alertParsed = parseInt(alertRaw, 10);
-      const lowStockAlertQty =
-        Number.isFinite(alertParsed) && alertParsed >= 0 ? alertParsed : 0;
+      const lowStockAlertQty = Number.isFinite(alertParsed) && alertParsed >= 0 ? alertParsed : 0;
 
       const payload = {
         store_location: {
@@ -167,21 +166,6 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
     }
   };
 
-  const sectionStyle = {
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    padding: 16,
-  };
-
-  const fieldGridStyle = {
-    display: 'grid',
-    gap: 12,
-  };
-
-  const sectionTitleStyle = { margin: '0 0 4px 0' };
-  const sectionHintStyle = { marginTop: 0, marginBottom: 12, color: '#6b7280', fontSize: 14 };
-
   const setTierField = (idx, key, value) => {
     setForm((prev) => {
       const next = [...prev.delivery_fee_tiers];
@@ -191,219 +175,297 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
   };
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: '16px' }}>
-      <h2 style={{ marginBottom: 6 }}>ตั้งค่าร้าน</h2>
-      <p style={{ marginTop: 0, color: '#666' }}>
-        จัดการข้อมูลร้านแบบแยกหมวด เพื่อให้ตั้งค่าได้ชัดเจนว่าแต่ละส่วนใช้ทำอะไร
-      </p>
-      {loading ? (
-        <div>กำลังโหลดข้อมูล...</div>
-      ) : (
-        <form onSubmit={submit} style={{ display: 'grid', gap: 16 }}>
-          {(section === 'all' || section === 'store') && (
-          <section style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>1) ข้อมูลร้าน</h3>
-            <p style={sectionHintStyle}>ข้อมูลพื้นฐานที่ลูกค้าเห็นหน้าร้านและในคำสั่งซื้อ</p>
-            <div style={fieldGridStyle}>
-              <input
-                value={form.store_location.name}
-                onChange={(e) => onLocationChange('name', e.target.value)}
-                placeholder="ชื่อร้าน"
-              />
-              <textarea
-                value={form.store_location.address}
-                onChange={(e) => onLocationChange('address', e.target.value)}
-                placeholder="ที่อยู่ร้าน"
-                rows={3}
-              />
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={{ fontWeight: 700 }}>แจ้งเตือนสต็อกใกล้หมด</span>
-                <span style={{ margin: 0, fontSize: 13, color: '#6b7280', lineHeight: 1.45 }}>
-                  ถ้าจำนวนคงเหลือหลังหักจองไม่เกินค่านี้ ระบบจะถือว่าใกล้หมด (แดงในแอดมิน / ข้อความในแอปลูกค้า)
-                  — ใส่ 0 เพื่อปิดเกณฑ์ระดับร้านและใช้เฉพาะจุดเตือนต่อสินค้า
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  inputMode="numeric"
-                  value={form.store_location.low_stock_alert_quantity}
-                  onChange={(e) => onLocationChange('low_stock_alert_quantity', e.target.value)}
-                />
-              </label>
-            </div>
-          </section>
-          )}
+    <div className="admin-dashboard" style={{ padding: 16 }}>
+      <div style={{ marginBottom: 16 }}>
+        <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>ตั้งค่าร้าน</h1>
+        <p style={{ margin: 0, color: '#666', fontSize: '0.92rem' }}>
+          ข้อมูลร้าน พิกัด เวลาทำการ การชำระเงิน และค่าจัดส่ง — ใช้ฟอร์มเดียวกับธีมแอดมินทั้งระบบ
+        </p>
+      </div>
 
-          {(section === 'all' || section === 'location') && (
-          <section style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>2) พิกัดร้าน</h3>
-            <p style={sectionHintStyle}>ใช้สำหรับคำนวณระยะทาง/ค่าส่ง และแสดงตำแหน่งบนแผนที่</p>
-            <div style={fieldGridStyle}>
-              <input
-                value={form.store_location.latitude}
-                onChange={(e) => onLocationChange('latitude', e.target.value)}
-                placeholder="ละติจูด (เช่น 13.756331)"
-              />
-              <input
-                value={form.store_location.longitude}
-                onChange={(e) => onLocationChange('longitude', e.target.value)}
-                placeholder="ลองจิจูด (เช่น 100.501762)"
-              />
-            </div>
-          </section>
-          )}
+      <div className="admin-content">
+        <div className="store-settings-page store-settings-page--embedded">
+          {loading ? (
+            <div className="store-settings-loading">กำลังโหลดข้อมูล...</div>
+          ) : (
+            <form className="store-settings-form" onSubmit={submit}>
+              {(section === 'all' || section === 'store') && (
+                <section className="store-settings-card">
+                  <h2 className="store-settings-card__title">1) ข้อมูลร้านและพิกัด</h2>
+                  <p className="store-settings-card__hint">
+                    ชื่อ ที่อยู่ และเกณฑ์แจ้งเตือนสต็อกที่ลูกค้าเห็นในหน้าร้านและคำสั่งซื้อ พิกัดใช้คำนวณระยะทาง/ค่าส่งและแผนที่
+                  </p>
+                  <div className="store-settings-stack">
+                    <div className="store-settings-field">
+                      <label className="form-label" htmlFor="store-settings-name">
+                        ชื่อร้าน
+                      </label>
+                      <input
+                        id="store-settings-name"
+                        className="form-input"
+                        value={form.store_location.name}
+                        onChange={(e) => onLocationChange('name', e.target.value)}
+                        placeholder="ชื่อร้าน"
+                        autoComplete="organization"
+                      />
+                    </div>
+                    <div className="store-settings-field">
+                      <label className="form-label" htmlFor="store-settings-address">
+                        ที่อยู่ร้าน
+                      </label>
+                      <textarea
+                        id="store-settings-address"
+                        className="form-textarea"
+                        rows={4}
+                        value={form.store_location.address}
+                        onChange={(e) => onLocationChange('address', e.target.value)}
+                        placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"
+                      />
+                    </div>
+                    <div className="store-settings-field">
+                      <label className="form-label" htmlFor="store-settings-low-stock">
+                        แจ้งเตือนสต็อกใกล้หมด
+                      </label>
+                      <p className="store-settings-field__hint">
+                        ถ้าจำนวนคงเหลือหลังหักจองไม่เกินค่านี้ ระบบจะถือว่าใกล้หมด (แดงในแอดมิน / ข้อความในแอปลูกค้า)
+                        — ใส่ 0 เพื่อปิดเกณฑ์ระดับร้านและใช้เฉพาะจุดเตือนต่อสินค้า
+                      </p>
+                      <input
+                        id="store-settings-low-stock"
+                        className="form-input"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        value={form.store_location.low_stock_alert_quantity}
+                        onChange={(e) => onLocationChange('low_stock_alert_quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="store-settings-subsection">
+                      <h3 className="store-settings-subsection__title">พิกัดบนแผนที่</h3>
+                      <p className="store-settings-subsection__hint">
+                        ใช้สำหรับคำนวณระยะทางและค่าจัดส่ง (ว่างได้ถ้ายังไม่ใช้แผนที่)
+                      </p>
+                      <div className="store-settings-row-2">
+                        <div className="store-settings-field">
+                          <label className="form-label" htmlFor="store-settings-lat">
+                            ละติจูด
+                          </label>
+                          <input
+                            id="store-settings-lat"
+                            className="form-input"
+                            value={form.store_location.latitude}
+                            onChange={(e) => onLocationChange('latitude', e.target.value)}
+                            placeholder="เช่น 13.756331"
+                            inputMode="decimal"
+                          />
+                        </div>
+                        <div className="store-settings-field">
+                          <label className="form-label" htmlFor="store-settings-lng">
+                            ลองจิจูด
+                          </label>
+                          <input
+                            id="store-settings-lng"
+                            className="form-input"
+                            value={form.store_location.longitude}
+                            onChange={(e) => onLocationChange('longitude', e.target.value)}
+                            placeholder="เช่น 100.501762"
+                            inputMode="decimal"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
 
-          {(section === 'all' || section === 'payment') && (
-          <section style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>3) การชำระเงิน (PromptPay)</h3>
-            <p style={sectionHintStyle}>ใช้สร้าง QR รับเงินจากลูกค้า</p>
-            <div style={fieldGridStyle}>
-              <input
-                value={form.store_location.promptpay_number}
-                onChange={(e) => onLocationChange('promptpay_number', e.target.value)}
-                placeholder="เบอร์พร้อมเพย์ร้าน (เช่น 0812345678)"
-              />
-            </div>
-          </section>
-          )}
-
-          {(section === 'all' || section === 'hours') && (
-          <section style={sectionStyle}>
-            <h3 style={sectionTitleStyle}>4) เวลาทำการ</h3>
-            <p style={sectionHintStyle}>กำหนดช่วงเวลาเปิดรับคำสั่งซื้อแยกตามประเภทบริการ</p>
-            {['pickup', 'delivery'].map((type) => (
-              <div key={type} style={{ marginBottom: 16, borderBottom: '1px solid #eee', paddingBottom: 12 }}>
-                <strong>{type === 'pickup' ? 'รับสินค้าเองที่ร้าน' : 'จัดส่งถึงบ้าน'}</strong>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
-                  <label>
-                    เริ่ม
+              {(section === 'all' || section === 'payment') && (
+                <section className="store-settings-card">
+                  <h2 className="store-settings-card__title">2) การชำระเงิน (PromptPay)</h2>
+                  <p className="store-settings-card__hint">ใช้สร้าง QR รับเงินจากลูกค้า</p>
+                  <div className="store-settings-field">
+                    <label className="form-label" htmlFor="store-settings-promptpay">
+                      เบอร์พร้อมเพย์ร้าน
+                    </label>
                     <input
-                      type="time"
-                      value={form.service_hours[type].start_time}
-                      onChange={(e) => onHoursChange(type, 'start_time', e.target.value)}
+                      id="store-settings-promptpay"
+                      className="form-input"
+                      value={form.store_location.promptpay_number}
+                      onChange={(e) => onLocationChange('promptpay_number', e.target.value)}
+                      placeholder="เช่น 0812345678"
+                      inputMode="tel"
+                      autoComplete="off"
                     />
-                  </label>
-                  <label>
-                    สิ้นสุด
-                    <input
-                      type="time"
-                      value={form.service_hours[type].end_time}
-                      onChange={(e) => onHoursChange(type, 'end_time', e.target.value)}
-                    />
-                  </label>
-                </div>
-                <label style={{ display: 'inline-flex', marginTop: 8, alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="checkbox"
-                    checked={!!form.service_hours[type].is_active}
-                    onChange={(e) => onHoursChange(type, 'is_active', e.target.checked)}
-                  />
-                  เปิดใช้งาน
-                </label>
-              </div>
-            ))}
-          </section>
-          )}
+                  </div>
+                </section>
+              )}
 
-          {(section === 'all' || section === 'delivery-fees') && (
-            <section style={sectionStyle}>
-              <h3 style={sectionTitleStyle}>5) ค่าส่งตามระยะทาง</h3>
-              <p style={sectionHintStyle}>
-                ตั้งเป็นหลายบรรทัดแบบ “ไม่เกิน X กม.” และแถวสุดท้ายเป็น “มากกว่า” (เว้นช่องระยะทางเป็นค่าว่าง)
-              </p>
+              {(section === 'all' || section === 'hours') && (
+                <section className="store-settings-card">
+                  <h2 className="store-settings-card__title">3) เวลาทำการ</h2>
+                  <p className="store-settings-card__hint">
+                    กำหนดช่วงเวลาเปิดรับคำสั่งซื้อแยกตามประเภทบริการ
+                  </p>
+                  {['pickup', 'delivery'].map((type) => (
+                    <div key={type} className="store-settings-hours-block">
+                      <span className="store-settings-hours-block__title">
+                        {type === 'pickup' ? 'รับสินค้าเองที่ร้าน' : 'จัดส่งถึงบ้าน'}
+                      </span>
+                      <div className="store-settings-row-2">
+                        <div className="store-settings-field">
+                          <label className="form-label" htmlFor={`store-hours-${type}-start`}>
+                            เริ่ม
+                          </label>
+                          <input
+                            id={`store-hours-${type}-start`}
+                            className="form-input"
+                            type="time"
+                            value={form.service_hours[type].start_time}
+                            onChange={(e) => onHoursChange(type, 'start_time', e.target.value)}
+                          />
+                        </div>
+                        <div className="store-settings-field">
+                          <label className="form-label" htmlFor={`store-hours-${type}-end`}>
+                            สิ้นสุด
+                          </label>
+                          <input
+                            id={`store-hours-${type}-end`}
+                            className="form-input"
+                            type="time"
+                            value={form.service_hours[type].end_time}
+                            onChange={(e) => onHoursChange(type, 'end_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <label className="store-settings-checkbox" htmlFor={`store-hours-${type}-active`}>
+                        <input
+                          id={`store-hours-${type}-active`}
+                          type="checkbox"
+                          checked={!!form.service_hours[type].is_active}
+                          onChange={(e) => onHoursChange(type, 'is_active', e.target.checked)}
+                        />
+                        เปิดใช้งานช่วงเวลานี้
+                      </label>
+                    </div>
+                  ))}
+                </section>
+              )}
 
-              <div style={{ display: 'grid', gap: 12 }}>
-                {form.delivery_fee_tiers.map((tier, idx) => {
-                  const isLast = idx === form.delivery_fee_tiers.length - 1;
-                  return (
-                    <div
-                      key={`tier-${idx}`}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: isLast ? '1fr 140px' : '1fr 140px 60px',
-                        gap: 12,
-                        alignItems: 'center',
+              {(section === 'all' || section === 'delivery-fees') && (
+                <section className="store-settings-card">
+                  <h2 className="store-settings-card__title">4) ค่าส่งตามระยะทาง</h2>
+                  <p className="store-settings-card__hint">
+                    ตั้งเป็นหลายบรรทัดแบบ “ไม่เกิน X กม.” และแถวสุดท้ายเป็น “มากกว่า” (เว้นช่องระยะทางเป็นค่าว่าง)
+                  </p>
+
+                  <div className="store-settings-tiers-stack">
+                    {form.delivery_fee_tiers.map((tier, idx) => {
+                      const isLast = idx === form.delivery_fee_tiers.length - 1;
+                      return (
+                        <div key={`tier-${idx}`} className="store-settings-tier">
+                          <div>
+                            {isLast ? (
+                              <>
+                                <div className="store-settings-tier-dynamic-title">ช่วงสุดท้าย (มากกว่าระยะก่อนหน้า)</div>
+                                <div className="store-settings-tier-label">ระยะทางสูงสุด (กม.)</div>
+                                <input
+                                  className="form-input"
+                                  type="number"
+                                  step="0.01"
+                                  value={tier.threshold_km}
+                                  disabled
+                                  placeholder="เว้นว่าง"
+                                  aria-label="ระยะทางช่วงสุดท้าย — เปิดค่าส่งแบบไม่มีเพดักมิติบนท้าย"
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <div className="store-settings-tier-dynamic-title">
+                                  {`ไม่เกิน ${tier.threshold_km === '' ? '—' : tier.threshold_km} กม.`}
+                                </div>
+                                <div className="store-settings-tier-label">ระยะทางไม่เกิน (กม.)</div>
+                                <input
+                                  className="form-input"
+                                  type="number"
+                                  step="0.01"
+                                  value={tier.threshold_km}
+                                  placeholder="เช่น 5"
+                                  onChange={(e) =>
+                                    setTierField(idx, 'threshold_km', e.target.value === '' ? '' : e.target.value)
+                                  }
+                                  aria-label={`ระยะทางช่วงที่ ${idx + 1}`}
+                                />
+                              </>
+                            )}
+                          </div>
+
+                          <div>
+                            <div className="store-settings-tier-label">ค่าส่ง (บาท)</div>
+                            <input
+                              className="form-input"
+                              type="number"
+                              step="1"
+                              value={tier.fee_amount}
+                              placeholder="เช่น 20"
+                              onChange={(e) =>
+                                setTierField(idx, 'fee_amount', e.target.value === '' ? 0 : e.target.value)
+                              }
+                              aria-label={`ค่าส่งช่วงที่ ${idx + 1}`}
+                            />
+                          </div>
+
+                          {!isLast && (
+                            <div className="store-settings-tier__actions">
+                              <button
+                                type="button"
+                                className="store-settings-tier-remove"
+                                onClick={() => {
+                                  setForm((prev) => {
+                                    const next = [...prev.delivery_fee_tiers];
+                                    if (next.length <= 2) return prev;
+                                    next.splice(idx, 1);
+                                    return { ...prev, delivery_fee_tiers: next };
+                                  });
+                                }}
+                                title="ลบช่วงนี้"
+                              >
+                                ลบช่วง
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="store-settings-btn-row store-settings-tiers-actions-row">
+                    <button
+                      type="button"
+                      className="btn-secondary store-settings-btn-compact"
+                      onClick={() => {
+                        setForm((prev) => {
+                          const next = [...prev.delivery_fee_tiers];
+                          const newTier = { threshold_km: '', fee_amount: 0 };
+                          next.splice(next.length - 1, 0, newTier);
+                          return { ...prev, delivery_fee_tiers: next };
+                        });
                       }}
                     >
-                      <div style={{ display: 'grid', gap: 6 }}>
-                        <label style={{ fontWeight: 700, fontSize: 14 }}>
-                          {isLast
-                            ? 'ช่วงสุดท้าย (มากกว่า)'
-                            : `ไม่เกิน ${tier.threshold_km === '' ? '—' : tier.threshold_km} กม.`}
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={tier.threshold_km}
-                          disabled={isLast}
-                          placeholder={isLast ? 'เว้นว่าง' : 'เช่น 5'}
-                          onChange={(e) => setTierField(idx, 'threshold_km', e.target.value === '' ? '' : e.target.value)}
-                          style={{ width: '100%' }}
-                        />
-                      </div>
+                      + เพิ่มช่วงระยะทาง
+                    </button>
+                  </div>
+                </section>
+              )}
 
-                      <div style={{ display: 'grid', gap: 6 }}>
-                        <label style={{ fontWeight: 700, fontSize: 14 }}>ค่าส่ง (บาท)</label>
-                        <input
-                          type="number"
-                          step="1"
-                          value={tier.fee_amount}
-                          placeholder="เช่น 20"
-                          onChange={(e) => setTierField(idx, 'fee_amount', e.target.value === '' ? 0 : e.target.value)}
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-
-                      {!isLast && (
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => {
-                            setForm((prev) => {
-                              const next = [...prev.delivery_fee_tiers];
-                              if (next.length <= 2) return prev; // อย่างน้อย 1 finite + 1 open-ended
-                              next.splice(idx, 1);
-                              return { ...prev, delivery_fee_tiers: next };
-                            });
-                          }}
-                          title="ลบช่วง"
-                        >
-                          ลบ
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setForm((prev) => {
-                        const next = [...prev.delivery_fee_tiers];
-                        const openEnded = next[next.length - 1];
-                        const newTier = { threshold_km: '', fee_amount: 0 };
-                        next.splice(next.length - 1, 0, newTier);
-                        return { ...prev, delivery_fee_tiers: next };
-                      });
-                    }}
-                  >
-                    เพิ่มช่วง
-                  </button>
-                </div>
+              <div className="store-settings-actions">
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? 'กำลังบันทึก...' : 'บันทึกตั้งค่า'}
+                </button>
               </div>
-            </section>
+            </form>
           )}
-
-          <div>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? 'กำลังบันทึก...' : 'บันทึกตั้งค่า'}
-            </button>
-          </div>
-        </form>
-      )}
+        </div>
+      </div>
     </div>
   );
 };
