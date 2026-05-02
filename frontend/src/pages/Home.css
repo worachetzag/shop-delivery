@@ -283,7 +283,7 @@
 }
 
 .home-dynamic-promo-carousel-viewport--scroll {
-  overflow: visible;
+  /* คง overflow:hidden จาก .home-dynamic-promo-carousel-viewport — visible เคยทำให้ขอบมน/เลื่อนแนวนอนดูพัง */
   border-radius: 14px;
 }
 

@@ -102,7 +102,9 @@ function HomePromotionSlide({ promotion: p }) {
               src={resolveMediaUrl(p.banner_image)}
               alt={p.title || 'โปรโมชั่น'}
               className="home-dynamic-promo-banner-img"
-              loading="lazy"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           </HomePromotionBannerLink>
           {(p.title || p.description) ? (

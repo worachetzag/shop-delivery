@@ -1,5 +1,28 @@
 import config from '../config';
 
+/**
+ * Origin ของ backend ที่เก็บไฟล์ /media/ — ใช้จาก API_BASE_URL เท่านั้น
+ * (ห้ามใช้ LIFF_ENDPOINT_URL: ถ้าเป็น liff.line.me การต่อ path /media/... จะพัง แต่รูปสินค้าที่ได้ absolute URL จาก API ยังดูปกติ)
+ */
+function backendOriginForMediaUrls() {
+  const api = config.API_BASE_URL || '';
+  if (!api) {
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
+  if (api.startsWith('/')) {
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
+  const trimmed = api.replace(/\/+$/, '');
+  let withoutApi = trimmed;
+  if (trimmed.endsWith('/api')) withoutApi = trimmed.slice(0, -4);
+  else if (trimmed.endsWith('/api/')) withoutApi = trimmed.replace(/\/api\/$/, '');
+  try {
+    return new URL(withoutApi).origin;
+  } catch {
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
+}
+
 export const PLACEHOLDER_IMAGES = {
   sm: 'https://via.placeholder.com/80x80/f8f9fa/6c757d?text=No+Image',
   md: 'https://via.placeholder.com/100x100/f8f9fa/6c757d?text=No+Image',
@@ -19,10 +42,9 @@ export function resolveMediaUrl(rawUrl, fallback = PLACEHOLDER_IMAGES.md) {
     return url;
   }
 
-  const backendBase = config.LIFF_ENDPOINT_URL || config.API_BASE_URL || '';
+  const origin = backendOriginForMediaUrls();
   try {
-    const base = new URL(backendBase, window.location.origin);
-    return new URL(url, `${base.origin}/`).toString();
+    return new URL(url, `${origin}/`).toString();
   } catch (error) {
     return url;
   }
