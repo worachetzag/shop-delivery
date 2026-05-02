@@ -303,11 +303,6 @@ const OrderDetail = () => {
     }
   };
 
-  const handlePrintReceipt = () => {
-    if (!receiptReady) return;
-    window.print();
-  };
-
   if (loading) return <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>;
 
   if (!order) {
@@ -589,12 +584,9 @@ const OrderDetail = () => {
               </div>
 
               <div className="receipt-slip-modal-actions">
-                <button type="button" className="btn btn-outline btn-sm" onClick={handlePrintReceipt}>
-                  พิมพ์
-                </button>
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary btn-sm receipt-slip-close-action"
                   onClick={() => setReceiptSlipOpen(false)}
                 >
                   ปิด
