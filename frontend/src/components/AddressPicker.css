@@ -1,6 +1,8 @@
 /* แถบค้นหา + ปุ่ม GPS / ค้นหา — ความสูงเท่ากัน จัดแนวสมดุล */
 .address-picker-wrap {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 400px;
   border: 1px solid #ddd;
   border-radius: 8px;

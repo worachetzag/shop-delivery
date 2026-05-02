@@ -204,12 +204,13 @@ const AddressPicker = ({
       setSelectedLat(latN);
       setSelectedLon(lonN);
 
-      const summary = await getAddressFromCoords(latN, lonN);
-      setAddress(summary);
-
+      /* แจ้งพิกัดให้หน้า Checkout ทันที — คำนวณค่าส่งตามระยะได้เลย ไม่ต้องรอ reverse geocode */
       if (onLocationSelect) {
         onLocationSelect(latN, lonN);
       }
+
+      const summary = await getAddressFromCoords(latN, lonN);
+      setAddress(summary);
       return summary;
     },
     [onLocationSelect, getAddressFromCoords],
@@ -342,7 +343,16 @@ const AddressPicker = ({
         />
         <MapFlyToSelection lat={selectedLat} lon={selectedLon} zoom={17} />
         <MapClickSelect onPick={handleLocationSelect} />
-        <Marker position={[selectedLat, selectedLon]}>
+        <Marker
+          position={[selectedLat, selectedLon]}
+          draggable
+          eventHandlers={{
+            dragend: (e) => {
+              const { lat, lng } = e.target.getLatLng();
+              void handleLocationSelect(lat, lng);
+            },
+          }}
+        >
           <Popup>
             📍 จุดจัดส่งที่เลือก
             <br />

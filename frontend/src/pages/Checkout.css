@@ -24,6 +24,8 @@
 .checkout-form {
   max-width: 1000px;
   margin: 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .checkout-content {
@@ -31,6 +33,12 @@
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   margin-bottom: 3rem;
+  min-width: 0;
+}
+
+/* Leaflet / แผนที่ทำให้ min-content กว้างเกินจอ — ต้องให้ย่อในกริดได้ */
+.checkout-content > * {
+  min-width: 0;
 }
 
 /* Order Summary */
@@ -440,6 +448,8 @@
 /* Minimal + branded refresh */
 .checkout-page {
   padding: 0.8rem 0 1rem;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 .checkout-content {
@@ -582,13 +592,22 @@
 
 .checkout-delivery-map-wrap {
   width: 100%;
+  max-width: 100%;
   margin-bottom: 1rem;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border-soft, #e5e7eb);
+  min-width: 0;
+  isolation: isolate;
 }
 
 .checkout-delivery-map-wrap > div {
   border-radius: 12px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.checkout-delivery-map-wrap .leaflet-container {
+  max-width: 100%;
 }
 
