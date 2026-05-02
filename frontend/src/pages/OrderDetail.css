@@ -257,10 +257,10 @@
   inset: 0;
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 16px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background: rgba(15, 23, 42, 0.45);
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
@@ -268,12 +268,14 @@
 
 @media (min-width: 480px) {
   .receipt-slip-backdrop {
-    align-items: center;
-    padding: 24px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 
+/* เลื่อนขึ้นจากกลางจอเล็กน้อย (~เหนือกลาง) */
 .receipt-slip-modal {
+  --slip-modal-lift: clamp(-40px, -5.5vh, -14px);
   position: relative;
   width: 100%;
   max-width: 20rem;
@@ -287,11 +289,11 @@
 @keyframes receipt-slip-in {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(calc(14px - var(--slip-modal-lift))) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(var(--slip-modal-lift)) scale(1);
   }
 }
 
