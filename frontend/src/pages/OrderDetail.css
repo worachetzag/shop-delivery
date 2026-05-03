@@ -16,10 +16,48 @@
   gap: 10px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border-soft, #e5e7eb);
+  text-align: left;
+}
+
+.order-detail-item-row .item-details {
+  justify-self: stretch;
+  min-width: 0;
+  text-align: left;
+}
+
+.order-detail-item-row .item-name {
+  text-align: left;
+}
+
+.order-detail-item-row .item-price {
+  text-align: right;
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .order-detail-item-row:last-child {
   border-bottom: none;
+}
+
+/* ทับ Orders.css — บนมือถือ .order-item { text-align: center } ไม่ให้กระทบหน้ารายละเอียดออเดอร์ลูกค้า */
+@media (max-width: 768px) {
+  .orders-page .order-detail-item-row.order-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .orders-page .order-detail-item-row .item-details,
+  .orders-page .order-detail-item-row .item-name {
+    text-align: left;
+  }
+
+  .orders-page .order-detail-item-row .item-price {
+    text-align: right;
+  }
 }
 
 .order-detail-thumb {
