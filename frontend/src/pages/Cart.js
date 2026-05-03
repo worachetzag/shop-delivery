@@ -168,16 +168,17 @@ const Cart = () => {
               <h3 className="summary-title">สรุปคำสั่งซื้อ</h3>
 
               <div className="summary-meta">
-                <span>{cartItems.length} รายการ</span>
-                <span>{totalItemCount()} ชิ้น</span>
+                <span>{cartItems.length} รายการสินค้า</span>
+                <span>รวม {totalItemCount()} ชิ้น</span>
               </div>
 
               <div className="summary-items">
                 {cartItems.map((item) => (
                   <div key={item.id} className="summary-item-row">
-                    <div className="summary-item-name">{displayProductLineName(item)}</div>
+                    <div className="summary-item-name">
+                      {displayProductLineName(item)} x{item.quantity}
+                    </div>
                     <div className="summary-item-detail">
-                      <span>x{item.quantity} {item.unit_label || 'ชิ้น'}</span>
                       <span>{formatPrice(item.price * item.quantity)}</span>
                     </div>
                   </div>

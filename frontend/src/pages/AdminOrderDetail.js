@@ -447,8 +447,7 @@ const AdminOrderDetail = () => {
             <>
               {(order.items || []).map((item) => (
                 <div key={item.id} className="order-detail-item-row">
-                  <span>{displayProductLineName(item)}</span>
-                  <span>x{item.quantity}</span>
+                  <span>{displayProductLineName(item)} x{item.quantity}</span>
                   <span>฿{Number(item.price || 0).toLocaleString()}</span>
                 </div>
               ))}

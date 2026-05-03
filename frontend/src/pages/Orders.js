@@ -58,7 +58,7 @@ const Orders = () => {
             const previewLines = items.map((line) => {
               const name = displayProductLineName(line);
               const q = Number(line.quantity || 0);
-              return q > 1 ? `${name} ×${q}` : name;
+              return `${name} x${q}`;
             });
             const previewThumbs = items.map((line) => pickLineItemImage(line, PLACEHOLDER_IMAGES.sm));
             return {
@@ -298,9 +298,9 @@ const Orders = () => {
                     </>
                   )}
                   <p className="order-preview-count-line">
-                    {order.itemCount} รายการ
+                    {order.itemCount} รายการสินค้า
                     {order.totalQuantity > order.itemCount && (
-                      <span className="order-qty-hint"> · {order.totalQuantity} ชิ้น</span>
+                      <span className="order-qty-hint"> · สั่งรวม {order.totalQuantity} ชิ้น</span>
                     )}
                   </p>
                 </div>

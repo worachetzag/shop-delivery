@@ -243,7 +243,7 @@ const ProductCard = ({
             {showCartChrome && hasInCart && (
               <div className="cart-status">
                 <span className="cart-icon">🛒</span>
-                <span>ใส่แล้ว {effectiveCartQuantity} ชิ้น</span>
+                <span>ในตะกร้า {effectiveCartQuantity} ชิ้น</span>
               </div>
             )}
 

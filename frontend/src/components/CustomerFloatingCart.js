@@ -39,7 +39,7 @@ export default function CustomerFloatingCart({
         onClick={() => setShowCartSummary((prev) => !prev)}
       >
         <span className="floating-cart-icon">🛒</span>
-        <span className="floating-cart-text">ในตะกร้า {totalCartQuantity} ชิ้น</span>
+        <span className="floating-cart-text">ตะกร้า · รวม {totalCartQuantity} ชิ้น</span>
       </button>
 
       {showCartSummary ? (

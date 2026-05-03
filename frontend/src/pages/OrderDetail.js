@@ -328,7 +328,8 @@ const OrderDetail = () => {
       ? Number(order.subtotal)
       : itemsSubtotalSum;
 
-  const itemPieces = (order.items || []).reduce((s, item) => s + Number(item.quantity || 0), 0);
+  /** จำนวนบรรทัดสินค้าในออเดอร์ (ใช้ในใบเสร็จ — ไม่ใช่ผลรวมจำนวนชิ้น) */
+  const orderLineCount = (order.items || []).length;
   const slipDateLine = (() => {
     const d = new Date(receiptIssuedAt || order.created_at);
     if (Number.isNaN(d.getTime())) return '-';
@@ -455,8 +456,9 @@ const OrderDetail = () => {
                   }}
                 />
                 <div className="item-details">
-                  <h4 className="item-name">{displayProductLineName(item)}</h4>
-                  <p className="item-quantity">จำนวน: {item.quantity}</p>
+                  <h4 className="item-name">
+                    {displayProductLineName(item)} x{item.quantity}
+                  </h4>
                 </div>
                 <div className="item-price">{formatPrice(Number(item.price) * Number(item.quantity))}</div>
               </div>
@@ -541,12 +543,14 @@ const OrderDetail = () => {
 
                 <div className="receipt-slip-divider" />
 
-                <p className="receipt-slip-section-label">รายการสินค้า</p>
+                <p className="receipt-slip-section-label">
+                  รายการสินค้า ({orderLineCount} รายการ)
+                </p>
                 <ul className="receipt-slip-lines">
                   {(order.items || []).map((item) => (
                     <li key={`slip-${item.id}`}>
                       <span className="receipt-slip-line-name">
-                        {item.quantity} {displayProductLineName(item)}
+                        {displayProductLineName(item)} x{item.quantity}
                       </span>
                       <span className="receipt-slip-line-price">
                         {formatPrice(Number(item.price) * Number(item.quantity))}
@@ -558,7 +562,7 @@ const OrderDetail = () => {
                 <div className="receipt-slip-divider dashed" />
 
                 <div className="receipt-slip-net">
-                  <span>ยอดสุทธิ {itemPieces} ชิ้น</span>
+                  <span>รวมทั้งสิ้น</span>
                   <strong>{formatPrice(order.total_amount)}</strong>
                 </div>
 

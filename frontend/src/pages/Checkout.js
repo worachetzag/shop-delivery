@@ -695,9 +695,8 @@ const Checkout = () => {
                       }}
                     />
                     <div className="item-details">
-                      <h4 className="item-name">{item.name}</h4>
+                      <h4 className="item-name">{item.name} x{item.quantity}</h4>
                       <p className="item-category">{item.category}</p>
-                      <p className="item-quantity">จำนวน: {item.quantity} {item.unitLabel}{item.unitDetail ? ` (${item.unitDetail})` : ''}</p>
                     </div>
                     <div className="item-price">
                       {formatPrice(item.price * item.quantity)}

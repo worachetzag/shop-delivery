@@ -372,7 +372,7 @@ const ProductDetail = () => {
                     <li key={line.id ?? `${line.product_id}-${displayProductLineName(line)}`}>
                       <span className="product-cart-peek-name">{displayProductLineName(line)}</span>
                       <span className="product-cart-peek-meta">
-                        ×{Number(line.quantity || 0)} · {formatBahtAmount(Number(line.price || 0) * Number(line.quantity || 0))}{' '}
+                        x{Number(line.quantity || 0)} · {formatBahtAmount(Number(line.price || 0) * Number(line.quantity || 0))}{' '}
                         บาท
                       </span>
                     </li>

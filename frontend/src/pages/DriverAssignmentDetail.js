@@ -415,8 +415,9 @@ const DriverAssignmentDetail = () => {
                     }}
                   />
                   <div className="driver-order-item-meta">
-                    <div className="driver-order-item-name">{item.product_name || `สินค้า #${item.product_id}`}</div>
-                    <div className="muted-small">จำนวน {item.quantity}</div>
+                    <div className="driver-order-item-name">
+                      {item.product_name || `สินค้า #${item.product_id}`} x{item.quantity}
+                    </div>
                   </div>
                   <div className="driver-order-item-price">{formatPrice(item.total_price)}</div>
                 </div>
