@@ -73,6 +73,27 @@
   font-weight: 600;
 }
 
+.tracking-driver-inline {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.tracking-driver-inline .driver-card {
+  margin-bottom: 0;
+}
+
+.driver-phone-inline {
+  color: #6c757d;
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0;
+}
+
+.driver-phone-inline strong {
+  color: #333;
+  font-weight: 600;
+}
+
 .status-badge {
   color: white;
   padding: 0.18rem 0.55rem;
@@ -82,16 +103,7 @@
   margin-left: 0.35rem;
 }
 
-/* Driver Information */
-.driver-info {
-  background: var(--surface-card);
-  border-radius: 12px;
-  padding: 0.9rem;
-  border: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-soft);
-  height: fit-content;
-}
-
+/* ข้อมูลคนขับรวมใน order-summary (.tracking-driver-inline) */
 .driver-card {
   display: flex;
   align-items: center;
@@ -254,8 +266,7 @@
     padding: 1rem 0;
   }
   
-  .order-summary,
-  .driver-info {
+  .order-summary {
     padding: 0.8rem;
   }
   

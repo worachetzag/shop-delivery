@@ -345,8 +345,36 @@ const Tracking = () => {
                   {getStatusText(trackingInfo.status)}
                 </span>
               </p>
-              <p><strong>คนขับ:</strong> {trackingInfo.driver?.name || '-'}</p>
-              {!!trackingInfo.driver?.phone && <p><strong>โทร:</strong> {trackingInfo.driver.phone}</p>}
+            </div>
+            <div className="tracking-driver-inline">
+              <div className="driver-card">
+                <div className="driver-avatar driver-avatar--delivery" title="พนักงานจัดส่ง">
+                  <DriverDeliveryAvatarGlyph />
+                </div>
+                <div className="driver-details">
+                  <h4 className="driver-name">{trackingInfo.driver?.name || '-'}</h4>
+                  {(trackingInfo.driver?.vehicle || '').trim() ? (
+                    <p className="driver-vehicle">{trackingInfo.driver.vehicle}</p>
+                  ) : null}
+                  <p className="driver-location">{trackingInfo.currentLocation}</p>
+                  {!!trackingInfo.driver?.phone && (
+                    <p className="driver-phone-inline">
+                      <strong>โทร:</strong> {trackingInfo.driver.phone}
+                    </p>
+                  )}
+                </div>
+                {!!trackingInfo.driver?.phone && (
+                  <div className="driver-actions">
+                    <button
+                      className="btn btn-primary btn-compact"
+                      type="button"
+                      onClick={callDriver}
+                    >
+                      📞 โทรหาคนขับ
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -442,31 +470,6 @@ const Tracking = () => {
               </div>
             </div>
           )}
-
-          <div className="driver-info">
-            <h3 className="section-title">ข้อมูลคนขับ</h3>
-            <div className="driver-card">
-              <div className="driver-avatar driver-avatar--delivery" title="พนักงานจัดส่ง">
-                <DriverDeliveryAvatarGlyph />
-              </div>
-              <div className="driver-details">
-                <h4 className="driver-name">{trackingInfo.driver.name}</h4>
-                <p className="driver-vehicle">{trackingInfo.driver.vehicle}</p>
-                <p className="driver-location">{trackingInfo.currentLocation}</p>
-              </div>
-              {!!trackingInfo.driver?.phone && (
-                <div className="driver-actions">
-                  <button
-                    className="btn btn-primary btn-compact"
-                    type="button"
-                    onClick={callDriver}
-                  >
-                    📞 โทรหาคนขับ
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>

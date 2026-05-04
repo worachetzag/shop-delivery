@@ -1,24 +1,23 @@
 import L from 'leaflet';
+import deliveryMarkerAssetUrl from '../assets/delivery-marker.svg';
 import './mapMarkers.css';
 
-/** รถส่งของแบบบรรจุ — เติมล้อให้อ่านง่ายในขนาดเล็ก */
-const DELIVERY_TRUCK_SVG =
-  '<svg class="map-marker-delivery-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
-  '<g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
-  '<path d="M2.5 17.25V11h8.75v6.25H2.5z"/>' +
-  '<path d="M11.25 12.75h3.1l3.35-3.4H19.2c.55 0 1 .45 1 1v5.65h-9V12.75z"/>' +
-  '<circle cx="7.1" cy="18.35" r="1.75" fill="currentColor" stroke="none"/>' +
-  '<circle cx="17.5" cy="18.35" r="1.75" fill="currentColor" stroke="none"/>' +
-  '</g></svg>';
+function escapeAttr(url) {
+  return String(url ?? '').replace(/"/g, '').trim();
+}
 
-/** ไอคอนรถส่งของสำหรับตำแหน่งคนขับ */
+/** ไอคอนคนขับบนแผนที่ — ใช้ artwork delivery.svg (ใน repo เป็น assets/delivery-marker.svg) */
 export function createDeliveryVehicleMarkerIcon() {
+  const src = escapeAttr(deliveryMarkerAssetUrl);
   return L.divIcon({
     className: 'map-marker-delivery-root',
-    html: `<div class="map-marker-delivery-inner" aria-hidden="true">${DELIVERY_TRUCK_SVG}</div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 44],
-    popupAnchor: [0, -40],
+    html:
+      `<div class="map-marker-delivery-inner" aria-hidden="true">` +
+      `<img class="map-marker-delivery-img" src="${src}" alt="" draggable="false" decoding="async" />` +
+      `</div>`,
+    iconSize: [48, 48],
+    iconAnchor: [24, 48],
+    popupAnchor: [0, -44],
   });
 }
 

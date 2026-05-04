@@ -5,24 +5,24 @@
 }
 
 .map-marker-delivery-inner {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: linear-gradient(160deg, #ecfdf5 0%, #d1fae5 55%, #bbf7d0 100%);
-  border: 2.5px solid #15803d;
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background: #fff;
+  border: 2.5px solid #16a34a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #14532d;
+  overflow: hidden;
 }
 
-.map-marker-delivery-svg {
+.map-marker-delivery-img {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
   display: block;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0.5px 0 rgba(255, 255, 255, 0.5));
+  pointer-events: none;
 }
 
 .map-marker-customer-root {
