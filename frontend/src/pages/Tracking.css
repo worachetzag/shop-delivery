@@ -24,9 +24,13 @@
 .tracking-content {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  max-width: 760px;
+  gap: 1rem;
+  max-width: min(100%, 980px);
   margin: 0 auto;
+}
+
+.admin-tracking-page .tracking-content {
+  max-width: min(100%, 1080px);
 }
 
 /* Order Summary */
@@ -110,6 +114,15 @@
   display: block;
 }
 
+.driver-avatar--delivery {
+  color: #fff;
+}
+
+.driver-delivery-svg {
+  display: block;
+  flex-shrink: 0;
+}
+
 .driver-details {
   flex: 1;
 }
@@ -144,13 +157,38 @@
   font-size: 0.8rem;
 }
 
+/* การ์ดแผนที่แยกจากข้อมูลคนขับ — โฟกัสพื้นที่แผนที่ */
+.tracking-map-section {
+  background: var(--surface-card);
+  border-radius: 12px;
+  padding: 0.9rem;
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.tracking-map-section .section-title {
+  margin-bottom: 0.45rem;
+}
+
+.tracking-map-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
 .driver-map-wrap {
   margin-top: 14px;
 }
 
+.tracking-map-section .driver-map-wrap {
+  margin-top: 0;
+}
+
 .driver-map {
   width: 100%;
-  height: 190px;
+  /* ใหญ่ขึ้นตามความสูงหน้าจอ แต่จำกัดบนจอใหญ่ — ลูกค้า/แอดมินใช้หน้าเดียวกัน */
+  height: clamp(320px, 70vh, 640px);
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #e5e8ef;

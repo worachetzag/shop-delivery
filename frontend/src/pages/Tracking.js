@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
@@ -10,6 +11,84 @@ import CustomerInlineBack from '../components/CustomerInlineBack';
 import { AdminBackLink } from '../components/AdminBackButton';
 import { createCustomerPhotoMarkerIcon, createMotorbikeMarkerIcon } from '../utils/mapMarkers';
 import './Tracking.css';
+
+/** ไอคอนรถส่งของในการ์ดคนขับ — ไม่ใช้รูปโปรไฟล์ */
+function DriverDeliveryAvatarGlyph() {
+  return (
+    <svg
+      className="driver-delivery-svg"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      aria-hidden={true}
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 15V9h11v6H2z" />
+        <path d="M13 11h5l4 4v6h-3" />
+        <circle cx="7.5" cy="18.5" r="2" />
+        <circle cx="17.5" cy="18.5" r="2" />
+      </g>
+    </svg>
+  );
+}
+
+/** เมื่อมีทั้งพิกัดคนขับและจุดรับของ — ซูมกรอบให้เห็นทั้งสองหมุด (และเส้นทางถ้ามี) */
+function TrackingMapFitBoth({
+  active,
+  driverLat,
+  driverLng,
+  deliveryLat,
+  deliveryLng,
+  routePositions,
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (
+      !active
+      || driverLat == null
+      || driverLng == null
+      || deliveryLat == null
+      || deliveryLng == null
+    ) {
+      return;
+    }
+    const da = Number(driverLat);
+    const db = Number(driverLng);
+    const ca = Number(deliveryLat);
+    const cb = Number(deliveryLng);
+    if ([da, db, ca, cb].some((n) => Number.isNaN(n))) return;
+
+    const bounds = L.latLngBounds([da, db], [ca, cb]);
+
+    if (Array.isArray(routePositions) && routePositions.length > 0) {
+      routePositions.forEach((pt) => {
+        if (!Array.isArray(pt) || pt.length < 2) return;
+        const lat = Number(pt[0]);
+        const lng = Number(pt[1]);
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) bounds.extend([lat, lng]);
+      });
+    }
+
+    const fit = () => {
+      map.invalidateSize();
+      map.fitBounds(bounds, { padding: [52, 52], maxZoom: 17 });
+    };
+
+    requestAnimationFrame(fit);
+    const retry = window.setTimeout(fit, 200);
+    return () => window.clearTimeout(retry);
+  }, [map, active, driverLat, driverLng, deliveryLat, deliveryLng, routePositions]);
+
+  return null;
+}
 
 const Tracking = () => {
   const { orderId } = useParams();
@@ -271,34 +350,12 @@ const Tracking = () => {
             </div>
           </div>
 
-          <div className="driver-info">
-            <h3 className="section-title">ข้อมูลคนขับ</h3>
-            <div className="driver-card">
-              <div className="driver-avatar">
-                {trackingInfo.driver?.photo_url ? (
-                  <img src={trackingInfo.driver.photo_url} alt="" className="driver-avatar-img" />
-                ) : (
-                  <span>{(trackingInfo.driver?.name || '?').charAt(0)}</span>
-                )}
-              </div>
-              <div className="driver-details">
-                <h4 className="driver-name">{trackingInfo.driver.name}</h4>
-                <p className="driver-vehicle">{trackingInfo.driver.vehicle}</p>
-                <p className="driver-location">{trackingInfo.currentLocation}</p>
-              </div>
-              {!!trackingInfo.driver?.phone && (
-                <div className="driver-actions">
-                  <button
-                    className="btn btn-primary btn-compact"
-                    type="button"
-                    onClick={callDriver}
-                  >
-                    📞 โทรหาคนขับ
-                  </button>
-                </div>
-              )}
-            </div>
-            {shouldShowMap && (
+          {shouldShowMap && (
+            <div className="tracking-map-section">
+              <h3 className="section-title">แผนที่ติดตาม</h3>
+              <p className="tracking-map-hint">
+                ไอคอนรถจักรยานยนต์สีเขียว = คนขับ · วงกลมรูปลูกค้า = จุดรับของ
+              </p>
               <div className="driver-map-wrap">
                 <MapContainer
                   center={
@@ -318,6 +375,16 @@ const Tracking = () => {
                   <TileLayer
                     attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <TrackingMapFitBoth
+                    active={hasDriverPosition && hasDeliveryDestination}
+                    driverLat={trackingInfo.currentLatitude}
+                    driverLng={trackingInfo.currentLongitude}
+                    deliveryLat={trackingInfo.deliveryLatitude}
+                    deliveryLng={trackingInfo.deliveryLongitude}
+                    routePositions={
+                      shouldShowRoute && routePath.length > 1 ? routePath : undefined
+                    }
                   />
                   {hasDriverPosition && (
                     <Marker
@@ -373,7 +440,32 @@ const Tracking = () => {
                   </small>
                 )}
               </div>
-            )}
+            </div>
+          )}
+
+          <div className="driver-info">
+            <h3 className="section-title">ข้อมูลคนขับ</h3>
+            <div className="driver-card">
+              <div className="driver-avatar driver-avatar--delivery" title="พนักงานจัดส่ง">
+                <DriverDeliveryAvatarGlyph />
+              </div>
+              <div className="driver-details">
+                <h4 className="driver-name">{trackingInfo.driver.name}</h4>
+                <p className="driver-vehicle">{trackingInfo.driver.vehicle}</p>
+                <p className="driver-location">{trackingInfo.currentLocation}</p>
+              </div>
+              {!!trackingInfo.driver?.phone && (
+                <div className="driver-actions">
+                  <button
+                    className="btn btn-primary btn-compact"
+                    type="button"
+                    onClick={callDriver}
+                  >
+                    📞 โทรหาคนขับ
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
