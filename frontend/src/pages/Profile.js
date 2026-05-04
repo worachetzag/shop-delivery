@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AddressPicker from '../components/AddressPicker';
 import config from '../config';
@@ -91,6 +91,18 @@ const emptyPersonal = () => ({
   phone: '',
 });
 
+/** ISO datetime จาก API → ข้อความสั้น ๆ ภาษาไทย */
+function formatThaiDateTime(iso) {
+  if (!iso || typeof iso !== 'string') return null;
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return null;
+  }
+}
+
 const Profile = () => {
   const popup = usePopup();
   const navigate = useNavigate();
@@ -107,6 +119,10 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [withdrawingPrivacy, setWithdrawingPrivacy] = useState(false);
+  const [withdrawingMarketing, setWithdrawingMarketing] = useState(false);
+  const [optInMarketingLoading, setOptInMarketingLoading] = useState(false);
+  const [pdpaSummary, setPdpaSummary] = useState(null);
+  const [pdpaSummaryLoaded, setPdpaSummaryLoaded] = useState(false);
   const [showAddAddress, setShowAddAddress] = useState(false);
   const phoneInputRef = useRef(null);
   const [editingAddressId, setEditingAddressId] = useState(null);
@@ -123,6 +139,15 @@ const Profile = () => {
   const sectionFocus = queryParams.get('section');
 
   const displayNameOneLine = recipientDisplayName(personal) || 'ผู้ใช้';
+
+  const refreshPdpaSummary = useCallback(async () => {
+    try {
+      const sum = await pdpaService.getConsentSummary();
+      setPdpaSummary(sum);
+    } catch {
+      setPdpaSummary(null);
+    }
+  }, []);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -171,6 +196,9 @@ const Profile = () => {
               isDefault: Boolean(addr.is_default),
             })));
           }
+
+          await refreshPdpaSummary();
+          setPdpaSummaryLoaded(true);
         } else {
           window.location.href = '/customer/login';
         }
@@ -183,7 +211,7 @@ const Profile = () => {
     };
 
     loadUserProfile();
-  }, []);
+  }, [refreshPdpaSummary]);
 
   useEffect(() => {
     const qp = new URLSearchParams(location.search);
@@ -490,6 +518,7 @@ const Profile = () => {
     setWithdrawingPrivacy(true);
     try {
       await pdpaService.withdrawPrivacyConsent();
+      await refreshPdpaSummary();
       popup.success(
         'ถอนความยินยอมนโยบายความเป็นส่วนตัวแล้ว เมื่อใช้งานครั้งถัดไประบบจะขอให้ยอมรับอีกครั้ง',
       );
@@ -508,6 +537,62 @@ const Profile = () => {
       popup.error(msg);
     } finally {
       setWithdrawingPrivacy(false);
+    }
+  };
+
+  const handleWithdrawMarketingConsent = async () => {
+    if (
+      !(await popup.confirm(
+        'ถอนความยินยอมรับข่าวสารและการตลาดหรือไม่? คุณจะไม่ได้รับโปรโมชันทางข้อความอีกจนกว่าจะให้ความยินยอมใหม่',
+        { tone: 'warning', confirmText: 'ถอนความยินยอม' },
+      ))
+    ) {
+      return;
+    }
+    setWithdrawingMarketing(true);
+    try {
+      await pdpaService.withdrawMarketingConsent();
+      await refreshPdpaSummary();
+      popup.success('ถอนความยินยอมการตลาดแล้ว');
+    } catch (err) {
+      let msg = 'ไม่สามารถถอนความยินยอมได้ กรุณาลองอีกครั้ง';
+      if (typeof err === 'string') {
+        msg = err;
+      } else if (err && typeof err === 'object') {
+        if (err.error) msg = err.error;
+        else if (err.detail) msg = String(err.detail);
+        else {
+          const flat = Object.values(err).flat().filter((x) => typeof x === 'string');
+          if (flat.length) msg = flat.join(' ');
+        }
+      }
+      popup.error(msg);
+    } finally {
+      setWithdrawingMarketing(false);
+    }
+  };
+
+  const handleOptInMarketing = async () => {
+    setOptInMarketingLoading(true);
+    try {
+      await pdpaService.updateConsent({ consent_type: 'marketing', is_given: true });
+      await refreshPdpaSummary();
+      popup.success('บันทึกความยินยอมรับข่าวสารและการตลาดแล้ว');
+    } catch (err) {
+      let msg = 'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง';
+      if (typeof err === 'string') {
+        msg = err;
+      } else if (err && typeof err === 'object') {
+        if (err.error) msg = err.error;
+        else if (err.detail) msg = String(err.detail);
+        else {
+          const flat = Object.values(err).flat().filter((x) => typeof x === 'string');
+          if (flat.length) msg = flat.join(' ');
+        }
+      }
+      popup.error(msg);
+    } finally {
+      setOptInMarketingLoading(false);
     }
   };
 
@@ -838,17 +923,104 @@ const Profile = () => {
               <h3 className="section-title">ความเป็นส่วนตัว (PDPA)</h3>
             </div>
             <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.9rem', lineHeight: 1.5 }}>
-              คุณสามารถถอนความยินยอมนโยบายความเป็นส่วนตัวได้ทุกเมื่อ โดยไม่เสียค่าใช้จ่าย
-              หลังถอน ระบบจะขอให้คุณอ่านและยอมรับนโยบายฉบับปัจจุบันอีกครั้งก่อนใช้งานต่อ
+              คุณสามารถถอนความยินยอมนโยบายความเป็นส่วนตัวหรือการตลาดได้แยกกัน โดยไม่เสียค่าใช้จ่าย
+              หลังถอนนโยบาย ระบบจะขอให้คุณอ่านและยอมรับนโยบายฉบับปัจจุบันอีกครั้งก่อนใช้งานต่อ
             </p>
-            <button
-              type="button"
-              className="btn btn-outline"
-              disabled={withdrawingPrivacy}
-              onClick={handleWithdrawPrivacyConsent}
-            >
-              {withdrawingPrivacy ? 'กำลังดำเนินการ...' : 'ถอนความยินยอมนโยบายความเป็นส่วนตัว'}
-            </button>
+            {!pdpaSummaryLoaded ? (
+              <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
+                กำลังโหลดสถานะความยินยอม...
+              </p>
+            ) : pdpaSummary ? (
+              <>
+                <div
+                  className="profile-pdpa-status"
+                  style={{ fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '16px' }}
+                >
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ margin: '0 0 6px' }}>
+                      <strong>นโยบายความเป็นส่วนตัว</strong>
+                      <br />
+                      {pdpaSummary.privacy_policy.accepted && pdpaSummary.privacy_policy.current_policy
+                        ? `ยอมรับแล้ว — ${pdpaSummary.privacy_policy.current_policy.title} (เวอร์ชัน ${pdpaSummary.privacy_policy.current_policy.version})`
+                        : 'ยังไม่ยอมรับนโยบายฉบับที่ใช้งานอยู่ หรือถอนความยินยอมแล้ว'}
+                    </p>
+                    {pdpaSummary.privacy_policy.accepted
+                    && formatThaiDateTime(pdpaSummary.privacy_policy.last_accepted_at) ? (
+                      <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                        ให้ความยินยอมเมื่อ {formatThaiDateTime(pdpaSummary.privacy_policy.last_accepted_at)}
+                      </p>
+                      ) : null}
+                    {!pdpaSummary.privacy_policy.accepted
+                    && formatThaiDateTime(pdpaSummary.privacy_policy.last_withdrawn_at) ? (
+                      <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                        ถอนความยินยอมล่าสุด {formatThaiDateTime(pdpaSummary.privacy_policy.last_withdrawn_at)}
+                      </p>
+                      ) : null}
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 6px' }}>
+                      <strong>ข่าวสารและการตลาด</strong>
+                      <br />
+                      {pdpaSummary.marketing.opt_in
+                        ? 'ยินยอมรับข่าวสาร โปรโมชัน หรือข้อมูลการตลาด'
+                        : 'ไม่ยินยอมรับข่าวสาร/การตลาด'}
+                    </p>
+                    {pdpaSummary.marketing.opt_in
+                    && formatThaiDateTime(pdpaSummary.marketing.last_given_at) ? (
+                      <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                        ให้ความยินยอมเมื่อ {formatThaiDateTime(pdpaSummary.marketing.last_given_at)}
+                      </p>
+                      ) : null}
+                    {!pdpaSummary.marketing.opt_in
+                    && formatThaiDateTime(pdpaSummary.marketing.last_withdrawn_at) ? (
+                      <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                        ถอนความยินยอมล่าสุด {formatThaiDateTime(pdpaSummary.marketing.last_withdrawn_at)}
+                      </p>
+                      ) : null}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    disabled={
+                      withdrawingPrivacy
+                      || !pdpaSummary.privacy_policy.accepted
+                    }
+                    onClick={handleWithdrawPrivacyConsent}
+                  >
+                    {withdrawingPrivacy ? 'กำลังดำเนินการ...' : 'ถอนความยินยอมนโยบายความเป็นส่วนตัว'}
+                  </button>
+                  {pdpaSummary.marketing.opt_in ? (
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      disabled={withdrawingMarketing || optInMarketingLoading}
+                      onClick={handleWithdrawMarketingConsent}
+                    >
+                      {withdrawingMarketing ? 'กำลังดำเนินการ...' : 'ถอนความยินยอมการตลาด'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      disabled={optInMarketingLoading || withdrawingMarketing}
+                      onClick={handleOptInMarketing}
+                    >
+                      {optInMarketingLoading ? 'กำลังบันทึก...' : 'ยินยอมรับข่าวสารและโปรโมชัน'}
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
+                ไม่สามารถโหลดสถานะความยินยอมได้
+                {' '}
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => refreshPdpaSummary()}>
+                  ลองอีกครั้ง
+                </button>
+              </p>
+            )}
           </section>
 
           {PROFILE_UI_SHOW_ADDRESSES ? (

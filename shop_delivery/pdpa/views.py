@@ -9,6 +9,12 @@ from .models import ConsentRecord, PrivacyPolicy
 from .serializers import ConsentRecordSerializer, PrivacyPolicySerializer
 
 
+def _dt_iso(dt):
+    if dt is None:
+        return None
+    return dt.isoformat()
+
+
 class PrivacyPolicyView(generics.ListAPIView):
     """นโยบายความเป็นส่วนตัว"""
     serializer_class = PrivacyPolicySerializer
@@ -108,6 +114,113 @@ class PdpaWithdrawPrivacyConsentView(APIView):
                 'records_updated': updated,
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class PdpaWithdrawMarketingConsentView(APIView):
+    """ลูกค้าถอนความยินยอมการตลาด (แยกจากนโยบายความเป็นส่วนตัว)"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        role_obj = getattr(request.user, 'user_role', None)
+        if not role_obj or role_obj.role != 'customer':
+            return Response(
+                {'error': 'ไม่มีสิทธิ์ดำเนินการนี้'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        customer = get_object_or_404(Customer, user=request.user)
+        now = timezone.now()
+        updated = ConsentRecord.objects.filter(
+            customer=customer,
+            consent_type='marketing',
+            is_given=True,
+            withdrawn_at__isnull=True,
+        ).update(withdrawn_at=now)
+        return Response(
+            {
+                'message': 'ถอนความยินยอมการตลาดแล้ว',
+                'records_updated': updated,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PdpaCustomerConsentSummaryView(APIView):
+    """ลูกค้า: สรุปสถานะความยินยอมนโยบายปัจจุบันและการตลาด (แสดงในโปรไฟล์)"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        role_obj = getattr(request.user, 'user_role', None)
+        if not role_obj or role_obj.role != 'customer':
+            return Response(
+                {'error': 'ไม่มีสิทธิ์ดำเนินการนี้'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        customer = get_object_or_404(Customer, user=request.user)
+        policy = PrivacyPolicy.objects.filter(is_active=True).order_by('-effective_date', '-id').first()
+
+        current_policy = None
+        privacy_active = None
+        if policy:
+            current_policy = {
+                'id': policy.id,
+                'version': policy.version,
+                'title': policy.title,
+            }
+            privacy_active = ConsentRecord.objects.filter(
+                customer=customer,
+                consent_type='privacy_policy',
+                is_given=True,
+                privacy_policy_id=policy.id,
+                withdrawn_at__isnull=True,
+            ).order_by('-given_at').first()
+
+        privacy_accepted = privacy_active is not None
+        privacy_last_accepted_at = _dt_iso(privacy_active.given_at) if privacy_active else None
+
+        privacy_last_withdrawn = ConsentRecord.objects.filter(
+            customer=customer,
+            consent_type='privacy_policy',
+            withdrawn_at__isnull=False,
+        ).order_by('-withdrawn_at').first()
+        privacy_last_withdrawn_at = _dt_iso(
+            privacy_last_withdrawn.withdrawn_at,
+        ) if privacy_last_withdrawn else None
+
+        marketing_active = ConsentRecord.objects.filter(
+            customer=customer,
+            consent_type='marketing',
+            is_given=True,
+            withdrawn_at__isnull=True,
+        ).order_by('-given_at').first()
+        marketing_opt_in = marketing_active is not None
+        marketing_last_given_at = _dt_iso(marketing_active.given_at) if marketing_active else None
+
+        marketing_last_withdrawn = ConsentRecord.objects.filter(
+            customer=customer,
+            consent_type='marketing',
+            withdrawn_at__isnull=False,
+        ).order_by('-withdrawn_at').first()
+        marketing_last_withdrawn_at = _dt_iso(
+            marketing_last_withdrawn.withdrawn_at,
+        ) if marketing_last_withdrawn else None
+
+        return Response(
+            {
+                'privacy_policy': {
+                    'accepted': privacy_accepted,
+                    'current_policy': current_policy,
+                    'last_accepted_at': privacy_last_accepted_at,
+                    'last_withdrawn_at': privacy_last_withdrawn_at,
+                },
+                'marketing': {
+                    'opt_in': marketing_opt_in,
+                    'last_given_at': marketing_last_given_at,
+                    'last_withdrawn_at': marketing_last_withdrawn_at,
+                },
+            },
         )
 
 

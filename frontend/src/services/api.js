@@ -420,6 +420,16 @@ export const pdpaService = {
     }
   },
 
+  /** ลูกค้า: สรุปสถานะความยินยอม (โปรไฟล์) */
+  getConsentSummary: async () => {
+    try {
+      const response = await api.get('/pdpa/consent/summary/');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
   /** บันทึกการยอมรับนโยบายความเป็นส่วนตัว (หลังอ่านครบ) */
   recordPrivacyPolicyConsent: async (privacyPolicyId) => {
     try {
@@ -438,6 +448,16 @@ export const pdpaService = {
   withdrawPrivacyConsent: async () => {
     try {
       const response = await api.post('/pdpa/consent/withdraw-privacy/');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /** ลูกค้า: ถอนความยินยอมการตลาด */
+  withdrawMarketingConsent: async () => {
+    try {
+      const response = await api.post('/pdpa/consent/withdraw-marketing/');
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
