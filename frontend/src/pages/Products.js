@@ -9,29 +9,11 @@ import { useRestoreCustomerListingScroll } from '../utils/listingScrollRestore';
 import CustomerProductSortDropdown from '../components/CustomerProductSortDropdown';
 import CustomerServiceHoursStrip from '../components/CustomerServiceHoursStrip';
 import CustomerFloatingCart from '../components/CustomerFloatingCart';
+import CustomerHomePromotionsBanner from '../components/CustomerHomePromotionsBanner';
 import { PRODUCT_SORT_OPTIONS_STANDARD, apiOrderingForSortKey } from '../utils/productSort';
 
 const PAGE_SIZE = 12;
 const SKELETON_CARD_COUNT = 8;
-
-function ProductsTrustStrip() {
-  return (
-    <div className="products-trust-strip">
-      <div className="products-trust-strip__item">
-        <span className="products-trust-strip__glyph" aria-hidden>🛒</span>
-        <span className="products-trust-strip__label">เลือกง่ายในหน้าเดียว</span>
-      </div>
-      <div className="products-trust-strip__item">
-        <span className="products-trust-strip__glyph" aria-hidden>📦</span>
-        <span className="products-trust-strip__label">จัดส่งถึงที่พัก</span>
-      </div>
-      <div className="products-trust-strip__item">
-        <span className="products-trust-strip__glyph" aria-hidden>💳</span>
-        <span className="products-trust-strip__label">ชำระเงินปลอดภัย</span>
-      </div>
-    </div>
-  );
-}
 
 function ProductsResultsHeading({ id }) {
   return (
@@ -326,7 +308,7 @@ const Products = () => {
             </div>
           </header>
           <CustomerServiceHoursStrip compact />
-          <ProductsTrustStrip />
+          <CustomerHomePromotionsBanner />
           <div className="results-section">
             <ProductsResultsHeading id="products-list-heading" />
             <div className="products-grid">
@@ -359,7 +341,7 @@ const Products = () => {
         </header>
 
         <CustomerServiceHoursStrip compact />
-        <ProductsTrustStrip />
+        <CustomerHomePromotionsBanner />
 
         <div className="filters-section">
           <div className="filters-section__label">ค้นหาและกรอง</div>
