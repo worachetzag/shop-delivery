@@ -408,7 +408,31 @@ export const pdpaService = {
     } catch (error) {
       throw error.response?.data || error;
     }
-  }
+  },
+
+  /** ลูกค้าที่ล็อกอิน: ต้องยอมรับ PDPA หรือไม่ + นโยบายที่ใช้ */
+  getPdpaConsentStatus: async () => {
+    try {
+      const response = await api.get('/pdpa/consent/status/');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /** บันทึกการยอมรับนโยบายความเป็นส่วนตัว (หลังอ่านครบ) */
+  recordPrivacyPolicyConsent: async (privacyPolicyId) => {
+    try {
+      const response = await api.post('/pdpa/consent/', {
+        consent_type: 'privacy_policy',
+        is_given: true,
+        privacy_policy: privacyPolicyId,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 };
 
 export default api;

@@ -94,6 +94,7 @@ function AdminNavSections({
             <Link to="/admin/store-settings/payment" className={navLinkClass(isActivePath('/admin/store-settings/payment'))}>PromptPay</Link>
             <Link to="/admin/store-settings/delivery-fees" className={navLinkClass(isActivePath('/admin/store-settings/delivery-fees'))}>ค่าส่งตามระยะทาง</Link>
             <Link to="/admin/store-settings/hours" className={navLinkClass(isActivePath('/admin/store-settings/hours'))}>เวลาทำการ</Link>
+            <Link to="/admin/store-settings/pdpa" className={navLinkClass(isActivePath('/admin/store-settings/pdpa'))}>นโยบาย PDPA</Link>
           </div>
         )}
       </div>

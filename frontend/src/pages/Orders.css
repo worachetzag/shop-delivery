@@ -70,6 +70,12 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.order-card--cancelled {
+  border: 1px solid #fecaca;
+  background: linear-gradient(180deg, #fff5f5 0%, #ffffff 42%);
+  box-shadow: 0 1px 5px rgba(220, 38, 38, 0.1);
+}
+
 .order-card-top {
   align-items: center;
   margin-bottom: 4px;

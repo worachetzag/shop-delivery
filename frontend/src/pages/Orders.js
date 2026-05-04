@@ -270,7 +270,7 @@ const Orders = () => {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="order-card order-card-clickable"
+              className={`order-card order-card-clickable${order.status === 'cancelled' ? ' order-card--cancelled' : ''}`}
               onClick={() => navigate(`/customer/orders/${order.id}`)}
               role="button"
               tabIndex={0}
@@ -362,9 +362,11 @@ const Orders = () => {
                   >
                     {order.statusDisplay || getStatusText(order.status)}
                   </span>
-                  <span className={`receipt-badge ${order.receiptReady ? 'ready' : 'pending'}`}>
-                    {order.receiptReady ? 'ใบเสร็จพร้อม' : 'รอออกใบเสร็จ'}
-                  </span>
+                  {order.status !== 'cancelled' && (
+                    <span className={`receipt-badge ${order.receiptReady ? 'ready' : 'pending'}`}>
+                      {order.receiptReady ? 'ใบเสร็จพร้อม' : 'รอออกใบเสร็จ'}
+                    </span>
+                  )}
                 </div>
                 {canCancelAwaitingProofOrder(order) && (
                   <div className="order-card-actions">

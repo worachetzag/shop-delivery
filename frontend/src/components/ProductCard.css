@@ -124,16 +124,16 @@
   color: #16a34a;
 }
 
-/* บรรทัด “จาก …” — คำว่า บาท ใช้สีแดงเดียวกับราคาขีดฆ่า */
-.product-price-unit--muted {
-  color: #dc2626;
-  font-weight: 600;
-}
-
 .product-price-unit {
   font-size: 0.88rem;
   font-weight: 600;
   color: #16a34a;
+}
+
+/* บรรทัด “จาก …” — ทั้งสองคลาสบน span เดียวกัน ต้องชนะ .product-price-unit ด้านบน */
+.product-price-unit.product-price-unit--muted {
+  color: #dc2626;
+  font-weight: 600;
 }
 
 .product-browse-hint {

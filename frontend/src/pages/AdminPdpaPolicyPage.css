@@ -1,0 +1,28 @@
+/* Rich text (Quill) ในหน้าแอดมิน PDPA */
+.admin-pdpa-quill {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.admin-pdpa-quill .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fafafa;
+}
+
+.admin-pdpa-quill .ql-container.ql-snow {
+  border: none;
+  font-size: 0.95rem;
+  min-height: 300px;
+}
+
+.admin-pdpa-quill .ql-editor {
+  min-height: 300px;
+}
+
+.admin-pdpa-quill .ql-editor.ql-blank::before {
+  color: #999;
+  font-style: normal;
+}

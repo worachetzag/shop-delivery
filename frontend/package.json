@@ -24,11 +24,14 @@
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
     "axios": "^1.12.2",
+    "dompurify": "^3.4.2",
     "leaflet": "^1.9.4",
     "liff": "^1.2.0",
+    "quill": "^2.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-leaflet": "^5.0.0",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^7.9.4"
   },
   "devDependencies": {

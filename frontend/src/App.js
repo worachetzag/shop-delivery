@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 import Header from './components/Header';
 import CustomerViewportChrome from './components/CustomerViewportChrome';
+import CustomerPdpaConsentModal from './components/CustomerPdpaConsentModal';
 import AdminHeader from './components/AdminHeader';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -38,6 +39,7 @@ import AdminAuditLogPage from './pages/AdminAuditLogPage';
 import AdminOrderDetail from './pages/AdminOrderDetail';
 import AdminProductFormPage from './pages/AdminProductFormPage';
 import AdminStoreSettingsPage from './pages/AdminStoreSettingsPage';
+import AdminPdpaPolicyPage from './pages/AdminPdpaPolicyPage';
 import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminPurchaseOrderDetailPage from './pages/AdminPurchaseOrderDetailPage';
 import AdminOverviewPage from './pages/AdminOverviewPage';
@@ -289,6 +291,7 @@ function AppContent() {
         <>
           <Header hideCustomerTopBar />
           <CustomerViewportChrome />
+          <CustomerPdpaConsentModal />
         </>
       ) : showDriverChrome ? (
         <Header hideCustomerTopBar hideDriverTopBar />
@@ -529,6 +532,14 @@ function AppContent() {
             element={(
               <ProtectedRoute requireAdmin redirectTo="/admin/login">
                 <AdminStoreSettingsPage section="hours" />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/store-settings/pdpa"
+            element={(
+              <ProtectedRoute requireAdmin redirectTo="/admin/login">
+                <AdminPdpaPolicyPage />
               </ProtectedRoute>
             )}
           />

@@ -10,10 +10,19 @@ class ConsentRecord(models.Model):
         ('data_processing', 'การประมวลผลข้อมูล'),
         ('third_party', 'การแชร์ข้อมูลกับบุคคลที่สาม'),
         ('analytics', 'การวิเคราะห์ข้อมูล'),
+        ('privacy_policy', 'นโยบายความเป็นส่วนตัว (PDPA)'),
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='consents', verbose_name="ลูกค้า")
     consent_type = models.CharField(max_length=20, choices=CONSENT_TYPE_CHOICES, verbose_name="ประเภทความยินยอม")
+    privacy_policy = models.ForeignKey(
+        'PrivacyPolicy',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='consent_records',
+        verbose_name="นโยบายที่อ้างอิง",
+    )
     is_given = models.BooleanField(verbose_name="ให้ความยินยอม")
     given_at = models.DateTimeField(auto_now_add=True, verbose_name="เวลาที่ให้ความยินยอม")
     withdrawn_at = models.DateTimeField(blank=True, null=True, verbose_name="เวลาที่ถอนความยินยอม")

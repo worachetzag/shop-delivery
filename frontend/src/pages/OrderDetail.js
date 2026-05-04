@@ -154,10 +154,12 @@ const OrderDetail = () => {
     && !['delivered', 'cancelled'].includes(order?.status)
     && !slipVerified
     && !slipNotRequired;
-  const receiptReady = Boolean(order) && (
-    (isPromptPayOrder && slipVerified)
-    || (!isPromptPayOrder && order.status === 'delivered')
-  );
+  const receiptReady = Boolean(order)
+    && order.status !== 'cancelled'
+    && (
+      (isPromptPayOrder && slipVerified)
+      || (!isPromptPayOrder && order.status === 'delivered')
+    );
   /** PromptPay ยังไม่ยืนยันสลิป — ยกเลิกคำสั่งซื้อได้ */
   const canCancelAwaitingProof =
     Boolean(order)
@@ -385,6 +387,17 @@ const OrderDetail = () => {
         </div>
 
         <div className="order-card order-detail-no-print">
+          {order.status === 'cancelled' && (
+            <div className="order-detail-status-banner order-detail-status-banner--cancelled" role="status">
+              <span className="order-detail-status-banner__mark" aria-hidden>✕</span>
+              <div className="order-detail-status-banner__text">
+                <strong>ยกเลิกคำสั่งซื้อแล้ว</strong>
+                <p className="order-detail-status-banner__hint">
+                  คำสั่งซื้อนี้ไม่มีผลต่อการชำระเงินหรือการจัดส่ง และไม่มีใบเสร็จรับเงิน
+                </p>
+              </div>
+            </div>
+          )}
           <div className="detail-meta">
             <p><strong>หมายเลขคำสั่งซื้อ:</strong> {order.order_number || `#${order.id}`}</p>
             <p><strong>วันที่สั่งซื้อ:</strong> {formatDate(order.created_at)}</p>
@@ -395,7 +408,8 @@ const OrderDetail = () => {
               {order.delivery_address || '-'}
             </p>
             <p><strong>เบอร์โทรติดต่อ:</strong> {order.delivery_phone || '-'}</p>
-            {order.payment_method === 'promptpay' && (
+            <p><strong>สถานะคำสั่งซื้อ:</strong> {order.status_display || order.status}</p>
+            {order.payment_method === 'promptpay' && order.status !== 'cancelled' && (
               <p><strong>สถานะสลิป:</strong> {order.payment_slip_status_display || order.payment_slip_status}</p>
             )}
             {order.driver_assignment && order.order_type !== 'pickup' && (
@@ -457,7 +471,7 @@ const OrderDetail = () => {
             </div>
           )}
 
-          {order.payment_method === 'promptpay' && hasSlip && (
+          {order.payment_method === 'promptpay' && hasSlip && order.status !== 'cancelled' && (
             <div className="slip-upload-box">
               <p><strong>สลิปที่อัปโหลด</strong></p>
               <img
@@ -533,24 +547,33 @@ const OrderDetail = () => {
           </div>
         </div>
 
-        <div className="order-card receipt-card order-detail-no-print">
-          <div className="receipt-header">
-            <h2 className="receipt-title">ใบเสร็จรับเงิน</h2>
-            <span className={`receipt-status ${receiptReady ? 'ready' : 'pending'}`}>
-              {receiptReady ? 'ออกใบเสร็จแล้ว' : 'ยังไม่พร้อมออกใบเสร็จ'}
-            </span>
+        {order.status === 'cancelled' ? (
+          <div className="order-card order-cancelled-receipt-note order-detail-no-print" role="region" aria-label="สถานะใบเสร็จ">
+            <p className="order-cancelled-receipt-note__lead">ไม่มีใบเสร็จรับเงิน</p>
+            <p className="order-cancelled-receipt-note__sub">
+              ออเดอร์ที่ยกเลิกแล้วจะไม่มีการออกใบเสร็จหรือหลักฐานการชำระเงินที่สมบูรณ์
+            </p>
           </div>
+        ) : (
+          <div className="order-card receipt-card order-detail-no-print">
+            <div className="receipt-header">
+              <h2 className="receipt-title">ใบเสร็จรับเงิน</h2>
+              <span className={`receipt-status ${receiptReady ? 'ready' : 'pending'}`}>
+                {receiptReady ? 'ออกใบเสร็จแล้ว' : 'ยังไม่พร้อมออกใบเสร็จ'}
+              </span>
+            </div>
 
-          {receiptReady && (
-            <button
-              type="button"
-              className="btn btn-primary receipt-slip-open-btn"
-              onClick={() => setReceiptSlipOpen(true)}
-            >
-              ดูใบเสร็จ
-            </button>
-          )}
-        </div>
+            {receiptReady && (
+              <button
+                type="button"
+                className="btn btn-primary receipt-slip-open-btn"
+                onClick={() => setReceiptSlipOpen(true)}
+              >
+                ดูใบเสร็จ
+              </button>
+            )}
+          </div>
+        )}
 
         {receiptSlipOpen && receiptReady && (
           <div
