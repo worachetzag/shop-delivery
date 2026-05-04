@@ -97,9 +97,28 @@
 }
 
 .profile-section-personal .section-header {
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.profile-personal-edit-footer {
+  margin-top: 1.25rem;
+}
+
+.profile-personal-edit-footer .btn {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .profile-personal-edit-footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .profile-personal-edit-footer .btn {
+    width: auto;
+  }
 }
 
 .profile-card {

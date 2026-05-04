@@ -764,13 +764,6 @@ const Profile = () => {
           <section id="profile-section-personal" className="profile-section profile-section-personal">
               <div className="section-header">
                 <h3 className="section-title">ข้อมูลส่วนตัว</h3>
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  onClick={() => setEditing(!editing)}
-                >
-                  {editing ? 'ยกเลิก' : 'แก้ไข'}
-                </button>
               </div>
 
               <div className="profile-card">
@@ -909,6 +902,13 @@ const Profile = () => {
                       />
                     </div>
                     <div className="form-actions">
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setEditing(false)}
+                      >
+                        ยกเลิก
+                      </button>
                       <button type="button" className="btn btn-primary" onClick={handleSaveProfile}>
                         บันทึก
                       </button>
@@ -916,6 +916,18 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+
+              {!editing ? (
+                <div className="profile-personal-edit-footer">
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setEditing(true)}
+                  >
+                    แก้ไข
+                  </button>
+                </div>
+              ) : null}
           </section>
 
           <section id="profile-section-pdpa" className="profile-section profile-section-pdpa">
