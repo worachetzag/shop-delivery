@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { cartService } from '../services/api';
-import { displayProductLineName } from '../utils/helpers';
+import { displayProductLineName, saveImageToDevice } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import CustomerInlineBack from '../components/CustomerInlineBack';
 import AddressPicker from '../components/AddressPicker';
@@ -602,6 +602,25 @@ const Checkout = () => {
     }
   };
 
+  const handleDownloadPromptPayQr = async () => {
+    if (!promptPayInfo?.qr_image || !createdOrderId) {
+      popup.error('ไม่พบรูป QR สำหรับบันทึก');
+      return;
+    }
+    try {
+      const result = await saveImageToDevice(
+        promptPayInfo.qr_image,
+        `promptpay-order-${createdOrderId}.png`,
+      );
+      if (result.method === 'aborted') {
+        return;
+      }
+      popup.info('บันทึก QR ลงเครื่องเรียบร้อย');
+    } catch (error) {
+      popup.error(error.message || 'บันทึกรูป QR ไม่สำเร็จ');
+    }
+  };
+
   const fulfillmentServiceMode = fulfillmentMode === 'pickup' ? 'pickup' : 'delivery';
   const hoursStatus = useMemo(
     () => getServiceHoursStatus(serviceHours, fulfillmentServiceMode),
@@ -941,7 +960,18 @@ const Checkout = () => {
                   <p>พร้อมเพย์: {promptPayInfo?.promptpay_number || '-'}</p>
                   <p>ยอดชำระ: {formatPrice(Number(promptPayInfo?.amount || calculateTotal()))}</p>
                   {promptPayInfo?.qr_image ? (
-                    <img src={promptPayInfo.qr_image} alt="PromptPay QR Code" className="promptpay-qr-image" />
+                    <>
+                      <img src={promptPayInfo.qr_image} alt="PromptPay QR Code" className="promptpay-qr-image" />
+                      <div style={{ marginTop: '10px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          onClick={handleDownloadPromptPayQr}
+                        >
+                          บันทึก QR ลงเครื่อง
+                        </button>
+                      </div>
+                    </>
                   ) : (
                     <p>ไม่สามารถแสดง QR Code ได้</p>
                   )}

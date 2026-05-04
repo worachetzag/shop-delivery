@@ -250,18 +250,24 @@ const ProductDetail = () => {
                       {formatBahtAmount(product.price)}
                     </span>
                     <span className="product-detail-price-unit"> บาท</span>
+                    {(product.unit_label || product.unit_detail) && (
+                      <span className="product-detail-price-meta">
+                        {' '}/ {product.unit_label || 'ชิ้น'}
+                        {product.unit_detail ? ` (${product.unit_detail})` : ''}
+                      </span>
+                    )}
                   </span>
                 </>
               ) : (
-                <>
+                <span className="product-detail-price-amount">
                   <span className="product-detail-price-value">{formatBahtAmount(product.price)}</span>
                   <span className="product-detail-price-unit"> บาท</span>
-                </>
-              )}
-              {(product.unit_label || product.unit_detail) && (
-                <span className="product-detail-price-meta">
-                  {' '}/ {product.unit_label || 'ชิ้น'}
-                  {product.unit_detail ? ` (${product.unit_detail})` : ''}
+                  {(product.unit_label || product.unit_detail) && (
+                    <span className="product-detail-price-meta">
+                      {' '}/ {product.unit_label || 'ชิ้น'}
+                      {product.unit_detail ? ` (${product.unit_detail})` : ''}
+                    </span>
+                  )}
                 </span>
               )}
             </p>

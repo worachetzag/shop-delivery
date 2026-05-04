@@ -82,19 +82,19 @@
 }
 
 .product-price-caption {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: #64748b;
 }
 
 .product-price-value {
-  font-size: 1rem;
+  font-size: 1.06rem;
   font-weight: 700;
   color: #16a34a;
 }
 
 .product-price-value--sale {
-  color: #1e293b;
+  color: #16a34a;
 }
 
 .product-price-compare-at {
@@ -119,20 +119,21 @@
 }
 
 .product-price-current {
-  font-size: 1rem;
+  font-size: 1.06rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #16a34a;
 }
 
+/* บรรทัด “จาก …” — คำว่า บาท แยกโทนเทาจางจากราคาขีดฆ่า */
 .product-price-unit--muted {
   color: #94a3b8;
   font-weight: 500;
 }
 
 .product-price-unit {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  color: #4b5563;
+  color: #16a34a;
 }
 
 .product-browse-hint {
@@ -203,7 +204,7 @@
 }
 
 .product-name {
-  font-size: 0.9rem;
+  font-size: 0.96rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0 0 4px 0;
@@ -225,9 +226,9 @@
 }
 
 .product-price {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #16a34a;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -425,19 +426,19 @@
 @media (max-width: 768px) {
   .product-name,
   .product-price:not(.product-price--browse) {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
   }
 
   .product-card--browse .product-name {
-    font-size: 0.86rem;
-  }
-
-  .product-card--browse .product-price-value {
     font-size: 0.92rem;
   }
 
+  .product-card--browse .product-price-value {
+    font-size: 0.98rem;
+  }
+
   .product-card--browse .product-price-unit {
-    font-size: 0.72rem;
+    font-size: 0.82rem;
   }
 
   .product-browse-hint {
@@ -489,15 +490,19 @@
 @media (max-width: 480px) {
   .product-name,
   .product-price:not(.product-price--browse) {
-    font-size: 0.78rem;
+    font-size: 0.84rem;
   }
 
   .product-card--browse .product-name {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
   }
 
   .product-card--browse .product-price-value {
-    font-size: 0.88rem;
+    font-size: 0.94rem;
+  }
+
+  .product-card--browse .product-price-unit {
+    font-size: 0.78rem;
   }
 
   .product-image-add-btn {

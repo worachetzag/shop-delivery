@@ -249,6 +249,93 @@ export const downloadFile = (data, filename, type = 'application/json') => {
   window.URL.revokeObjectURL(url);
 };
 
+/**
+ * แปลง data URL เป็น Blob (ไม่พึ่ง fetch — รองรับ data URL ยาวบนมือถือ)
+ */
+function dataUrlToBlob(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  if (comma === -1) {
+    throw new Error('รูปแบบรูปไม่ถูกต้อง');
+  }
+  const header = dataUrl.slice(0, comma);
+  const body = dataUrl.slice(comma + 1);
+  const mimeMatch = /^data:([^;,]+)/i.exec(header);
+  const mime = mimeMatch ? mimeMatch[1].trim() : 'image/png';
+  const isBase64 = /;base64/i.test(header);
+  let binary;
+  if (isBase64) {
+    binary = atob(body);
+  } else {
+    binary = decodeURIComponent(body);
+  }
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
+/**
+ * บันทึกรูปจาก data URL หรือ URL จริงลงเครื่อง
+ * - มือถือ: ลอง Web Share API (เลือก “บันทึกรูป” / แอป Files)
+ * - อื่นๆ: แท็ก download + Blob URL
+ * @returns {{ method: 'share'|'download'|'aborted' }}
+ */
+export async function saveImageToDevice(imageSrc, filename = 'image.png') {
+  if (!imageSrc || typeof imageSrc !== 'string') {
+    throw new Error('ไม่พบรูปสำหรับบันทึก');
+  }
+
+  let blob;
+  if (imageSrc.startsWith('data:')) {
+    blob = dataUrlToBlob(imageSrc);
+  } else {
+    const response = await fetch(imageSrc, {
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      mode: 'cors',
+    });
+    if (!response.ok) {
+      throw new Error('โหลดรูปไม่สำเร็จ');
+    }
+    blob = await response.blob();
+  }
+
+  const safeName = filename.replace(/[^\w.\-]/g, '_') || 'promptpay-qr.png';
+  const mimeType = (blob.type && blob.type.startsWith('image/')) ? blob.type : 'image/png';
+
+  if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+    try {
+      const file = new File([blob], safeName, { type: mimeType });
+      const payload = { files: [file], title: 'QR ชำระเงิน' };
+      if (navigator.canShare(payload)) {
+        await navigator.share(payload);
+        return { method: 'share' };
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') {
+        return { method: 'aborted' };
+      }
+      /* fall through to download */
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = safeName;
+    link.style.display = 'none';
+    link.setAttribute('download', safeName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  return { method: 'download' };
+}
+
 // Get device info
 export const getDeviceInfo = () => {
   const userAgent = navigator.userAgent;

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import config from '../config';
-import { displayProductLineName } from '../utils/helpers';
+import { displayProductLineName, saveImageToDevice } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { usePopup } from '../components/PopupProvider';
 import CustomerInlineBack from '../components/CustomerInlineBack';
@@ -208,24 +208,16 @@ const OrderDetail = () => {
       return;
     }
     try {
-      const response = await fetch(promptPayInfo.qr_image, {
-        headers: { 'ngrok-skip-browser-warning': 'true' },
-      });
-      if (!response.ok) {
-        throw new Error('ดาวน์โหลดรูป QR ไม่สำเร็จ');
+      const result = await saveImageToDevice(
+        promptPayInfo.qr_image,
+        `promptpay-order-${order.id}.png`,
+      );
+      if (result.method === 'aborted') {
+        return;
       }
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = `promptpay-order-${order.id}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
       popup.info('บันทึก QR ลงเครื่องเรียบร้อย');
     } catch (error) {
-      popup.error(error.message || 'ดาวน์โหลดรูป QR ไม่สำเร็จ');
+      popup.error(error.message || 'บันทึกรูป QR ไม่สำเร็จ');
     }
   };
 
