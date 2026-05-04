@@ -241,8 +241,11 @@
 }
 
 .summary-item-row {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
   padding: 8px 4px;
   border-bottom: 1px solid #f1f4f9;
 }
@@ -255,14 +258,17 @@
   font-size: 0.86rem;
   font-weight: 600;
   color: #222;
+  flex: 1;
+  min-width: 0;
 }
 
 .summary-item-detail {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 0.82rem;
-  color: #556070;
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #00b900;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .summary-row {
@@ -304,23 +310,26 @@
 
 .total-row {
   border-top: 2px solid #e9ecef;
-  padding-top: 1rem;
-  margin-top: 1rem;
+  padding-top: 0.85rem;
+  margin-top: 0.75rem;
   font-size: 1.1rem;
 }
 
-.cart-subtotal-final {
-  margin-top: 0.5rem;
-  /* คนละขนาดฟอนต์ — align-items:center บนบรรทัดมักดูเบี้ยว; baseline ให้ข้อความกับตัวเลขอยู่แนวเดียวกัน */
-  align-items: baseline;
+/* flex + baseline + ฟอนต์คนละขนาดมักเห็นเส้นประแปลก — ใช้ grid จัดป้ายซ้าย / ราคาขวาให้ตรงแนวเดียวกัน */
+.summary-row.cart-subtotal-final {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  margin-bottom: 0;
 }
 
 .cart-subtotal-final > span:first-child {
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .cart-subtotal-final .total-amount {
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .cart-shipping-hint {
