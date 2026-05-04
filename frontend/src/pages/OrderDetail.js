@@ -15,6 +15,7 @@ const OrderDetail = () => {
   const [selectedSlipFile, setSelectedSlipFile] = useState(null);
   const [uploadingSlip, setUploadingSlip] = useState(false);
   const [deletingSlip, setDeletingSlip] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
   const [slipPreviewUrl, setSlipPreviewUrl] = useState('');
   const [promptPayInfo, setPromptPayInfo] = useState(null);
   const [loadingPromptPayQr, setLoadingPromptPayQr] = useState(false);
@@ -157,6 +158,12 @@ const OrderDetail = () => {
     (isPromptPayOrder && slipVerified)
     || (!isPromptPayOrder && order.status === 'delivered')
   );
+  /** PromptPay ยังไม่ยืนยันสลิป — ยกเลิกคำสั่งซื้อได้ */
+  const canCancelAwaitingProof =
+    Boolean(order)
+    && isPromptPayOrder
+    && !slipVerified
+    && !['delivered', 'cancelled'].includes(order?.status);
   const receiptIssuedAt = order?.payment_verified_at || (order?.status === 'delivered' ? order?.updated_at : null);
   const receiptNo = order?.order_number ? `${order.order_number}-R` : `RCPT-${order?.id || ''}`;
   const customerName = (order?.customer_name || '').trim() || 'ลูกค้า';
@@ -300,6 +307,41 @@ const OrderDetail = () => {
       popup.error(error.message || 'ลบสลิปไม่สำเร็จ');
     } finally {
       setDeletingSlip(false);
+    }
+  };
+
+  const handleCancelAwaitingProof = async () => {
+    if (!order || cancellingOrder) return;
+    if (!(await popup.confirm(
+      'ยกเลิกคำสั่งซื้อนี้? เมื่อยืนยันแล้วจะไม่สามารถชำระด้วยออเดอร์เดิมได้ และสต็อกที่จองไว้จะคืนเข้าร้าน (หากมี)',
+      { tone: 'danger', confirmText: 'ยกเลิกออเดอร์' },
+    ))) return;
+    setCancellingOrder(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${config.API_BASE_URL}orders/${order.id}/cancel-awaiting-payment-proof/`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Token ${token}` } : {}),
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+      }
+      if (data?.order) {
+        setOrder(data.order);
+      } else {
+        await fetchOrder({ silent: true });
+      }
+      popup.info(data?.message || 'ยกเลิกคำสั่งซื้อเรียบร้อย');
+    } catch (error) {
+      popup.error(error.message || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+    } finally {
+      setCancellingOrder(false);
     }
   };
 
@@ -481,6 +523,16 @@ const OrderDetail = () => {
               </div>
             </div>
             <div className="order-footer-actions">
+              {canCancelAwaitingProof && (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm order-cancel-awaiting-btn"
+                  onClick={handleCancelAwaitingProof}
+                  disabled={cancellingOrder}
+                >
+                  {cancellingOrder ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์'}
+                </button>
+              )}
               {order.driver_assignment && !['delivered', 'cancelled'].includes(order.status) && (
                 <Link to={`/customer/tracking/${order.id}`} className="btn btn-primary btn-sm">ติดตามคนขับ</Link>
               )}

@@ -213,6 +213,11 @@
   font-size: 0.95rem;
 }
 
+.order-cancel-awaiting-btn {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
 .order-footer-actions {
   display: flex;
   gap: 8px;

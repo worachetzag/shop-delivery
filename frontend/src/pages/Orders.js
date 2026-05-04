@@ -2,19 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
+import { usePopup } from '../components/PopupProvider';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import { displayProductLineName } from '../utils/helpers';
 import './Orders.css';
 
 const PAGE_SIZE = 10;
 
+function canCancelAwaitingProofOrder(order) {
+  return (
+    order.paymentMethod === 'promptpay'
+    && order.paymentSlipStatus !== 'verified'
+    && !['delivered', 'cancelled'].includes(order.status)
+  );
+}
+
 const Orders = () => {
+  const popup = usePopup();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
 
   useEffect(() => {
     setPage(1);
@@ -147,6 +158,38 @@ const Orders = () => {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handleCancelAwaitingProof = async (orderId) => {
+    if (cancellingOrderId) return;
+    if (!(await popup.confirm(
+      'ยกเลิกคำสั่งซื้อนี้? เมื่อยืนยันแล้วจะไม่สามารถชำระด้วยออเดอร์เดิมได้ และสต็อกที่จองไว้จะคืนเข้าร้าน (หากมี)',
+      { tone: 'danger', confirmText: 'ยกเลิกออเดอร์' },
+    ))) return;
+    setCancellingOrderId(orderId);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${config.API_BASE_URL}orders/${orderId}/cancel-awaiting-payment-proof/`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Token ${token}` } : {}),
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+      }
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      setTotalCount((c) => Math.max(0, c - 1));
+      popup.info(data?.message || 'ยกเลิกคำสั่งซื้อเรียบร้อย');
+    } catch (error) {
+      popup.error(error.message || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+    } finally {
+      setCancellingOrderId(null);
+    }
   };
 
   if (loading) {
@@ -323,6 +366,21 @@ const Orders = () => {
                     {order.receiptReady ? 'ใบเสร็จพร้อม' : 'รอออกใบเสร็จ'}
                   </span>
                 </div>
+                {canCancelAwaitingProofOrder(order) && (
+                  <div className="order-card-actions">
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm order-list-cancel-proof-btn"
+                      disabled={cancellingOrderId === order.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancelAwaitingProof(order.id);
+                      }}
+                    >
+                      {cancellingOrderId === order.id ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

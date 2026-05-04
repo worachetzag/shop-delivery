@@ -18,6 +18,11 @@ urlpatterns = [
     path('<int:order_id>/promptpay-qr/', views.PromptPayQRCodeView.as_view(), name='promptpay-qr'),
     path('<int:order_id>/payment-slip/', views.PaymentSlipUploadView.as_view(), name='payment-slip-upload'),
     path('<int:order_id>/payment-slip/review/', views.AdminPaymentSlipReviewView.as_view(), name='payment-slip-review'),
+    path(
+        '<int:order_id>/cancel-awaiting-payment-proof/',
+        views.OrderCancelAwaitingPaymentProofView.as_view(),
+        name='order-cancel-awaiting-payment-proof',
+    ),
     path('admin/stats/', views.AdminOrderStatsView.as_view(), name='admin-order-stats'),
     path('cart/add/', views.CartView.as_view(), name='cart-add'),
     path('cart/', views.CartListView.as_view(), name='cart-list'),

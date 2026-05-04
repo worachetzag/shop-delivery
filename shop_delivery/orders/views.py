@@ -828,6 +828,109 @@ class AdminPaymentSlipReviewView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class OrderCancelAwaitingPaymentProofView(APIView):
+    """
+    ยกเลิกออเดอร์ PromptPay ที่ยังไม่ยืนยันสลิป (รอแนบหลักฐานโอน / รอตรวจ / สลิปถูกปฏิเสธ)
+    — เจ้าของออเดอร์หรือแอดมิน
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_id):
+        order = get_object_or_404(
+            Order.objects.select_related('customer', 'customer__user'),
+            id=order_id,
+        )
+        is_admin = _is_admin_user(request.user)
+        if not is_admin:
+            customer = Customer.objects.filter(user=request.user).first()
+            if not customer or order.customer_id != customer.id:
+                return Response(
+                    {'error': 'ไม่มีสิทธิ์ยกเลิกคำสั่งซื้อนี้'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        if order.status in ('delivered', 'cancelled'):
+            return Response(
+                {'error': 'ออเดอร์นี้จัดส่งแล้วหรือยกเลิกไปแล้ว'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if order.payment_method != 'promptpay':
+            return Response(
+                {'error': 'ใช้ได้เฉพาะออเดอร์ชำระด้วยพร้อมเพย์ที่รอหลักฐานการโอน'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if order.payment_slip_status == 'verified':
+            return Response(
+                {'error': 'ชำระเงินยืนยันแล้ว ไม่สามารถยกเลิกจากเมนูนี้'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if order.status in ('delivered', 'cancelled'):
+                return Response(
+                    {'error': 'สถานะออเดอร์เปลี่ยนแล้ว โปรดรีเฟรชหน้า'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            if order.payment_slip_status == 'verified':
+                return Response(
+                    {'error': 'ชำระเงินยืนยันแล้ว'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            old_status = order.status
+            order, stock_meta = sync_order_stock_for_status_change(order, old_status, 'cancelled')
+            order.refresh_from_db()
+            order.status = 'cancelled'
+            order.save()
+
+            da = DriverAssignment.objects.select_for_update().filter(order_id=order.pk).first()
+            if da and da.status not in ('delivered', 'cancelled'):
+                drv = da.driver
+                da.status = 'cancelled'
+                da.save(update_fields=['status', 'updated_at'])
+                _sync_driver_availability(drv)
+
+        action_label_th = format_order_stock_audit_label(
+            order.id,
+            old_status,
+            'cancelled',
+            stock_meta,
+            source='admin' if is_admin else 'customer',
+        )
+        if is_admin:
+            log_staff_audit(
+                request,
+                StaffAuditLog.Action.ORDER_STATUS,
+                target_type='order',
+                target_id=str(order.id),
+                summary=action_label_th[:500],
+                detail={
+                    'order_id': order.id,
+                    'from': old_status,
+                    'to': 'cancelled',
+                    'reason': 'cancel_awaiting_payment_proof',
+                    'action_label_th': action_label_th,
+                    'stock_restocked': bool(stock_meta.get('restocked')),
+                    'restock_items': stock_meta.get('restock_items') or [],
+                },
+            )
+
+        send_order_status_notification(
+            order=order,
+            source='admin' if is_admin else 'customer',
+            old_status=old_status,
+            new_status='cancelled',
+            actor=request.user,
+        )
+
+        serializer = OrderSerializer(order, context={'request': request})
+        return Response({
+            'message': 'ยกเลิกคำสั่งซื้อเรียบร้อย',
+            'order': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+
 class AdminAssignDriverView(APIView):
     """แอดมินมอบหมายงานให้คนขับ"""
     permission_classes = [permissions.IsAuthenticated]

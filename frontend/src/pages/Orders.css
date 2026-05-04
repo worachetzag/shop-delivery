@@ -246,6 +246,17 @@
   gap: 6px 8px;
 }
 
+.order-card-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.order-list-cancel-proof-btn {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
 .order-meta-total {
   font-weight: 700;
   color: var(--accent-brand, #00B900);

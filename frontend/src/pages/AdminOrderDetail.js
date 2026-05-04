@@ -16,6 +16,7 @@ const AdminOrderDetail = () => {
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingSlip, setSavingSlip] = useState(false);
   const [savingAssign, setSavingAssign] = useState(false);
+  const [savingCancel, setSavingCancel] = useState(false);
   const [slipPreviewUrl, setSlipPreviewUrl] = useState('');
 
   const getAdminToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
@@ -225,6 +226,44 @@ const AdminOrderDetail = () => {
     }
   };
 
+  const cancelAwaitingPaymentProof = async () => {
+    if (!order || savingCancel) return;
+    if (!(await popup.confirm(
+      'ยกเลิกคำสั่งซื้อนี้? ใช้ได้เมื่อยังไม่ยืนยันการโอน — สต็อกที่จองไว้จะคืนเข้าร้าน (หากมี)',
+      { tone: 'danger', confirmText: 'ยกเลิกออเดอร์' },
+    ))) return;
+    setSavingCancel(true);
+    try {
+      const token = getAdminToken();
+      const response = await fetch(
+        `${config.API_BASE_URL}orders/${order.id}/cancel-awaiting-payment-proof/`,
+        {
+          method: 'POST',
+          headers: {
+            ...(token ? { Authorization: `Token ${token}` } : {}),
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+      }
+      if (data?.order) {
+        setOrder(data.order);
+      } else {
+        await refreshOrder();
+      }
+      popup.info(data?.message || 'ยกเลิกคำสั่งซื้อเรียบร้อย');
+    } catch (error) {
+      popup.error(error.message || 'ยกเลิกออเดอร์ไม่สำเร็จ');
+    } finally {
+      setSavingCancel(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>;
   }
@@ -247,6 +286,11 @@ const AdminOrderDetail = () => {
     order.payment_method === 'promptpay' &&
     order.payment_slip_url &&
     order.payment_slip_status === 'uploaded';
+  /** PromptPay ยังไม่ยืนยันสลิป — ยกเลิกได้ทั้งฝั่งแอดมิน */
+  const canCancelAwaitingProof =
+    !isOrderClosed &&
+    order.payment_method === 'promptpay' &&
+    order.payment_slip_status !== 'verified';
   const isPickup = order.order_type === 'pickup';
   const hasAssignedDriver = Boolean(order?.driver_assignment?.driver_id);
   const customerId = order.customer || order.customer_id || null;
@@ -435,6 +479,18 @@ const AdminOrderDetail = () => {
               </>
             ) : (
               <p className="muted">ยังไม่มีการอัปโหลดสลิป</p>
+            )}
+            {canCancelAwaitingProof && (
+              <div className="product-actions-cell" style={{ marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={cancelAwaitingPaymentProof}
+                  disabled={savingCancel}
+                >
+                  {savingCancel ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์ (รอหลักฐานโอน)'}
+                </button>
+              </div>
             )}
           </div>
         )}

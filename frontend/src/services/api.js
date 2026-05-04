@@ -201,10 +201,10 @@ export const ordersService = {
     }
   },
 
-  // Cancel order
+  // Cancel PromptPay order before payment slip is verified (customer or admin token)
   cancelOrder: async (id) => {
     try {
-      const response = await api.post(`/customer/orders/${id}/cancel/`);
+      const response = await api.post(`/orders/${id}/cancel-awaiting-payment-proof/`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
