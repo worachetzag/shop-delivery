@@ -259,9 +259,14 @@ const Products = () => {
     return (
       <div className="products-page">
         <div className="container">
-          <div className="page-header">
-            <h1 className="page-title">สินค้าทั้งหมด</h1>
-          </div>
+          <header className="products-hero">
+            <div className="products-hero__inner">
+              <h1 className="products-hero__title">สินค้าทั้งหมด</h1>
+              <p className="products-hero__subtitle">
+                เลือกหมวดหมู่ ค้นหา หรือกรองโปรโมชัน — แตะการ์ดเพื่อดูรายละเอียด
+              </p>
+            </div>
+          </header>
           <CustomerServiceHoursStrip compact />
           <div className="results-section">
             <div className="results-header">
@@ -287,20 +292,39 @@ const Products = () => {
   return (
     <div className="products-page">
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">สินค้าทั้งหมด</h1>
-        </div>
+        <header className="products-hero">
+          <div className="products-hero__inner">
+            <h1 className="products-hero__title">สินค้าทั้งหมด</h1>
+            <p className="products-hero__subtitle">
+              เลือกหมวดหมู่ ค้นหา หรือกรองโปรโมชัน — แตะการ์ดเพื่อดูรายละเอียด
+            </p>
+          </div>
+        </header>
 
         <CustomerServiceHoursStrip compact />
 
         <div className="filters-section">
+          <div className="filters-section__label">ค้นหาและกรอง</div>
           <div className="search-box">
+            <span className="products-search-icon" aria-hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM21 21l-4.35-4.35"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
             <input
-              type="text"
-              placeholder="ค้นหาสินค้า..."
+              type="search"
+              enterKeyHint="search"
+              placeholder="ค้นหาชื่อสินค้า..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input"
+              className="form-input products-search-input"
+              aria-label="ค้นหาสินค้า"
             />
           </div>
 
@@ -351,7 +375,15 @@ const Products = () => {
 
         <div className="results-section">
           <div className="results-header">
-            <p className="results-count">พบสินค้า {totalCount} รายการ{loading ? ' (กำลังโหลด...)' : ''}</p>
+            <p className="results-count">
+              <span className="results-count__badge" aria-hidden>
+                {totalCount}
+              </span>
+              <span className="results-count__text">
+                รายการสินค้า
+                {loading ? <span className="results-count__loading"> · กำลังอัปเดต</span> : null}
+              </span>
+            </p>
           </div>
 
           {loading && products.length === 0 ? (
@@ -374,9 +406,21 @@ const Products = () => {
             </>
           ) : (
             <div className="no-results">
-              <div className="no-results-icon">🔍</div>
-              <h3>ไม่พบสินค้าที่ค้นหา</h3>
-              <p>ลองเปลี่ยนคำค้นหาหรือหมวดหมู่</p>
+              <div className="no-results-card">
+                <div className="no-results-icon" aria-hidden>
+                  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM21 21l-4.35-4.35"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <h3 className="no-results-title">ยังไม่พบสินค้า</h3>
+                <p className="no-results-hint">ลองเปลี่ยนคำค้นหา เลือกหมวดอื่น หรือกด «ทั้งหมด»</p>
+              </div>
             </div>
           )}
         </div>

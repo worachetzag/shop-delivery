@@ -1,52 +1,141 @@
-/* Products Page Styles */
+/* หน้ารายการสินค้าลูกค้า — พื้นหลังนุ่ม แถบหัวข้อแบรนด์ การ์ดฟิลเตอร์ กริดยืดหยุ่น */
+
 .products-page {
-  min-height: 100vh;
-  padding: 1rem 0 1.4rem;
+  min-height: 100dvh;
+  padding: 0.5rem 0 1.25rem;
+  background:
+    radial-gradient(120% 80% at 50% -15%, rgba(0, 177, 79, 0.12) 0%, rgba(0, 177, 79, 0) 52%),
+    linear-gradient(185deg, var(--surface-muted, #eef3f1) 0%, var(--surface-bg, #f4f7f6) 42%, #f1f5f9 100%);
 }
 
-.page-header {
+.products-page .container {
+  position: relative;
+}
+
+/* --- Hero (คล้ายหน้าแรก แต่กะทัดรัด) --- */
+.products-hero {
+  margin: 0 0 0.65rem;
+  padding: 1.05rem 1rem 1.15rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--brand-primary, #00b14f) 0%, var(--brand-primary-strong, #008e42) 52%, #059669 100%);
+  color: #fff;
   text-align: center;
-  margin-bottom: 1rem;
+  box-shadow:
+    0 12px 32px rgba(0, 142, 66, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
 }
 
-.page-title {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.5rem;
+.products-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 25%, rgba(255, 255, 255, 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 88% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 38%);
+  pointer-events: none;
 }
 
-.page-subtitle {
-  font-size: 1.1rem;
-  color: #6c757d;
+.products-hero__inner {
+  position: relative;
+  z-index: 1;
 }
 
-/* Filters Section */
+.products-hero__title {
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.35rem, 4.2vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.products-hero__subtitle {
+  margin: 0 auto;
+  max-width: 26rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+/* --- ฟิลเตอร์ --- */
 .filters-section {
-  background: #fff;
-  border-radius: 14px;
-  padding: 1rem;
-  margin-bottom: 0.9rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
-  overflow: visible;
+  position: relative;
+  background: var(--surface-card, #fff);
+  border-radius: 16px;
+  padding: 0.95rem 1rem 1rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow:
+    0 4px 18px rgba(15, 23, 42, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.filters-section::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65rem;
+  bottom: 0.65rem;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, var(--brand-primary, #00b14f), var(--brand-accent, #1fbf67));
+  opacity: 0.9;
+}
+
+.filters-section__label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0 0 0.55rem 0.15rem;
 }
 
 .filters-section .customer-category-strip {
-  padding-top: 0.15rem;
+  padding-top: 0.2rem;
 }
 
 .search-box {
+  position: relative;
   margin-bottom: 0.85rem;
 }
 
-.search-box .form-input {
-  font-size: 0.95rem;
-  padding: 0.72rem 0.78rem;
-  border-radius: 10px;
+.products-search-icon {
+  position: absolute;
+  left: 0.78rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  display: flex;
+  pointer-events: none;
+  z-index: 1;
 }
 
-/* ฟิลเตอร์ด่วน: ทั้งหมด / ลดราคา / แนะนำ */
+.search-box .products-search-input,
+.search-box .form-input.products-search-input {
+  font-size: 0.92rem;
+  padding: 0.78rem 0.85rem 0.78rem 2.55rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: #fafcfb;
+  width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.search-box .products-search-input:focus {
+  outline: none;
+  border-color: var(--brand-primary, #00b14f);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.18);
+}
+
 .products-quick-filters {
   display: flex;
   flex-wrap: wrap;
@@ -59,137 +148,114 @@
   appearance: none;
   cursor: pointer;
   border-radius: 999px;
-  padding: 0.42rem 0.95rem;
-  font-size: 0.82rem;
-  font-weight: 600;
+  padding: 0.45rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
   border: 1px solid #d1d5db;
   background: #fff;
   color: #374151;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .products-filter-chip:hover {
-  border-color: var(--brand-primary, #00a651);
-  color: var(--brand-primary, #00a651);
+  border-color: var(--brand-primary, #00b14f);
+  color: var(--brand-primary, #00b14f);
+}
+
+.products-filter-chip:active {
+  transform: scale(0.98);
 }
 
 .products-filter-chip.is-active {
-  border-color: var(--brand-primary, #00a651);
-  background: #ecfdf5;
+  border-color: var(--brand-primary, #00b14f);
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
   color: #065f46;
+  box-shadow: 0 2px 8px rgba(0, 177, 79, 0.12);
 }
 
 .products-filter-chip--sale.is-active {
   border-color: #ea580c;
-  background: #fff7ed;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
   color: #9a3412;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
 }
 
 .products-filter-chip--featured.is-active {
   border-color: #2563eb;
-  background: #eff6ff;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
   color: #1e40af;
-}
-
-.products-filter-banners {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem;
-  margin-bottom: 0.65rem;
-}
-
-.products-filter-clear-link {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--brand-primary, #00a651);
-  text-decoration: none;
-}
-
-.products-filter-clear-link:hover {
-  text-decoration: underline;
-}
-
-.products-on-sale-banner {
-  margin: 0;
-  padding: 0.45rem 0.55rem;
-  font-size: 0.78rem;
-  color: #0d6b39;
-  background: #effaf3;
-  border: 1px solid #c6e9d4;
-  border-radius: 10px;
-}
-
-.products-on-sale-banner a {
-  color: var(--brand-primary, #00a651);
-  font-weight: 700;
-}
-
-.products-on-sale-banner--featured {
-  color: #1e3a5f;
-  background: #eef6ff;
-  border-color: #bfdbfe;
-}
-
-.products-on-sale-banner--featured a {
-  color: #1d4ed8;
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.filter-group .form-label {
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.filter-group .form-input {
-  padding: 0.75rem;
-  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
 }
 
 .filters.filters-sort-only {
+  display: grid;
   grid-template-columns: 1fr;
-  justify-items: start;
+  justify-items: stretch;
 }
 
-/* Results Section */
+/* --- ผลลัพธ์ --- */
 .results-section {
-  background: white;
-  border-radius: 14px;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  background: var(--surface-card, #fff);
+  border-radius: 16px;
+  padding: 0.95rem 1rem 1.05rem;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
 }
 
 .results-header {
-  margin-bottom: 0.9rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .results-count {
-  font-size: 1.1rem;
-  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.results-count__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-primary, #00b14f), var(--brand-primary-strong, #008e42));
+  box-shadow: 0 2px 8px rgba(0, 177, 79, 0.25);
+}
+
+.results-count__text {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.results-count__loading {
   font-weight: 500;
+  color: #94a3b8;
 }
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.8rem;
   align-items: stretch;
 }
 
@@ -197,113 +263,117 @@
   height: 100%;
 }
 
-/* No Results */
+/* Skeleton — คล้ายการ์ดจริง */
+.product-card-skeleton {
+  background: var(--surface-card, #fff);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+  min-height: 200px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.product-card-skeleton-image {
+  aspect-ratio: 1;
+  background: linear-gradient(110deg, #e2e8f0 0%, #f1f5f9 45%, #e2e8f0 90%);
+  background-size: 200% 100%;
+  animation: products-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.product-card-skeleton-body {
+  padding: 0.65rem 0.7rem 0.85rem;
+}
+
+.product-card-skeleton-line {
+  height: 0.65rem;
+  border-radius: 6px;
+  background: #e2e8f0;
+  margin-bottom: 0.45rem;
+}
+
+.product-card-skeleton-line.name {
+  width: 88%;
+}
+
+.product-card-skeleton-line.price {
+  width: 45%;
+  height: 0.55rem;
+}
+
+@keyframes products-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* ไม่พบสินค้า */
 .no-results {
+  padding: 1.5rem 0.5rem 2rem;
+}
+
+.no-results-card {
+  max-width: 20rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
   text-align: center;
-  padding: 4rem 2rem;
-  color: #6c757d;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  border: 1px dashed rgba(148, 163, 184, 0.55);
 }
 
 .no-results-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: center;
 }
 
-.no-results h3 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: #333;
+.no-results-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 0.35rem;
 }
 
-.no-results p {
-  font-size: 1rem;
+.no-results-hint {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #64748b;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .products-page {
-    padding: 1rem 0;
+@media (min-width: 400px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+    gap: 0.9rem;
   }
-  
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .page-subtitle {
-    font-size: 1rem;
-  }
-  
-  .filters-section {
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .filters {
-    grid-template-columns: 1fr;
+}
+
+@media (min-width: 520px) {
+  .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
   }
-  
-  .results-section {
-    padding: 1.5rem;
-  }
-  
-  .products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
-  }
-  
-  .no-results {
-    padding: 2rem 1rem;
-  }
-  
-  .no-results-icon {
-    font-size: 3rem;
-  }
-  
-  .no-results h3 {
-    font-size: 1.3rem;
-  }
 }
 
-@media (max-width: 480px) {
-  .results-section {
-    padding: 1rem;
+@media (min-width: 768px) {
+  .products-page {
+    padding: 0.65rem 0 1.5rem;
   }
 
-  .products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem;
+  .products-hero {
+    padding: 1.2rem 1.25rem 1.35rem;
   }
 
-}
+  .products-hero__subtitle {
+    font-size: 0.88rem;
+    max-width: 32rem;
+  }
 
-/* Minimal + branded refresh */
-.products-page {
-  padding: 0.7rem 0 1rem;
+  .filters-section {
+    padding: 1.05rem 1.15rem 1.15rem;
+  }
 }
-
-.filters-section,
-.results-section {
-  border-radius: 12px;
-  padding: 0.8rem;
-}
-
-.results-header {
-  margin-bottom: 0.6rem;
-  padding-bottom: 0.45rem;
-}
-
-.results-count {
-  font-size: 0.85rem;
-}
-
-.search-box .form-input,
-.filter-group .form-input {
-  font-size: 0.86rem;
-}
-
-.filter-group .form-label {
-  font-size: 0.78rem;
-  margin-bottom: 0.3rem;
-}
-
