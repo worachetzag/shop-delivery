@@ -323,18 +323,14 @@
 .payment-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
   flex: 1;
-}
-
-.payment-icon {
-  font-size: 2rem;
+  min-width: 0;
 }
 
 .payment-info h4 {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin: 0;
 }
 
 .payment-info p {

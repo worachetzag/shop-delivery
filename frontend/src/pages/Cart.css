@@ -311,6 +311,16 @@
 
 .cart-subtotal-final {
   margin-top: 0.5rem;
+  /* คนละขนาดฟอนต์ — align-items:center บนบรรทัดมักดูเบี้ยว; baseline ให้ข้อความกับตัวเลขอยู่แนวเดียวกัน */
+  align-items: baseline;
+}
+
+.cart-subtotal-final > span:first-child {
+  line-height: 1.25;
+}
+
+.cart-subtotal-final .total-amount {
+  line-height: 1.25;
 }
 
 .cart-shipping-hint {

@@ -929,10 +929,7 @@ const Checkout = () => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   />
                   <div className="payment-info">
-                    <div className="payment-icon">📱</div>
-                    <div>
-                      <h4>QR Code</h4>
-                    </div>
+                    <h4>QR Code</h4>
                   </div>
                 </label>
 
@@ -945,10 +942,7 @@ const Checkout = () => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   />
                   <div className="payment-info">
-                    <div className="payment-icon">💳</div>
-                    <div>
-                      <h4>ชำระปลายทาง</h4>
-                    </div>
+                    <h4>ชำระปลายทาง</h4>
                   </div>
                 </label>
               </div>
