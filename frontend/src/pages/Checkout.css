@@ -149,7 +149,8 @@
   padding-top: 1rem;
 }
 
-.total-row {
+/* ขอบเขตภายใน checkout เท่านั้น — อย่าใช้ .total-row / .total-amount เปล่าๆ เพราะหน้าตะกร้าใช้ชื่อคลาสเดียวกัน */
+.checkout-page .order-totals .total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -157,11 +158,11 @@
   font-size: 1rem;
 }
 
-.total-row span:first-child {
+.checkout-page .order-totals .total-row span:first-child {
   color: #6c757d;
 }
 
-.total-row span:last-child {
+.checkout-page .order-totals .total-row span:last-child {
   font-weight: 500;
   color: #333;
 }
@@ -171,7 +172,7 @@
   font-weight: bold;
 }
 
-.total-amount {
+.checkout-page .order-totals .total-row.total-amount {
   font-size: 1.2rem;
   font-weight: bold;
   color: #00B900;
@@ -533,12 +534,12 @@
   max-width: 9.5rem;
 }
 
-.total-row {
+.checkout-page .order-totals .total-row {
   font-size: 0.86rem;
   margin-bottom: 0.5rem;
 }
 
-.total-amount {
+.checkout-page .order-totals .total-row.total-amount {
   font-size: 1rem;
 }
 
