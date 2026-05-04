@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import CustomerCategoryStrip from '../components/CustomerCategoryStrip';
-import ApiPaginationBar from '../components/ApiPaginationBar';
 import { productsService, cartService } from '../services/api';
 import './Products.css';
 import { usePopup } from '../components/PopupProvider';
@@ -41,7 +40,7 @@ function ProductsResultsHeading({ id }) {
         สินค้าในร้าน
       </h2>
       <p className="products-results-head__hint">
-        เลื่อนดูรายการด้านล่าง แตะการ์ดเพื่อขยายรายละเอียด
+        เลื่อนลงเพื่อโหลดสินค้าเพิ่ม — แตะการ์ดเพื่อขยายรายละเอียด
       </p>
     </header>
   );
@@ -67,15 +66,12 @@ const Products = () => {
   };
 
   const [products, setProducts] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const page = useMemo(() => {
-    const n = Number.parseInt(searchParams.get('page') || '1', 10);
-    return Number.isFinite(n) && n >= 1 ? n : 1;
-  }, [searchParams]);
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [sortBy, setSortBy] = useState('name-asc');
   const [cartQuantities, setCartQuantities] = useState(readCartCache);
   const [cartLineItems, setCartLineItems] = useState([]);
@@ -86,46 +82,28 @@ const Products = () => {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  const prevFiltersKeyRef = useRef(null);
-  /** เลือกหมวด / ค้นหา / เรียง / ชิปกรองเปลี่ยน — กลับไปหน้า 1 (ไม่รันตอน mount เพื่อเก็บ ?page= จากย้อนกลับจากรายละเอียดสินค้า) */
+  /** ไม่ใช้ pagination ใน URL — ลบพารามิเตอร์ page เก่า */
   useEffect(() => {
-    const key = `${categoryIdFromUrl}|${debouncedSearch}|${sortBy}|${onSaleOnly}|${featuredOnly}`;
-    const prev = prevFiltersKeyRef.current;
-    prevFiltersKeyRef.current = key;
-    if (prev !== null && prev !== key) {
-      setSearchParams(
-        (params) => {
-          const sp = new URLSearchParams(params);
-          if (!sp.has('page')) return sp;
-          sp.delete('page');
-          return sp;
-        },
-        { replace: true },
-      );
-    }
-  }, [categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly]);
+    setSearchParams(
+      (prev) => {
+        const sp = new URLSearchParams(prev);
+        if (!sp.has('page')) return prev;
+        sp.delete('page');
+        return sp;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
-  const handlePageChange = useCallback(
-    (nextPage) => {
-      const n = Number(nextPage);
-      if (!Number.isFinite(n) || n < 1) return;
-      setSearchParams(
-        (prev) => {
-          const sp = new URLSearchParams(prev);
-          if (n <= 1) sp.delete('page');
-          else sp.set('page', String(Math.floor(n)));
-          return sp;
-        },
-        { replace: false },
-      );
-    },
-    [setSearchParams],
-  );
+  const fetchGenerationRef = useRef(0);
+  const nextPageRef = useRef(2);
+  const loadingMoreLockRef = useRef(false);
+  const loadMoreRef = useRef(() => {});
+  const sentinelRef = useRef(null);
 
   const categoryStripHref = useCallback(
     (categoryId) => {
       const next = new URLSearchParams(searchParams);
-      next.delete('page');
       if (categoryId) next.set('category_id', categoryId);
       else next.delete('category_id');
       const qs = next.toString();
@@ -178,47 +156,95 @@ const Products = () => {
     };
   }, []);
 
+  const buildProductParams = useCallback(
+    (pageNum) => {
+      const ordering = apiOrderingForSortKey(sortBy);
+      const params = { page: pageNum, page_size: PAGE_SIZE, ordering };
+      if (categoryIdFromUrl) params.category_id = categoryIdFromUrl;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (onSaleOnly) params.on_sale = 'true';
+      if (featuredOnly) params.featured = 'true';
+      return params;
+    },
+    [sortBy, categoryIdFromUrl, debouncedSearch, onSaleOnly, featuredOnly],
+  );
+
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const ordering = apiOrderingForSortKey(sortBy);
-        const params = { page, page_size: PAGE_SIZE, ordering };
-        if (categoryIdFromUrl) params.category_id = categoryIdFromUrl;
-        if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
-        if (onSaleOnly) params.on_sale = 'true';
-        if (featuredOnly) params.featured = 'true';
+    const gen = ++fetchGenerationRef.current;
+    nextPageRef.current = 2;
+    setLoading(true);
+    setHasMore(false);
 
-        const productsResponse = await productsService.getProducts(params);
-        if (cancelled) return;
+    (async () => {
+      try {
+        const productsResponse = await productsService.getProducts(buildProductParams(1));
+        if (cancelled || gen !== fetchGenerationRef.current) return;
 
         const list = productsResponse.results || productsResponse;
-        setProducts(Array.isArray(list) ? list : []);
-        setTotalCount(
-          typeof productsResponse.count === 'number'
-            ? productsResponse.count
-            : Array.isArray(list)
-              ? list.length
-              : 0
-        );
+        const arr = Array.isArray(list) ? list : [];
+        setProducts(arr);
+        setHasMore(Boolean(productsResponse.next));
       } catch (error) {
         console.error('Error fetching products:', error);
-        if (!cancelled) {
+        if (!cancelled && gen === fetchGenerationRef.current) {
           setProducts([]);
-          setTotalCount(0);
+          setHasMore(false);
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && gen === fetchGenerationRef.current) {
           setLoading(false);
           setListReady(true);
         }
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [page, categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly]);
+  }, [categoryIdFromUrl, debouncedSearch, sortBy, onSaleOnly, featuredOnly, buildProductParams]);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (!hasMore || loading || loadingMoreLockRef.current) return;
+    const gen = fetchGenerationRef.current;
+    const pageNum = nextPageRef.current;
+    loadingMoreLockRef.current = true;
+    setLoadingMore(true);
+    try {
+      const productsResponse = await productsService.getProducts(buildProductParams(pageNum));
+      if (gen !== fetchGenerationRef.current) return;
+
+      const list = productsResponse.results || productsResponse;
+      const arr = Array.isArray(list) ? list : [];
+      setProducts((prev) => [...prev, ...arr]);
+      setHasMore(Boolean(productsResponse.next));
+      nextPageRef.current = pageNum + 1;
+    } catch (error) {
+      console.error('Error loading more products:', error);
+      popup.error(typeof error === 'string' ? error : 'โหลดสินค้าเพิ่มไม่สำเร็จ');
+    } finally {
+      loadingMoreLockRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [hasMore, loading, buildProductParams, popup]);
+
+  loadMoreRef.current = loadMoreProducts;
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore || loading) return undefined;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        loadMoreRef.current();
+      },
+      { root: null, rootMargin: '280px', threshold: 0 },
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loading, products.length]);
 
   const syncCartQuantities = async () => {
     try {
@@ -423,12 +449,17 @@ const Products = () => {
                   <ProductCard key={product.id} product={product} listingOnly />
                 ))}
               </div>
-              <ApiPaginationBar
-                count={totalCount}
-                page={page}
-                pageSize={PAGE_SIZE}
-                onPageChange={handlePageChange}
-              />
+              {loadingMore ? (
+                <div className="products-loading-more" role="status" aria-live="polite">
+                  <div className="products-loading-inline__dots" aria-hidden>
+                    <span className="products-loading-inline__dot" />
+                    <span className="products-loading-inline__dot" />
+                    <span className="products-loading-inline__dot" />
+                  </div>
+                  <span className="products-loading-more__text">กำลังโหลดเพิ่ม…</span>
+                </div>
+              ) : null}
+              {hasMore ? <div ref={sentinelRef} className="products-infinite-sentinel" aria-hidden /> : null}
             </>
           ) : (
             <div className="no-results">

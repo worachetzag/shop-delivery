@@ -319,6 +319,26 @@
   }
 }
 
+.products-loading-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0 0.35rem;
+}
+
+.products-loading-more__text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.products-infinite-sentinel {
+  height: 1px;
+  margin-bottom: env(safe-area-inset-bottom, 0);
+  pointer-events: none;
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
