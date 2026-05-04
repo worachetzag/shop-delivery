@@ -17,7 +17,10 @@ class ConsentRecordSerializer(serializers.ModelSerializer):
             'id', 'customer', 'customer_name', 'consent_type', 'consent_type_display',
             'privacy_policy', 'is_given', 'given_at', 'withdrawn_at', 'ip_address', 'user_agent',
         ]
-        read_only_fields = ['given_at', 'withdrawn_at', 'customer']
+        read_only_fields = [
+            'given_at', 'withdrawn_at', 'customer',
+            'ip_address', 'user_agent',  # เติมที่ ConsentRecordView.create จาก request
+        ]
 
     def validate(self, attrs):
         consent_type = attrs.get('consent_type')
