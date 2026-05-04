@@ -683,23 +683,36 @@ const Checkout = () => {
             <div className="order-summary">
               <h3 className="section-title">สรุปคำสั่งซื้อ</h3>
               
-              <div className="order-items">
-                {cartItems.map(item => (
-                  <div key={item.id} className="order-item">
+              <div className="checkout-summary-list">
+                {cartItems.map((item) => (
+                  <div key={item.id} className="checkout-summary-line">
                     <img
-                      src={item.image}
-                      alt={item.name}
-                      className="item-image"
+                      className="checkout-summary-thumb"
+                      src={pickItemImage(item)}
+                      alt={displayProductLineName(item)}
                       onError={(e) => {
                         e.currentTarget.src = FALLBACK_IMAGE;
                       }}
                     />
-                    <div className="item-details">
-                      <h4 className="item-name">{item.name} x{item.quantity}</h4>
-                      <p className="item-category">{item.category}</p>
+                    <div className="checkout-summary-line-main">
+                      <span className="checkout-summary-line-name">
+                        {displayProductLineName(item)}
+                      </span>
+                      {item.category ? (
+                        <span className="checkout-summary-line-cat">{item.category}</span>
+                      ) : null}
                     </div>
-                    <div className="item-price">
-                      {formatPrice(item.price * item.quantity)}
+                    <div className="checkout-summary-line-right">
+                      <span className="checkout-summary-line-total">
+                        {formatPrice(item.price * item.quantity)}
+                      </span>
+                      <span className="checkout-summary-line-meta">
+                        x{item.quantity} · {formatPrice(item.price)} /{' '}
+                        {item.unitLabel || item.unit_label || 'ชิ้น'}
+                        {(item.unitDetail || item.unit_detail)
+                          ? ` (${item.unitDetail || item.unit_detail})`
+                          : ''}
+                      </span>
                     </div>
                   </div>
                 ))}

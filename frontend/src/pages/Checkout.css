@@ -61,56 +61,87 @@
   border-bottom: 2px solid #e9ecef;
 }
 
-.order-items {
+/* รูปซ้าย · ชื่อ/หมวดกลาง · ราคารวม + จำนวน/ราคาต่อหน่วย ขวา (กริดเดียวกับรายละเอียดออเดอร์) */
+.checkout-summary-list {
   margin-bottom: 2rem;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  padding: 8px;
 }
 
-.order-item {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid #e9ecef;
+.checkout-summary-line {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #f1f4f9;
+  text-align: left;
 }
 
-.order-item:last-child {
+.checkout-summary-line:last-child {
   border-bottom: none;
 }
 
-.order-item .item-image {
-  width: 80px;
-  height: 80px;
+.checkout-summary-thumb {
+  width: 56px;
+  height: 56px;
   object-fit: cover;
   border-radius: 8px;
   background: #f8f9fa;
+  border: 1px solid #e9eeec;
+  display: block;
+  flex-shrink: 0;
 }
 
-.order-item .item-details {
-  flex: 1;
+.checkout-summary-line-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+  padding-top: 1px;
 }
 
-.order-item .item-name {
-  font-size: 1rem;
+.checkout-summary-line-name {
+  font-size: 0.95rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 0.25rem;
+  line-height: 1.35;
 }
 
-.order-item .item-category {
+.checkout-summary-line-cat {
+  font-size: 0.82rem;
   color: #6c757d;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
+  line-height: 1.25;
 }
 
-.order-item .item-quantity {
-  color: #6c757d;
-  font-size: 0.9rem;
+.checkout-summary-line-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  text-align: right;
 }
 
-.order-item .item-price {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #00B900;
-  align-self: center;
+.checkout-summary-line-total {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #00b900;
+  white-space: nowrap;
+}
+
+.checkout-summary-line-meta {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.25;
+  max-width: 11rem;
+  text-align: right;
 }
 
 .order-totals {
@@ -392,16 +423,7 @@
     grid-template-columns: 1fr;
     gap: 0;
   }
-  
-  .order-item {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .order-item .item-image {
-    align-self: center;
-  }
-  
+
   .checkout-actions {
     flex-direction: column;
     gap: 1rem;
@@ -479,28 +501,40 @@
   border-bottom-width: 1px;
 }
 
-.order-item {
-  padding: 0.55rem 0;
-  gap: 0.7rem;
-}
-
-.order-item .item-image {
-  width: 62px;
-  height: 62px;
+.checkout-summary-list {
+  margin-bottom: 0.85rem;
+  border-color: var(--border-soft, #eef1f6);
+  padding: 6px 8px;
   border-radius: 10px;
 }
 
-.order-item .item-name {
+.checkout-summary-line {
+  padding: 6px 2px;
+  gap: 8px;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+}
+
+.checkout-summary-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+}
+
+.checkout-summary-line-name {
   font-size: 0.86rem;
 }
 
-.order-item .item-category,
-.order-item .item-quantity {
-  font-size: 0.78rem;
+.checkout-summary-line-cat {
+  font-size: 0.72rem;
 }
 
-.order-item .item-price {
-  font-size: 0.9rem;
+.checkout-summary-line-total {
+  font-size: 0.86rem;
+}
+
+.checkout-summary-line-meta {
+  font-size: 0.68rem;
+  max-width: 9.5rem;
 }
 
 .total-row {
