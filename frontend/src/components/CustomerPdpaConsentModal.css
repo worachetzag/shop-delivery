@@ -83,6 +83,17 @@
   font-weight: 600;
 }
 
+/* <li><p>...</p></li> — ย่อหน้าเป็น block เลยเลขอยู่บรรทัดเดียว ข้อความบรรทัดถัดไป */
+.customer-pdpa-dialog__content li > p:first-child {
+  display: inline;
+  margin: 0;
+}
+
+.customer-pdpa-dialog__content li > p:not(:first-child) {
+  display: block;
+  margin: 0.35em 0 0;
+}
+
 .customer-pdpa-dialog__content h1,
 .customer-pdpa-dialog__content h2,
 .customer-pdpa-dialog__content h3 {
