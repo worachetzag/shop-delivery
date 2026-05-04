@@ -1,3 +1,4 @@
+/* ต้องสูงกว่า .customer-pdpa-overlay (2500) ไม่งั้น confirm/toast โผล่ด้านหลัง modal PDPA */
 .popup-toast-stack {
   position: fixed;
   right: 16px;
@@ -5,7 +6,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 1400;
+  z-index: 2700;
 }
 
 .popup-toast {
@@ -48,7 +49,7 @@
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(1px);
-  z-index: 1300;
+  z-index: 2600;
   display: flex;
   align-items: center;
   justify-content: center;
