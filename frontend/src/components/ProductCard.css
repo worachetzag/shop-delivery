@@ -124,10 +124,10 @@
   color: #16a34a;
 }
 
-/* บรรทัด “จาก …” — คำว่า บาท แยกโทนเทาจางจากราคาขีดฆ่า */
+/* บรรทัด “จาก …” — คำว่า บาท ใช้สีแดงเดียวกับราคาขีดฆ่า */
 .product-price-unit--muted {
-  color: #94a3b8;
-  font-weight: 500;
+  color: #dc2626;
+  font-weight: 600;
 }
 
 .product-price-unit {

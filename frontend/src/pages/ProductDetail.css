@@ -115,6 +115,12 @@
   text-decoration-thickness: 1px;
 }
 
+/* คำว่า บาท หลังราคา “จาก” ให้สีแดงเดียวกับราคาขีดฆ่า */
+.product-detail-price-block:has(.product-detail-price-compare) .product-detail-price-unit {
+  color: #dc2626;
+  font-weight: 600;
+}
+
 .product-detail-price-value--sale {
   color: #1e293b;
 }
