@@ -28,9 +28,7 @@ class ConsentRecordSerializer(serializers.ModelSerializer):
         policy = attrs.get('privacy_policy')
         if consent_type == 'privacy_policy':
             if is_given:
-                current = PrivacyPolicy.objects.filter(is_active=True).order_by(
-                    '-effective_date', '-id',
-                ).first()
+                current = PrivacyPolicy.get_current_for_storefront()
                 if not current:
                     raise serializers.ValidationError(
                         {'privacy_policy': 'ยังไม่มีนโยบายที่เปิดใช้งาน'},
@@ -41,9 +39,7 @@ class ConsentRecordSerializer(serializers.ModelSerializer):
                     )
             else:
                 # ปฏิเสธนโยบาย — อนุญาตแนบ privacy_policy = ฉบับปัจจุบันเพื่อ audit
-                current = PrivacyPolicy.objects.filter(is_active=True).order_by(
-                    '-effective_date', '-id',
-                ).first()
+                current = PrivacyPolicy.get_current_for_storefront()
                 if policy is not None and current and policy.id == current.id:
                     attrs['privacy_policy'] = current
                 else:

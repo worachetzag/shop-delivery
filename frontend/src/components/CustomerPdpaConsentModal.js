@@ -258,15 +258,6 @@ export default function CustomerPdpaConsentModal() {
           ref={scrollRef}
           onScroll={onScrollBody}
         >
-          <div className="customer-pdpa-dialog__intro">
-            <p>
-              การให้ความยินยอมเป็นไปโดยสมัครใจ โปรดอ่านรายละเอียดด้านล่างก่อนติ๊กยอมรับ
-              หากคุณเข้าสู่ระบบด้วย LINE หรือบริการบุคคลที่สามอื่น อาจมีการส่งข้อมูลบางส่วนระหว่างผู้ให้บริการ — รายละเอียดอยู่ในนโยบายด้านล่าง
-            </p>
-            <p>
-              คุณสามารถถอนความยินยอมนโยบายความเป็นส่วนตัวได้ทุกเมื่อที่เมนูโปรไฟล์ → ส่วน «ความเป็นส่วนตัว (PDPA)»
-            </p>
-          </div>
           <div
             className="customer-pdpa-dialog__content"
             dangerouslySetInnerHTML={{ __html: safeHtml }}
@@ -298,16 +289,6 @@ export default function CustomerPdpaConsentModal() {
               (ไม่บังคับ) ข้าพเจ้ายินยอมให้ส่งข่าวสาร โปรโมชัน หรือข้อมูลการตลาดทางช่องทางที่ระบุในนโยบาย — แยกจากการยอมรับนโยบายความเป็นส่วนตัว
             </span>
           </label>
-          {!readToEnd ? (
-            <p className="customer-pdpa-hint" role="status">
-              เลื่อนอ่านนโยบายในช่องด้านบนให้ครบจนสุด แล้วจึงติ๊กยอมรับนโยบาย (จำเป็น) — ช่องการตลาดเลือกได้หรือไม่ก็ได้
-            </p>
-          ) : null}
-          {readToEnd && !agreed ? (
-            <p className="customer-pdpa-hint" role="status">
-              โปรดติ๊กช่อง “ข้าพเจ้าได้อ่านและยอมรับนโยบายความเป็นส่วนตัว” ก่อนกดดำเนินการต่อ — ช่องการตลาดไม่บังคับ
-            </p>
-          ) : null}
           <div className="customer-pdpa-dialog__actions">
             <button
               type="button"

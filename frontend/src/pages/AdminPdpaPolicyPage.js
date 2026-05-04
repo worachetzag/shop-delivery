@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import config from '../config';
 import AdminPdpaRichTextEditor from '../components/AdminPdpaRichTextEditor';
 import { usePopup } from '../components/PopupProvider';
@@ -18,64 +18,117 @@ const AdminPdpaPolicyPage = () => {
   const popup = usePopup();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [policies, setPolicies] = useState([]);
+  /** 'list' | 'form' */
+  const [mode, setMode] = useState('list');
+  /** null = สร้างใหม่, ตัวเลข = แก้ id นั้น */
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(defaultForm);
-  const [hasExisting, setHasExisting] = useState(false);
-  /** เปลี่ยนเมื่อโหลด/รีเซ็ตเนื้อหาจาก API — ให้ตัวแก้ TipTap สร้างใหม่ตรงกับ HTML */
   const [editorMountKey, setEditorMountKey] = useState(0);
 
   const getToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
+
+  const loadPolicies = useCallback(async () => {
+    const token = getToken();
+    const response = await fetch(`${config.API_BASE_URL}pdpa/admin/privacy-policy/`, {
+      headers: {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      credentials: 'include',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || `โหลดรายการไม่สำเร็จ (${response.status})`);
+    }
+    setPolicies(Array.isArray(data.policies) ? data.policies : []);
+  }, []);
 
   useEffect(() => {
     let alive = true;
     const run = async () => {
       setLoading(true);
       try {
-        const token = getToken();
-        const response = await fetch(`${config.API_BASE_URL}pdpa/admin/privacy-policy/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
-          credentials: 'include',
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(data.error || `โหลดข้อมูลไม่สำเร็จ (${response.status})`);
-        }
-        if (!alive) return;
-        if (data.policy) {
-          const p = data.policy;
-          setHasExisting(true);
-          setForm({
-            version: p.version ?? '1.0',
-            title: p.title ?? '',
-            content: p.content && String(p.content).trim() ? p.content : '<p><br></p>',
-            effective_date: p.effective_date || defaultForm().effective_date,
-            is_active: Boolean(p.is_active),
-          });
-        } else {
-          setHasExisting(false);
-          setForm(defaultForm());
-        }
+        await loadPolicies();
       } catch (err) {
         if (!alive) return;
         popup.error(err.message || 'โหลดนโยบายไม่สำเร็จ');
-        setForm(defaultForm());
-        setHasExisting(false);
+        setPolicies([]);
       } finally {
-        if (alive) {
-          setLoading(false);
-          setEditorMountKey((k) => k + 1);
-        }
+        if (alive) setLoading(false);
       }
     };
     run();
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- โหลดครั้งเดียวเมื่อเปิดหน้า
-  }, []);
+  }, [loadPolicies, popup]);
+
+  const goFormCreate = () => {
+    const nextVersion = suggestNextVersion(policies);
+    setEditingId(null);
+    setForm({
+      ...defaultForm(),
+      version: nextVersion,
+      is_active: true,
+    });
+    setEditorMountKey((k) => k + 1);
+    setMode('form');
+  };
+
+  const goFormEdit = async (id) => {
+    setMode('form');
+    setLoading(true);
+    try {
+      const token = getToken();
+      const response = await fetch(`${config.API_BASE_URL}pdpa/admin/privacy-policy/${id}/`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        credentials: 'include',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `โหลดฉบับไม่สำเร็จ (${response.status})`);
+      }
+      const p = data.policy;
+      if (!p) throw new Error('ไม่พบข้อมูลนโยบาย');
+      setEditingId(id);
+      setForm({
+        version: p.version ?? '1.0',
+        title: p.title ?? '',
+        content: p.content && String(p.content).trim() ? p.content : '<p><br></p>',
+        effective_date: p.effective_date || defaultForm().effective_date,
+        is_active: Boolean(p.is_active),
+      });
+      setEditorMountKey((k) => k + 1);
+    } catch (err) {
+      popup.error(err.message || 'โหลดไม่สำเร็จ');
+      setMode('list');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const goList = () => {
+    setMode('list');
+    setEditingId(null);
+    setForm(defaultForm());
+  };
+
+  const copyBodyFromActive = () => {
+    const active = policies.find((p) => p.is_active);
+    if (!active || !active.content) {
+      popup.info('ยังไม่มีฉบับที่เปิดใช้งานหรือไม่มีเนื้อหา');
+      return;
+    }
+    setForm((f) => ({ ...f, content: active.content }));
+    setEditorMountKey((k) => k + 1);
+    popup.info('คัดลอกเนื้อหาจากฉบับที่ใช้งานแล้ว — โปรดปรับเวอร์ชันและวันที่มีผลก่อนบันทึก');
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -98,8 +151,12 @@ const AdminPdpaPolicyPage = () => {
         effective_date: form.effective_date,
         is_active: Boolean(form.is_active),
       };
-      const response = await fetch(`${config.API_BASE_URL}pdpa/admin/privacy-policy/`, {
-        method: 'PUT',
+      const isEdit = editingId != null;
+      const url = isEdit
+        ? `${config.API_BASE_URL}pdpa/admin/privacy-policy/${editingId}/`
+        : `${config.API_BASE_URL}pdpa/admin/privacy-policy/`;
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
@@ -116,19 +173,9 @@ const AdminPdpaPolicyPage = () => {
             : null;
         throw new Error(data.error || firstErr || `บันทึกไม่สำเร็จ (${response.status})`);
       }
-      popup.success(data.message || 'บันทึกนโยบายแล้ว');
-      setHasExisting(true);
-      if (data.policy) {
-        const p = data.policy;
-        setForm((prev) => ({
-          ...prev,
-          version: p.version ?? prev.version,
-          title: p.title ?? prev.title,
-          content: p.content ?? prev.content,
-          effective_date: p.effective_date || prev.effective_date,
-          is_active: Boolean(p.is_active),
-        }));
-      }
+      popup.success(data.message || (isEdit ? 'บันทึกนโยบายแล้ว' : 'สร้างเวอร์ชันใหม่แล้ว'));
+      await loadPolicies();
+      goList();
     } catch (error) {
       popup.error(error.message || 'บันทึกนโยบายไม่สำเร็จ');
     } finally {
@@ -136,99 +183,198 @@ const AdminPdpaPolicyPage = () => {
     }
   };
 
+  const formTitle = editingId != null ? `แก้ไขนโยบาย (ID ${editingId})` : 'สร้างเวอร์ชันใหม่';
+
   return (
     <div className="admin-dashboard admin-pdpa-page">
       <div className="admin-content">
         <header className="admin-pdpa-page__head">
           <h1 className="admin-pdpa-page__title">นโยบายความเป็นส่วนตัว (PDPA)</h1>
           <p className="admin-pdpa-page__lede">
-            แก้ไขเนื้อหาที่ลูกค้าเห็นได้เอง ใช้ตัวแก้แบบ rich text (ตัวหนา หัวข้อ รายการ ลิงก์ ฯลฯ) — บันทึกเป็น HTML
-            {!hasExisting ? ' — ยังไม่มีนโยบายในระบบ กดบันทึกเพื่อสร้างฉบับแรก' : null}
+            จัดเก็บได้หลายเวอร์ชัน — ฉบับเก่ายังอยู่ในระบบ ลูกค้าจะเห็นเฉพาะฉบับที่เปิดใช้งาน (หนึ่งฉบับ)
+            {mode === 'list'
+              ? ' — เลือกแก้ไขฉบับเก่าหรือสร้างฉบับใหม่เมื่อมีนโยบายเปลี่ยนแปลง'
+              : null}
           </p>
         </header>
 
         <div className="store-settings-page store-settings-page--embedded">
-          {loading ? (
+          {loading && mode === 'list' ? (
             <div className="store-settings-loading">กำลังโหลดข้อมูล...</div>
-          ) : (
-            <form className="store-settings-form" onSubmit={submit}>
-              <section className="store-settings-card">
-                <h2 className="store-settings-card__title">ข้อมูลนโยบาย</h2>
-                <p className="store-settings-card__hint">
-                  เวอร์ชันและวันที่มีผลช่วยให้ติดตามการเปลี่ยนแปลงได้ ปิดการใช้งานชั่วคราวได้ถ้าไม่ต้องการให้ API สาธารณะคืนฉบับนี้
-                </p>
-                <div className="store-settings-row-2">
-                  <div className="store-settings-field">
-                    <label className="form-label" htmlFor="pdpa-version">
-                      เวอร์ชัน
-                    </label>
-                    <input
-                      id="pdpa-version"
-                      className="form-control"
-                      value={form.version}
-                      onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))}
-                      placeholder="เช่น 1.0"
-                    />
-                  </div>
-                  <div className="store-settings-field">
-                    <label className="form-label" htmlFor="pdpa-effective">
-                      วันที่มีผลบังคับใช้
-                    </label>
-                    <input
-                      id="pdpa-effective"
-                      type="date"
-                      className="form-control"
-                      value={form.effective_date}
-                      onChange={(e) => setForm((f) => ({ ...f, effective_date: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="store-settings-field" style={{ marginTop: 12 }}>
-                  <label className="form-label" htmlFor="pdpa-title">
-                    หัวข้อ
-                  </label>
-                  <input
-                    id="pdpa-title"
-                    className="form-control"
-                    value={form.title}
-                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  />
-                </div>
-                <label className="store-settings-checkbox" htmlFor="pdpa-active" style={{ marginTop: 14 }}>
-                  <input
-                    id="pdpa-active"
-                    type="checkbox"
-                    checked={form.is_active}
-                    onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-                  />
-                  <span>ใช้งานนโยบายนี้ (ลูกค้าจะเห็นฉบับที่เปิดใช้งานผ่าน API สาธารณะ)</span>
-                </label>
-              </section>
+          ) : null}
 
-              <section className="store-settings-card">
-                <h2 className="store-settings-card__title">เนื้อหา</h2>
-                <p className="store-settings-card__hint">
-                  จัดรูปแบบจากแถบเครื่องมือด้านบน — หากต้องการคล้าย Word ให้ใช้หัวข้อ ตัวหนา รายการ และสีตามต้องการ
-                </p>
-                <AdminPdpaRichTextEditor
-                  key={editorMountKey}
-                  initialHtml={form.content}
-                  onChange={(html) => setForm((f) => ({ ...f, content: html }))}
-                  placeholder="พิมพ์เนื้อหานโยบายที่นี่..."
-                />
-              </section>
-
-              <div className="store-settings-actions">
-                <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? 'กำลังบันทึก...' : 'บันทึกนโยบาย'}
+          {mode === 'list' && !loading ? (
+            <section className="store-settings-card admin-pdpa-versions">
+              <div className="admin-pdpa-versions__toolbar">
+                <h2 className="store-settings-card__title" style={{ margin: 0 }}>
+                  รายการเวอร์ชัน
+                </h2>
+                <button type="button" className="btn-primary btn-sm" onClick={goFormCreate}>
+                  + สร้างเวอร์ชันใหม่
                 </button>
               </div>
+              <p className="store-settings-card__hint" style={{ marginTop: 8 }}>
+                เรียงจากวันที่มีผลล่าสุด — ไม่ลบฉบับเก่าเพื่อให้สอดคล้องกับประวัติความยินยอม
+              </p>
+              {policies.length === 0 ? (
+                <p className="admin-pdpa-versions__empty">ยังไม่มีนโยบาย — กด «สร้างเวอร์ชันใหม่» เพื่อเพิ่มฉบับแรก</p>
+              ) : (
+                <div className="admin-pdpa-versions-table-wrap">
+                  <table className="admin-pdpa-versions-table">
+                    <thead>
+                      <tr>
+                        <th>เวอร์ชัน</th>
+                        <th>หัวข้อ</th>
+                        <th>มีผล</th>
+                        <th>สถานะ</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {policies.map((p) => (
+                        <tr key={p.id}>
+                          <td>{p.version}</td>
+                          <td>{p.title}</td>
+                          <td>{p.effective_date}</td>
+                          <td>
+                            {p.is_active ? (
+                              <span className="admin-pdpa-badge admin-pdpa-badge--on">ใช้งาน</span>
+                            ) : (
+                              <span className="admin-pdpa-badge admin-pdpa-badge--off">ไม่ใช้งาน</span>
+                            )}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn-outline btn-sm"
+                              onClick={() => goFormEdit(p.id)}
+                            >
+                              แก้ไข
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {mode === 'form' ? (
+            <form className="store-settings-form" onSubmit={submit}>
+              <div className="admin-pdpa-form-toolbar">
+                <button type="button" className="btn-outline btn-sm" onClick={goList} disabled={saving}>
+                  ← กลับรายการ
+                </button>
+                <span className="admin-pdpa-form-toolbar__title">{formTitle}</span>
+              </div>
+
+              {loading ? (
+                <div className="store-settings-loading">กำลังโหลด...</div>
+              ) : (
+                <>
+                  <section className="store-settings-card">
+                    <h2 className="store-settings-card__title">ข้อมูลนโยบาย</h2>
+                    <p className="store-settings-card__hint">
+                      เมื่อเปิดใช้งานฉบับนี้ ระบบจะปิดใช้งานฉบับอื่นโดยอัตโนมัติ — ลูกค้าที่ยังไม่ยอมรับฉบับใหม่จะเห็นป๊อปอัปขอความยินยอม
+                    </p>
+                    <div className="store-settings-row-2">
+                      <div className="store-settings-field">
+                        <label className="form-label" htmlFor="pdpa-version">
+                          เวอร์ชัน
+                        </label>
+                        <input
+                          id="pdpa-version"
+                          className="form-control"
+                          value={form.version}
+                          onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))}
+                          placeholder="เช่น 2.0"
+                        />
+                      </div>
+                      <div className="store-settings-field">
+                        <label className="form-label" htmlFor="pdpa-effective">
+                          วันที่มีผลบังคับใช้
+                        </label>
+                        <input
+                          id="pdpa-effective"
+                          type="date"
+                          className="form-control"
+                          value={form.effective_date}
+                          onChange={(e) => setForm((f) => ({ ...f, effective_date: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="store-settings-field" style={{ marginTop: 12 }}>
+                      <label className="form-label" htmlFor="pdpa-title">
+                        หัวข้อ
+                      </label>
+                      <input
+                        id="pdpa-title"
+                        className="form-control"
+                        value={form.title}
+                        onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                      />
+                    </div>
+                    <label className="store-settings-checkbox" htmlFor="pdpa-active" style={{ marginTop: 14 }}>
+                      <input
+                        id="pdpa-active"
+                        type="checkbox"
+                        checked={form.is_active}
+                        onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+                      />
+                      <span>ใช้งานนโยบายนี้ (ลูกค้าจะเห็นฉบับที่เปิดใช้งานผ่าน API สาธารณะ)</span>
+                    </label>
+                  </section>
+
+                  <section className="store-settings-card">
+                    <div className="admin-pdpa-content-tools">
+                      <h2 className="store-settings-card__title" style={{ margin: 0 }}>
+                        เนื้อหา
+                      </h2>
+                      {editingId == null ? (
+                        <button type="button" className="btn-outline btn-sm" onClick={copyBodyFromActive}>
+                          คัดลอกเนื้อหาจากฉบับที่ใช้งาน
+                        </button>
+                      ) : null}
+                    </div>
+                    <p className="store-settings-card__hint">
+                      จัดรูปแบบจากแถบเครื่องมือ — บันทึกเป็น HTML
+                    </p>
+                    <AdminPdpaRichTextEditor
+                      key={editorMountKey}
+                      initialHtml={form.content}
+                      onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+                      placeholder="พิมพ์เนื้อหานโยบายที่นี่..."
+                    />
+                  </section>
+
+                  <div className="store-settings-actions">
+                    <button type="submit" className="btn-primary" disabled={saving}>
+                      {saving ? 'กำลังบันทึก...' : editingId != null ? 'บันทึกการแก้ไข' : 'สร้างเวอร์ชัน'}
+                    </button>
+                  </div>
+                </>
+              )}
             </form>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
   );
 };
+
+/** แนะนำเวอร์ชันถัดไปแบบง่ายจากรายการที่มี */
+function suggestNextVersion(list) {
+  if (!list.length) return '1.0';
+  const nums = list
+    .map((p) => parseFloat(String(p.version || '').replace(',', '.'), 10))
+    .filter((n) => !Number.isNaN(n));
+  if (nums.length) {
+    const max = Math.max(...nums);
+    return String(Math.floor(max) === max ? max + 1 : Math.round((max + 0.1) * 10) / 10);
+  }
+  return '1.0';
+}
 
 export default AdminPdpaPolicyPage;

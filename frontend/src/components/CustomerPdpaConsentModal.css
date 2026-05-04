@@ -50,23 +50,6 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.customer-pdpa-dialog__intro {
-  font-size: 0.86rem;
-  line-height: 1.5;
-  color: var(--customer-text-muted, #4b5563);
-  margin: 0 0 1rem;
-  padding: 0 0 1rem;
-  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
-}
-
-.customer-pdpa-dialog__intro p {
-  margin: 0 0 0.65em;
-}
-
-.customer-pdpa-dialog__intro p:last-child {
-  margin-bottom: 0;
-}
-
 .customer-pdpa-dialog__content {
   font-size: 0.9rem;
   line-height: 1.55;
@@ -197,17 +180,6 @@
 .customer-pdpa-submit:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.customer-pdpa-hint {
-  margin: 0;
-  padding: 10px 12px;
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: var(--customer-text-muted, #4b5563);
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 @media (min-width: 480px) {

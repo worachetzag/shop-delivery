@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from django.utils import timezone
 from accounts.models import Customer
 from accounts.permissions import is_admin_user as _is_admin_user
@@ -16,13 +17,16 @@ def _dt_iso(dt):
 
 
 class PrivacyPolicyView(generics.ListAPIView):
-    """นโยบายความเป็นส่วนตัว"""
+    """นโยบายความเป็นส่วนตัว (ฉบับที่ใช้งานล่าสุดเท่านั้น — เหมือน /consent/status)"""
     serializer_class = PrivacyPolicySerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = None
 
     def get_queryset(self):
-        return PrivacyPolicy.objects.filter(is_active=True).order_by('-effective_date')
+        p = PrivacyPolicy.get_current_for_storefront()
+        if not p:
+            return PrivacyPolicy.objects.none()
+        return PrivacyPolicy.objects.filter(pk=p.pk)
 
 
 class ConsentRecordView(generics.ListCreateAPIView):
@@ -56,7 +60,7 @@ class ConsentRecordView(generics.ListCreateAPIView):
 
 
 class PdpaConsentStatusView(APIView):
-    """ลูกค้า: ต้องแสดง popup ยอมรับ PDPA หรือไม่ (ยังไม่ยอมรับฉบับที่ใช้อยู่)"""
+    """ลูกค้า: ต้องแสดง popup หรือไม่ — ยังไม่ยอมรับฉบับที่ใช้งานล่าสุด (เวอร์ชันใหม่ = policy id ใหม่ → ต้องยอมรับใหม่)"""
 
     permission_classes = [permissions.IsAuthenticated]
 
@@ -70,7 +74,7 @@ class PdpaConsentStatusView(APIView):
         except Customer.DoesNotExist:
             return Response({'requires_consent': False, 'policy': None})
 
-        policy = PrivacyPolicy.objects.filter(is_active=True).order_by('-effective_date', '-id').first()
+        policy = PrivacyPolicy.get_current_for_storefront()
         if not policy:
             return Response({'requires_consent': False, 'policy': None})
 
@@ -159,7 +163,7 @@ class PdpaCustomerConsentSummaryView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         customer = get_object_or_404(Customer, user=request.user)
-        policy = PrivacyPolicy.objects.filter(is_active=True).order_by('-effective_date', '-id').first()
+        policy = PrivacyPolicy.get_current_for_storefront()
 
         current_policy = None
         privacy_active = None
@@ -224,37 +228,79 @@ class PdpaCustomerConsentSummaryView(APIView):
         )
 
 
-class AdminPrivacyPolicyView(APIView):
-    """อ่าน/บันทึกนโยบาย PDPA ฉบับล่าสุด (สำหรับแอดมิน) — เนื้อหาเป็น HTML จาก rich text editor"""
+def _admin_pdpa_denied():
+    return Response(
+        {'error': 'ไม่มีสิทธิ์แก้ไขนโยบายความเป็นส่วนตัว'},
+        status=status.HTTP_403_FORBIDDEN,
+    )
+
+
+def _privacy_policy_activate_exclusive(policy):
+    """มีได้แค่หนึ่งฉบับที่ is_active=True สำหรับ API ลูกค้า"""
+    if policy.is_active:
+        PrivacyPolicy.objects.exclude(pk=policy.pk).update(is_active=False)
+
+
+class AdminPrivacyPolicyListCreateView(APIView):
+    """แอดมิน: รายการนโยบายทุกฉบับ (ย้อนหลังได้) + สร้างเวอร์ชันใหม่"""
 
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         if not _is_admin_user(request.user):
-            return Response(
-                {'error': 'ไม่มีสิทธิ์แก้ไขนโยบายความเป็นส่วนตัว'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        obj = PrivacyPolicy.objects.order_by('-effective_date', '-id').first()
-        if not obj:
-            return Response({'policy': None})
-        return Response({'policy': PrivacyPolicySerializer(obj).data})
+            return _admin_pdpa_denied()
+        qs = PrivacyPolicy.objects.all().order_by('-effective_date', '-id')
+        return Response({
+            'policies': PrivacyPolicySerializer(qs, many=True).data,
+        })
 
-    def put(self, request):
+    def post(self, request):
         if not _is_admin_user(request.user):
-            return Response(
-                {'error': 'ไม่มีสิทธิ์แก้ไขนโยบายความเป็นส่วนตัว'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        instance = PrivacyPolicy.objects.order_by('-effective_date', '-id').first()
-        serializer = PrivacyPolicySerializer(
-            instance=instance,
-            data=request.data,
-            partial=instance is not None,
-        )
+            return _admin_pdpa_denied()
+        serializer = PrivacyPolicySerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        policy = serializer.save()
+        with transaction.atomic():
+            policy = serializer.save()
+            _privacy_policy_activate_exclusive(policy)
+            policy.refresh_from_db()
+        return Response(
+            {
+                'message': 'สร้างนโยบายฉบับใหม่แล้ว',
+                'policy': PrivacyPolicySerializer(policy).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminPrivacyPolicyDetailView(APIView):
+    """แอดมิน: อ่าน/แก้ไขนโยบายตาม id (ฉบับเก่าแก้ได้ — ไม่ลบเพื่อเก็บประวัติ)"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        if not _is_admin_user(request.user):
+            return _admin_pdpa_denied()
+        policy = get_object_or_404(PrivacyPolicy, pk=pk)
+        return Response({'policy': PrivacyPolicySerializer(policy).data})
+
+    def put(self, request, pk):
+        return self._update(request, pk, partial=False)
+
+    def patch(self, request, pk):
+        return self._update(request, pk, partial=True)
+
+    def _update(self, request, pk, partial):
+        if not _is_admin_user(request.user):
+            return _admin_pdpa_denied()
+        policy = get_object_or_404(PrivacyPolicy, pk=pk)
+        serializer = PrivacyPolicySerializer(policy, data=request.data, partial=partial)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            policy = serializer.save()
+            _privacy_policy_activate_exclusive(policy)
+            policy.refresh_from_db()
         return Response(
             {
                 'message': 'บันทึกนโยบายแล้ว',

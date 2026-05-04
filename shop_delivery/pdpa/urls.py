@@ -5,7 +5,8 @@ app_name = 'pdpa'
 
 urlpatterns = [
     path('privacy-policy/', views.PrivacyPolicyView.as_view(), name='privacy-policy'),
-    path('admin/privacy-policy/', views.AdminPrivacyPolicyView.as_view(), name='admin-privacy-policy'),
+    path('admin/privacy-policy/<int:pk>/', views.AdminPrivacyPolicyDetailView.as_view(), name='admin-privacy-policy-detail'),
+    path('admin/privacy-policy/', views.AdminPrivacyPolicyListCreateView.as_view(), name='admin-privacy-policy'),
     path('consent/status/', views.PdpaConsentStatusView.as_view(), name='pdpa-consent-status'),
     path('consent/summary/', views.PdpaCustomerConsentSummaryView.as_view(), name='pdpa-consent-summary'),
     path('consent/withdraw-privacy/', views.PdpaWithdrawPrivacyConsentView.as_view(), name='pdpa-withdraw-privacy'),

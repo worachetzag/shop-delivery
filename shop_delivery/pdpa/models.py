@@ -82,6 +82,15 @@ class PrivacyPolicy(models.Model):
     def __str__(self):
         return f"{self.title} v{self.version}"
 
+    @classmethod
+    def get_current_for_storefront(cls):
+        """
+        นโยบายฉบับเดียวที่หน้าบ้าน / consent ใช้ — is_active ล่าสุดตามวันที่มีผล แล้วตาม id
+        เมื่อแอดมินเปิดใช้งานเวอร์ชันใหม่ (แถวใหม่) ลูกค้าที่ยอมรับฉบับเก่าจะต้องยอมรับใหม่
+        เพราะ ConsentRecord อ้าง privacy_policy_id
+        """
+        return cls.objects.filter(is_active=True).order_by('-effective_date', '-id').first()
+
 
 class AuditLog(models.Model):
     """บันทึกการเข้าถึงและแก้ไขข้อมูล"""
