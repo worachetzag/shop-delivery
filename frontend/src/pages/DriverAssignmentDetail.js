@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { assignmentContactPhone, assignmentCustomerLabel } from '../utils/driverAssignmentCustomer';
-import { createCustomerPhotoMarkerIcon, createMotorbikeMarkerIcon } from '../utils/mapMarkers';
+import { createCustomerPhotoMarkerIcon, createDeliveryVehicleMarkerIcon } from '../utils/mapMarkers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import './DriverDashboard.css';
@@ -223,7 +223,7 @@ const DriverAssignmentDetail = () => {
     fetchRoute();
   }, [assignment]);
 
-  const driverMapIcon = useMemo(() => createMotorbikeMarkerIcon(), []);
+  const driverMapIcon = useMemo(() => createDeliveryVehicleMarkerIcon(), []);
 
   const customerLabelForMap = assignment ? assignmentCustomerLabel(assignment) : '';
   const customerMapIcon = useMemo(
@@ -410,7 +410,7 @@ const DriverAssignmentDetail = () => {
               )}
             </MapContainer>
             <div className="route-legend">
-              <span>ไอคอนรถ: คนขับ</span>
+              <span>ไอคอนรถส่งของ: คนขับ</span>
               <span>รูปโปรไฟล์ / วงแดง: จุดลูกค้า</span>
               <span>เส้นสีน้ำเงิน: เส้นทางตามถนน</span>
             </div>

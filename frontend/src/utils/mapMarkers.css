@@ -1,25 +1,28 @@
-/* Leaflet divIcon markers — คนขับ (รถจักรยานยนต์) / จุดลูกค้า (โปรไฟล์) */
-.map-marker-motorbike-root {
+/* Leaflet divIcon — คนขับ (รถส่งของ) / ลูกค้า (โปรไฟล์) */
+.map-marker-delivery-root {
   background: transparent !important;
   border: none !important;
 }
 
-.map-marker-motorbike-inner {
-  width: 40px;
-  height: 40px;
+.map-marker-delivery-inner {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(220, 252, 231, 0.96);
-  border: 2px solid #16a34a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(160deg, #ecfdf5 0%, #d1fae5 55%, #bbf7d0 100%);
+  border: 2.5px solid #15803d;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #166534;
+  color: #14532d;
 }
 
-.map-marker-motorbike-svg {
+.map-marker-delivery-svg {
   display: block;
   flex-shrink: 0;
+  filter: drop-shadow(0 0.5px 0 rgba(255, 255, 255, 0.5));
 }
 
 .map-marker-customer-root {

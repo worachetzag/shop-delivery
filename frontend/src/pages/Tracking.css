@@ -42,6 +42,12 @@
   box-shadow: var(--shadow-soft);
 }
 
+/* กัน CSS จากหน้าอื่นที่ใช้ class เดียวกัน (เช่น Checkout sticky) */
+.tracking-page .order-summary {
+  position: static;
+  top: auto;
+}
+
 
 .section-title {
   font-size: 1rem;
@@ -177,21 +183,29 @@
   line-height: 1.45;
 }
 
-.driver-map-wrap {
+.tracking-page .driver-map-wrap {
   margin-top: 14px;
 }
 
-.tracking-map-section .driver-map-wrap {
+.tracking-page .tracking-map-section .driver-map-wrap {
   margin-top: 0;
 }
 
-.driver-map {
+.tracking-page .driver-map {
   width: 100%;
-  /* ใหญ่ขึ้นตามความสูงหน้าจอ แต่จำกัดบนจอใหญ่ — ลูกค้า/แอดมินใช้หน้าเดียวกัน */
-  height: clamp(320px, 70vh, 640px);
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #e5e8ef;
+}
+
+/* ลูกค้า — แผนที่สั้นลง */
+.tracking-page:not(.admin-tracking-page) .driver-map {
+  height: clamp(220px, 46vh, 380px);
+}
+
+/* แอดมิน — พื้นที่แผนที่ใหญ่ตามที่ใช้งานอยู่ */
+.tracking-page.admin-tracking-page .driver-map {
+  height: clamp(320px, 70vh, 640px);
 }
 
 .driver-location-time {

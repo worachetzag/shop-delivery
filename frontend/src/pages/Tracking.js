@@ -9,7 +9,7 @@ import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import CustomerInlineBack from '../components/CustomerInlineBack';
 import { AdminBackLink } from '../components/AdminBackButton';
-import { createCustomerPhotoMarkerIcon, createMotorbikeMarkerIcon } from '../utils/mapMarkers';
+import { createCustomerPhotoMarkerIcon, createDeliveryVehicleMarkerIcon } from '../utils/mapMarkers';
 import './Tracking.css';
 
 /** ไอคอนรถส่งของในการ์ดคนขับ — ไม่ใช้รูปโปรไฟล์ */
@@ -218,7 +218,7 @@ const Tracking = () => {
     fetchRoute();
   }, [trackingInfo]);
 
-  const driverMapIcon = useMemo(() => createMotorbikeMarkerIcon(), []);
+  const driverMapIcon = useMemo(() => createDeliveryVehicleMarkerIcon(), []);
 
   const customerMapIcon = useMemo(
     () =>
@@ -354,7 +354,7 @@ const Tracking = () => {
             <div className="tracking-map-section">
               <h3 className="section-title">แผนที่ติดตาม</h3>
               <p className="tracking-map-hint">
-                ไอคอนรถจักรยานยนต์สีเขียว = คนขับ · วงกลมรูปลูกค้า = จุดรับของ
+                ไอคอนรถส่งของสีเขียว = คนขับ · วงกลมรูปลูกค้า (ขอบแดง) = จุดรับของ
               </p>
               <div className="driver-map-wrap">
                 <MapContainer

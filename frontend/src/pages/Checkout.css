@@ -41,8 +41,8 @@
   min-width: 0;
 }
 
-/* Order Summary */
-.order-summary {
+/* Order Summary — เฉพาะ Checkout (class เดียวกันถูกใช้ในหน้า Tracking — sticky จะไปเกาะผิดที่ถ้าไม่สโคป) */
+.checkout-page .order-summary {
   background: white;
   border-radius: 12px;
   padding: 2rem;
@@ -391,7 +391,7 @@
     gap: 2rem;
   }
   
-  .order-summary {
+  .checkout-page .order-summary {
     position: static;
   }
 }
@@ -409,7 +409,7 @@
     gap: 1rem;
   }
   
-  .order-summary,
+  .checkout-page .order-summary,
   .shipping-info,
   .payment-method {
     padding: 1.5rem;
@@ -475,7 +475,7 @@
   margin-bottom: 1rem;
 }
 
-.order-summary,
+.checkout-page .order-summary,
 .shipping-info,
 .payment-method,
 .saved-address-summary {
@@ -484,7 +484,7 @@
   box-shadow: var(--shadow-soft);
 }
 
-.order-summary,
+.checkout-page .order-summary,
 .shipping-info,
 .payment-method {
   padding: 0.9rem;

@@ -439,3 +439,16 @@
   font-size: 13px;
   font-weight: 800;
 }
+
+/* แผนที่รายละเอียดงานคนขับ — ไม่ใช้ความสูงจากหน้า Tracking */
+.driver-dashboard-page .driver-map-wrap {
+  margin-top: 10px;
+}
+
+.driver-dashboard-page .driver-map {
+  width: 100%;
+  height: clamp(220px, 46vh, 380px);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #dbe6f3;
+}
