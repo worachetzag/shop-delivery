@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import React, { useEffect, useState } from 'react';
 import config from '../config';
+import AdminPdpaRichTextEditor from '../components/AdminPdpaRichTextEditor';
 import { usePopup } from '../components/PopupProvider';
 import './AdminDashboard.css';
 import './AdminStoreSettingsPage.css';
@@ -21,24 +20,10 @@ const AdminPdpaPolicyPage = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [hasExisting, setHasExisting] = useState(false);
+  /** เปลี่ยนเมื่อโหลด/รีเซ็ตเนื้อหาจาก API — ให้ตัวแก้ TipTap สร้างใหม่ตรงกับ HTML */
+  const [editorMountKey, setEditorMountKey] = useState(0);
 
   const getToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
-
-  const quillModules = useMemo(
-    () => ({
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ color: [] }, { background: [] }],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        [{ indent: '-1' }, { indent: '+1' }],
-        [{ align: [] }],
-        ['link'],
-        ['clean'],
-      ],
-    }),
-    [],
-  );
 
   useEffect(() => {
     let alive = true;
@@ -79,7 +64,10 @@ const AdminPdpaPolicyPage = () => {
         setForm(defaultForm());
         setHasExisting(false);
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          setLoading(false);
+          setEditorMountKey((k) => k + 1);
+        }
       }
     };
     run();
@@ -149,16 +137,16 @@ const AdminPdpaPolicyPage = () => {
   };
 
   return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>นโยบายความเป็นส่วนตัว (PDPA)</h1>
-        <p style={{ margin: 0, color: '#666', fontSize: '0.92rem' }}>
-          แก้ไขเนื้อหาที่ลูกค้าเห็นได้เอง ใช้ตัวแก้แบบ rich text (ตัวหนา หัวข้อ รายการ ลิงก์ ฯลฯ) — บันทึกเป็น HTML
-          {!hasExisting ? ' — ยังไม่มีนโยบายในระบบ กดบันทึกเพื่อสร้างฉบับแรก' : null}
-        </p>
-      </div>
-
+    <div className="admin-dashboard admin-pdpa-page">
       <div className="admin-content">
+        <header className="admin-pdpa-page__head">
+          <h1 className="admin-pdpa-page__title">นโยบายความเป็นส่วนตัว (PDPA)</h1>
+          <p className="admin-pdpa-page__lede">
+            แก้ไขเนื้อหาที่ลูกค้าเห็นได้เอง ใช้ตัวแก้แบบ rich text (ตัวหนา หัวข้อ รายการ ลิงก์ ฯลฯ) — บันทึกเป็น HTML
+            {!hasExisting ? ' — ยังไม่มีนโยบายในระบบ กดบันทึกเพื่อสร้างฉบับแรก' : null}
+          </p>
+        </header>
+
         <div className="store-settings-page store-settings-page--embedded">
           {loading ? (
             <div className="store-settings-loading">กำลังโหลดข้อมูล...</div>
@@ -222,15 +210,12 @@ const AdminPdpaPolicyPage = () => {
                 <p className="store-settings-card__hint">
                   จัดรูปแบบจากแถบเครื่องมือด้านบน — หากต้องการคล้าย Word ให้ใช้หัวข้อ ตัวหนา รายการ และสีตามต้องการ
                 </p>
-                <div className="admin-pdpa-quill">
-                  <ReactQuill
-                    theme="snow"
-                    value={form.content}
-                    onChange={(html) => setForm((f) => ({ ...f, content: html }))}
-                    modules={quillModules}
-                    placeholder="พิมพ์เนื้อหานโยบายที่นี่..."
-                  />
-                </div>
+                <AdminPdpaRichTextEditor
+                  key={editorMountKey}
+                  initialHtml={form.content}
+                  onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+                  placeholder="พิมพ์เนื้อหานโยบายที่นี่..."
+                />
               </section>
 
               <div className="store-settings-actions">

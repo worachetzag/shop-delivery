@@ -27,8 +27,9 @@
 
 .customer-pdpa-dialog__head {
   flex: 0 0 auto;
-  padding: 16px 18px 10px;
+  padding: 16px 22px 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: center;
 }
 
 .customer-pdpa-dialog__title {
@@ -38,33 +39,24 @@
   line-height: 1.35;
 }
 
-.customer-pdpa-dialog__meta {
-  margin: 6px 0 0;
-  font-size: 0.8rem;
-  color: var(--customer-muted, #666);
-}
-
 .customer-pdpa-dialog__scroll {
   flex: 1 1 auto;
   min-height: 0;
   max-height: min(48vh, 360px);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 12px 18px;
+  padding: 14px clamp(20px, 6vw, 28px) 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.customer-pdpa-dialog__scroll-hint {
-  font-size: 0.78rem;
-  color: var(--customer-muted, #666);
-  margin: 0 0 8px;
-  line-height: 1.4;
 }
 
 .customer-pdpa-dialog__content {
   font-size: 0.9rem;
   line-height: 1.55;
   word-break: break-word;
+  max-width: 34rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: start;
 }
 
 .customer-pdpa-dialog__content h1,
@@ -80,7 +72,7 @@
 
 .customer-pdpa-dialog__foot {
   flex: 0 0 auto;
-  padding: 12px 18px 16px;
+  padding: 12px clamp(18px, 5vw, 24px) calc(14px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 12px;

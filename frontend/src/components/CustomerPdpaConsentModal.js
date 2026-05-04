@@ -8,9 +8,30 @@ import './CustomerPdpaConsentModal.css';
 
 const SCROLL_END_EPS = 10;
 
+/**
+ * ถ้าแอดมินวางโค้ด HTML ในโหมดข้อความ ระบบอาจเก็บเป็น &lt;h2&gt;…
+ * พอ render ด้วย innerHTML จะกลายเป็นข้อความที่มองเห็นเป็น <h2> ดิบ
+ * ต้องถอด entity ก่อน sanitize (จับเฉพาะที่ดูเหมือนแท็กถูก escape)
+ */
+function normalizeEscapedMarkup(html) {
+  if (!html || typeof html !== 'string') return '';
+  if (!/&lt;[a-z!?/]/i.test(html)) {
+    return html;
+  }
+  return html
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number.parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(Number.parseInt(h, 16)));
+}
+
 function sanitizePolicyHtml(html) {
   if (!html || typeof html !== 'string') return '';
-  return DOMPurify.sanitize(html, {
+  const normalized = normalizeEscapedMarkup(html);
+  return DOMPurify.sanitize(normalized, {
     ADD_ATTR: ['style', 'class', 'target', 'rel'],
   });
 }
@@ -167,9 +188,6 @@ export default function CustomerPdpaConsentModal() {
           <h2 id="customer-pdpa-title" className="customer-pdpa-dialog__title">
             {policy.title || 'นโยบายความเป็นส่วนตัว'}
           </h2>
-          {policy.version ? (
-            <p className="customer-pdpa-dialog__meta">เวอร์ชัน {policy.version}</p>
-          ) : null}
         </div>
 
         <div
@@ -177,11 +195,6 @@ export default function CustomerPdpaConsentModal() {
           ref={scrollRef}
           onScroll={onScrollBody}
         >
-          <p className="customer-pdpa-dialog__scroll-hint">
-            {readToEnd
-              ? 'อ่านครบแล้ว — สามารถติ๊กยอมรับด้านล่างได้'
-              : 'กรุณาเลื่อนอ่านจนสุด จึงจะติ๊ก “ยอมรับ” ได้'}
-          </p>
           <div
             className="customer-pdpa-dialog__content"
             dangerouslySetInnerHTML={{ __html: safeHtml }}
