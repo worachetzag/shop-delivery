@@ -15,6 +15,38 @@ import { PRODUCT_SORT_OPTIONS_STANDARD, apiOrderingForSortKey } from '../utils/p
 const PAGE_SIZE = 12;
 const SKELETON_CARD_COUNT = 8;
 
+function ProductsTrustStrip() {
+  return (
+    <div className="products-trust-strip">
+      <div className="products-trust-strip__item">
+        <span className="products-trust-strip__glyph" aria-hidden>🛒</span>
+        <span className="products-trust-strip__label">เลือกง่ายในหน้าเดียว</span>
+      </div>
+      <div className="products-trust-strip__item">
+        <span className="products-trust-strip__glyph" aria-hidden>📦</span>
+        <span className="products-trust-strip__label">จัดส่งถึงที่พัก</span>
+      </div>
+      <div className="products-trust-strip__item">
+        <span className="products-trust-strip__glyph" aria-hidden>💳</span>
+        <span className="products-trust-strip__label">ชำระเงินปลอดภัย</span>
+      </div>
+    </div>
+  );
+}
+
+function ProductsResultsHeading({ id }) {
+  return (
+    <header className="products-results-head">
+      <h2 id={id} className="products-results-head__title">
+        สินค้าในร้าน
+      </h2>
+      <p className="products-results-head__hint">
+        เลื่อนดูรายการด้านล่าง แตะการ์ดเพื่อขยายรายละเอียด
+      </p>
+    </header>
+  );
+}
+
 const Products = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -268,10 +300,9 @@ const Products = () => {
             </div>
           </header>
           <CustomerServiceHoursStrip compact />
+          <ProductsTrustStrip />
           <div className="results-section">
-            <div className="results-header">
-              <p className="results-count">กำลังโหลดสินค้า...</p>
-            </div>
+            <ProductsResultsHeading id="products-list-heading" />
             <div className="products-grid">
               {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
                 <div key={`products-skeleton-${index}`} className="product-card-skeleton" aria-hidden="true">
@@ -302,6 +333,7 @@ const Products = () => {
         </header>
 
         <CustomerServiceHoursStrip compact />
+        <ProductsTrustStrip />
 
         <div className="filters-section">
           <div className="filters-section__label">ค้นหาและกรอง</div>
@@ -374,21 +406,15 @@ const Products = () => {
         </div>
 
         <div className="results-section">
-          <div className="results-header">
-            <p className="results-count">
-              <span className="results-count__badge" aria-hidden>
-                {totalCount}
-              </span>
-              <span className="results-count__text">
-                รายการสินค้า
-                {loading ? <span className="results-count__loading"> · กำลังอัปเดต</span> : null}
-              </span>
-            </p>
-          </div>
-
+          <ProductsResultsHeading id="products-list-heading" />
           {loading && products.length === 0 ? (
-            <div className="loading" style={{ minHeight: '120px' }}>
-              กำลังโหลด...
+            <div className="products-loading-inline" aria-live="polite">
+              <div className="products-loading-inline__dots" aria-hidden>
+                <span className="products-loading-inline__dot" />
+                <span className="products-loading-inline__dot" />
+                <span className="products-loading-inline__dot" />
+              </div>
+              <span className="products-loading-inline__text">กำลังโหลดสินค้า</span>
             </div>
           ) : products.length > 0 ? (
             <>
