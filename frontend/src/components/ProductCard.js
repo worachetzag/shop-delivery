@@ -147,7 +147,7 @@ const ProductCard = ({
 
   return (
     <div
-      className={`product-card ${listingOnly ? 'product-card--browse' : ''} ${hasEntered ? 'is-entered' : ''}`}
+      className={`product-card ${listingOnly ? 'product-card--browse' : ''}${listingOnly && isOutOfStock ? ' product-card--browse-oos' : ''} ${hasEntered ? 'is-entered' : ''}`}
     >
       <div className="product-image-container">
         <Link
@@ -158,7 +158,7 @@ const ProductCard = ({
           <img
             src={pickProductImage(product, PLACEHOLDER_IMAGES.md)}
             alt={product.name}
-            className="product-image"
+            className={`product-image${listingOnly && isOutOfStock ? ' product-image--browse-oos' : ''}`}
             loading="lazy"
             decoding="async"
             onError={(e) => {
@@ -166,6 +166,11 @@ const ProductCard = ({
             }}
           />
         </Link>
+        {listingOnly && isOutOfStock ? (
+          <div className="product-coming-soon-overlay" aria-hidden>
+            <span className="product-coming-soon-overlay__text">สินค้าจะมีเร็วๆนี้</span>
+          </div>
+        ) : null}
         {listingOnly && compareAtPrice != null && (
           <span className="product-special-badge">ลดราคา</span>
         )}

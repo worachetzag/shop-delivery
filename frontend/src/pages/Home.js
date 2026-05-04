@@ -16,6 +16,7 @@ import {
   PRODUCT_SORT_OPTION_CREATED_DESC,
   PRODUCT_SORT_OPTION_DISCOUNT_DESC,
   apiOrderingForSortKey,
+  availabilitySortKey,
   isDiscountDescSort,
 } from '../utils/productSort';
 import './Home.css';
@@ -43,6 +44,8 @@ function discountSortWeight(product) {
 
 function sortPromoProducts(list) {
   return [...list].sort((a, b) => {
+    const stockDiff = availabilitySortKey(a) - availabilitySortKey(b);
+    if (stockDiff !== 0) return stockDiff;
     const diff = discountSortWeight(b) - discountSortWeight(a);
     if (Math.abs(diff) > 1e-12) return diff;
     return Number(a.price ?? 0) - Number(b.price ?? 0);

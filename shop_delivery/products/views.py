@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import F, IntegerField, Q, Sum, Value
+from django.db.models import Case, F, IntegerField, Q, Sum, Value, When
 from django.db.models import ExpressionWrapper
 from django.db.models.functions import Greatest
 from django.shortcuts import get_object_or_404
@@ -248,7 +248,20 @@ class ProductListView(generics.ListAPIView):
                 compare_at_price__gt=F('price'),
             )
 
-        return queryset.annotate(available_quantity_calc=F('stock_quantity') - F('reserved_quantity'))
+        return queryset.annotate(available_quantity_calc=F('stock_quantity') - F('reserved_quantity')).annotate(
+            _listing_stock_sort=Case(
+                When(available_quantity_calc__gt=0, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            ),
+        )
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        prior = tuple(queryset.query.order_by)
+        if not prior:
+            prior = ('category_id', 'name')
+        return queryset.order_by('_listing_stock_sort', *prior)
 
 
 class ProductDetailView(generics.RetrieveAPIView):

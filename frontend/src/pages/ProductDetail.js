@@ -10,6 +10,13 @@ import { displayProductLineName } from '../utils/helpers';
 import CustomerInlineBack from '../components/CustomerInlineBack';
 import './ProductDetail.css';
 
+function relatedProductAvailableQty(item) {
+  if (item?.available_quantity != null && item.available_quantity !== '') {
+    return Math.max(0, Number(item.available_quantity));
+  }
+  return Math.max(0, Number(item?.stock_quantity || 0) - Number(item?.reserved_quantity || 0));
+}
+
 const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -220,15 +227,22 @@ const ProductDetail = () => {
         </div>
 
         <div className="product-detail-card">
-          <div className="product-detail-image-wrap">
+          <div
+            className={`product-detail-image-wrap${outOfStock ? ' product-detail-image-wrap--oos' : ''}`}
+          >
             <img
               src={pickProductImage(product, PLACEHOLDER_IMAGES.xl)}
               alt={product.name}
-              className="product-detail-image"
+              className={`product-detail-image${outOfStock ? ' product-detail-image--oos' : ''}`}
               onError={(e) => {
                 e.currentTarget.src = PLACEHOLDER_IMAGES.xl;
               }}
             />
+            {outOfStock ? (
+              <div className="product-detail-oos-overlay" role="status">
+                <span className="product-detail-oos-overlay__text">สินค้าจะมีเร็วๆนี้</span>
+              </div>
+            ) : null}
           </div>
 
           <div className="product-detail-info">
@@ -318,9 +332,12 @@ const ProductDetail = () => {
             >
               {relatedProducts.map((item) => {
                 const relCmp = getProductCompareAtPrice(item);
+                const relOos = relatedProductAvailableQty(item) <= 0;
                 return (
                   <Link key={item.id} to={`/customer/products/${item.id}`} className="related-product-card">
-                    <div className="related-product-image-wrap">
+                    <div
+                      className={`related-product-image-wrap${relOos ? ' related-product-image-wrap--oos' : ''}`}
+                    >
                       {relCmp != null && <span className="related-product-badge">ลดราคา</span>}
                       <img
                         src={pickProductImage(item, PLACEHOLDER_IMAGES.lg)}
@@ -329,6 +346,11 @@ const ProductDetail = () => {
                           e.currentTarget.src = PLACEHOLDER_IMAGES.lg;
                         }}
                       />
+                      {relOos ? (
+                        <div className="related-product-oos-overlay" role="status">
+                          <span className="related-product-oos-overlay__text">สินค้าจะมีเร็วๆนี้</span>
+                        </div>
+                      ) : null}
                     </div>
                     <div className="related-product-info">
                       <div className="related-product-name">{item.name}</div>

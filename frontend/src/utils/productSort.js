@@ -21,6 +21,15 @@ export const PRODUCT_SORT_OPTION_DISCOUNT_DESC = {
   hint: 'เปอร์เซ็นต์ลดจากราคาก่อนลดสูงก่อน',
 };
 
+/** คีย์เรียงสำหรับให้สินค้าที่มีสต็อกขึ้นก่อนรายการที่หมด (ใช้ร่วมเรียงฝั่ง client หลังดึงชุดใหญ่) */
+export function availabilitySortKey(product) {
+  const avail = Number(
+    product?.available_quantity ??
+      Math.max(0, Number(product?.stock_quantity || 0) - Number(product?.reserved_quantity || 0)),
+  );
+  return avail > 0 ? 0 : 1;
+}
+
 /** พารามิเตอร์ `ordering` สำหรับ API — `discount-desc` โหลดชุดแล้วเรียงฝั่ง client */
 export function apiOrderingForSortKey(sortKey) {
   const map = {

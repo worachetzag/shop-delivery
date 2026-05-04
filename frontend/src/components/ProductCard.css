@@ -60,6 +60,41 @@
   pointer-events: none;
 }
 
+/* หมดสต็อก — โหมด browse (หน้ารายการ / หน้าแรก) */
+.product-coming-soon-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.52);
+  pointer-events: none;
+}
+
+.product-coming-soon-overlay__text {
+  font-size: clamp(0.72rem, 2.9vw, 0.88rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.28;
+  max-width: 100%;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 1),
+    0 0 4px rgba(255, 255, 255, 1),
+    0 1px 2px rgba(255, 255, 255, 0.95);
+}
+
+.product-card--browse-oos .product-image--browse-oos {
+  opacity: 0.38;
+}
+
+.product-card--browse-oos:hover .product-image {
+  transform: none;
+}
+
 .product-browse-low-stock {
   color: #b45309;
   font-weight: 700;

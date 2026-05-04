@@ -484,7 +484,8 @@
   --admin-row-hover-bg: #e0e7ff;
 }
 
-.products-manage-table .admin-product-compare-price {
+.products-manage-table .admin-product-compare-price,
+.products-manage-table .admin-product-compare-price-cell {
   color: #64748b;
   white-space: nowrap;
 }
@@ -575,6 +576,49 @@
   color: #334e9a;
   border-radius: 6px;
   padding: 6px 10px;
+  cursor: pointer;
+  min-width: 5.5rem;
+}
+
+.stock-save-btn:disabled {
+  cursor: wait;
+  opacity: 0.88;
+}
+
+.stock-editor--saving {
+  opacity: 0.78;
+}
+
+.admin-product-compare-price-cell {
+  vertical-align: middle;
+}
+
+.admin-product-compare-at-input {
+  width: 96px;
+  max-width: 100%;
+  border: 1px solid #d3d9e8;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.admin-product-featured-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.admin-product-featured-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.admin-product-featured-label input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
   cursor: pointer;
 }
 
