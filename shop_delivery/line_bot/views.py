@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import permissions, status
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -25,7 +25,9 @@ handler = WebhookHandler(settings.LINE_CHANNEL_SECRET)
 @method_decorator(csrf_exempt, name='dispatch')
 class LineWebhookView(APIView):
     """รับ Webhook จาก LINE"""
-    
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         # Get X-Line-Signature header value
         signature = request.META.get('HTTP_X_LINE_SIGNATURE')
@@ -132,7 +134,8 @@ def handle_text_message(event):
 
 class SendNotificationView(APIView):
     """ส่งการแจ้งเตือนผ่าน LINE Bot"""
-    
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
         data = request.data
         user_id = data.get('user_id')
@@ -178,7 +181,8 @@ class SendNotificationView(APIView):
 
 class LineUserListView(APIView):
     """รายการผู้ใช้งาน LINE Bot"""
-    
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
         users = LineBotUser.objects.filter(is_active=True)
         data = []

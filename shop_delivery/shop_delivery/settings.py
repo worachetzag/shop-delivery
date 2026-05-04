@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 import os
 
 import dj_database_url
@@ -67,14 +68,18 @@ if LINE_CONFIG_ENV.exists():
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config(
-    'SECRET_KEY',
-    default='django-insecure-6#njm!w0(%lik#z&3^=6h)!wbporyu3@myuo$+cednwm_2h0vb',
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = config('SECRET_KEY', default='').strip()
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-set-secret-key-in-env-for-shared-environments'
+    else:
+        raise ImproperlyConfigured(
+            'Set SECRET_KEY in the environment when DEBUG=False (production).'
+        )
 
 # Render ตั้ง RENDER_EXTERNAL_HOSTNAME / RENDER_EXTERNAL_URL — ใส่ใน ALLOWED_HOSTS ให้ชัดเพื่อไม่ให้ DisallowedHost
 _allowed_hosts_extra = _comma_separated_list('ALLOWED_HOSTS_EXTRA', default='')
@@ -238,13 +243,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     # Token ก่อน Session: SPA ส่ง Authorization + credentials ได้ session cookie ด้วย
     # ถ้า Session มาก่อน DRF จะ enforce CSRF บน POST/PATCH/DELETE แม้มี Token
+    # ไม่ใช้ BasicAuthentication — ลดความเสี่ยง brute-force และไม่จำเป็นต่อ SPA/LIFF
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ],
+    # เฟส B — endpoint ที่เปิดสาธารณะต้องใส่ AllowAny ในคลาส view โดยชัดเจน
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # อนุญาตให้ดูข้อมูล public ได้
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'shop_delivery.pagination.StandardPagination',
     'PAGE_SIZE': 20,
@@ -308,24 +314,25 @@ CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Additional CORS settings
 
-# LINE Messaging API Channel (สำหรับ LINE Bot)
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', 'your-channel-access-token')
-LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', 'your-channel-secret')
+# LINE Messaging API Channel (สำหรับ LINE Bot) — ห้ามใส่ความลับจริงใน repo; ตั้งใน .env
+LINE_CHANNEL_ACCESS_TOKEN = config('LINE_CHANNEL_ACCESS_TOKEN', default='')
+LINE_CHANNEL_SECRET = config('LINE_CHANNEL_SECRET', default='')
 
 # LINE Login Channel (สำหรับ LIFF)
-LINE_LOGIN_CHANNEL_ID = os.getenv('LINE_LOGIN_CHANNEL_ID', '2008347227')
-LINE_LOGIN_CHANNEL_SECRET = os.getenv('LINE_LOGIN_CHANNEL_SECRET', '9b724c3d737e5c6661c4c9b9b8fc953c')
-LINE_LIFF_ID = os.getenv('LINE_LIFF_ID', '2008347227-Bd7D38KD')
+LINE_LOGIN_CHANNEL_ID = config('LINE_LOGIN_CHANNEL_ID', default='')
+LINE_LOGIN_CHANNEL_SECRET = config('LINE_LOGIN_CHANNEL_SECRET', default='')
+LINE_LIFF_ID = config('LINE_LIFF_ID', default='')
 # path หลัง LIFF ID สำหรับดีลิงก์แจ้งเตือนออเดอร์ — ต่อท้าย Endpoint URL ใน LINE Console
 # default: orders/<id> เมื่อ Endpoint ลงท้ายด้วย .../customer/ ได้ URL สุดท้าย .../customer/orders/<id>
 # ถ้า Endpoint เป็นโดเมนราก (ไม่มี /customer) ให้ตั้งเป็น customer/orders
 LINE_LIFF_ORDER_URI_PREFIX = (os.getenv('LINE_LIFF_ORDER_URI_PREFIX', 'orders') or 'orders').strip().strip('/')
 
-# Payment Gateway settings
-PROMPTPAY_MERCHANT_ID = 'your-promptpay-merchant-id'
-PROMPTPAY_API_KEY = 'your-promptpay-api-key'
-PROMPTPAY_WEBHOOK_SECRET = 'your-promptpay-webhook-secret'
+# Payment Gateway settings (ค่าจริงจาก env เท่านั้น)
+PROMPTPAY_MERCHANT_ID = config('PROMPTPAY_MERCHANT_ID', default='')
+PROMPTPAY_API_KEY = config('PROMPTPAY_API_KEY', default='')
 PROMPTPAY_NUMBER = config('PROMPTPAY_NUMBER', default='')
+# ใช้ยืนยัน POST /api/payments/webhook/ — ส่ง header X-Payment-Webhook-Secret ให้ตรงค่านี้ (production บังคับถ้า DEBUG=False)
+PAYMENT_WEBHOOK_SECRET = config('PAYMENT_WEBHOOK_SECRET', default='')
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True

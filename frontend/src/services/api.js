@@ -4,7 +4,39 @@ import config from '../config';
 // API Configuration
 const API_BASE_URL = config.API_BASE_URL;
 const API_TIMEOUT = config.API_TIMEOUT;
-const API_RETRY_ATTEMPTS = config.API_RETRY_ATTEMPTS;
+
+/** ไม่ redirect ไปหน้า login เมื่อ 401 จาก endpoint เหล่านี้ (รหัสผ่านผิด / สมัคร ฯลฯ) */
+const UNAUTHENTICATED_401_PATH_FRAGMENTS = [
+  '/accounts/login/',
+  '/accounts/register/',
+  '/accounts/admin/login/',
+  '/accounts/driver/login/',
+];
+
+/**
+ * แปลง Axios error เป็น object { error?, detail?, status? } — idempotent ถ้า reject มาแล้ว
+ */
+export function normalizeApiError(error) {
+  if (error != null && typeof error === 'object' && !('response' in error) && !('config' in error)) {
+    if ('error' in error || 'detail' in error || 'non_field_errors' in error) {
+      return error;
+    }
+  }
+  const data = error?.response?.data;
+  if (data && typeof data === 'object') return data;
+  const st = error?.response?.status;
+  if (st === 401) return { error: 'กรุณาเข้าสู่ระบบ', status: 401 };
+  if (st === 403) return { error: 'ไม่มีสิทธิ์เข้าถึง', status: 403 };
+  if (error?.code === 'ECONNABORTED') return { error: 'การเชื่อมต่อหมดเวลา' };
+  const msg = typeof error?.message === 'string' ? error.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+  return { error: msg };
+}
+
+function shouldSessionRedirectOn401(error) {
+  if (error?.response?.status !== 401) return false;
+  const url = error.config?.url || '';
+  return !UNAUTHENTICATED_401_PATH_FRAGMENTS.some((frag) => url.includes(frag));
+}
 
 // Create axios instance
 const api = axios.create({
@@ -19,463 +51,266 @@ const api = axios.create({
 
 // Request interceptor
 api.interceptors.request.use(
-  (config) => {
-    // Add auth token if available
+  (req) => {
     const token = localStorage.getItem('auth_token');
     if (token) {
-      config.headers.Authorization = `Token ${token}`;
+      req.headers.Authorization = `Token ${token}`;
     }
-    return config;
+    return req;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(normalizeApiError(error))
 );
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
+    if (shouldSessionRedirectOn401(error)) {
       localStorage.removeItem('auth_token');
       window.location.href = '/customer/login';
     }
-    return Promise.reject(error);
+    return Promise.reject(normalizeApiError(error));
   }
 );
 
-// API Services
+// API Services — ผิดพลาดถูกแปลงที่ interceptor แล้ว
 export const authService = {
-  // Register new user
   register: async (userData) => {
-    try {
-      const response = await api.post('/accounts/register/', userData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/accounts/register/', userData);
+    return response.data;
   },
 
-  // Login user
   login: async (credentials) => {
-    try {
-      const response = await api.post('/accounts/login/', credentials);
-      const { token } = response.data;
-      localStorage.setItem('auth_token', token);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/accounts/login/', credentials);
+    const { token } = response.data;
+    localStorage.setItem('auth_token', token);
+    return response.data;
   },
 
-  // Get user profile
   getProfile: async () => {
-    try {
-      const response = await api.get('/accounts/profile/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/accounts/profile/');
+    return response.data;
   },
 
-  // Update user profile
   updateProfile: async (profileData) => {
-    try {
-      const response = await api.put('/accounts/profile/', profileData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.put('/accounts/profile/', profileData);
+    return response.data;
   },
 
-  // Export user data
   exportData: async () => {
-    try {
-      const response = await api.get('/accounts/data-export/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/accounts/data-export/');
+    return response.data;
   },
 
-  // Logout
   logout: () => {
     localStorage.removeItem('auth_token');
-  }
+  },
 };
 
 export const productsService = {
-  // Get all products
   getProducts: async (params = {}) => {
-    try {
-      const response = await api.get('/products/', { params });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/products/', { params });
+    return response.data;
   },
 
-  // Get product by ID
   getProduct: async (id) => {
-    try {
-      const response = await api.get(`/products/${id}/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get(`/products/${id}/`);
+    return response.data;
   },
 
-  // Get categories
   getCategories: async () => {
-    try {
-      const response = await api.get('/products/categories/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/products/categories/');
+    return response.data;
   },
 
-  /** การ์ด/แบนเนอร์โปรโมชั่นหน้าแรก (แอดมิน React → /admin/home-promotions) */
   getHomePromotions: async () => {
-    try {
-      const response = await api.get('/products/home-promotions/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/products/home-promotions/');
+    return response.data;
   },
 
-  // Search products
   searchProducts: async (query, filters = {}) => {
-    try {
-      const params = { search: query, ...filters };
-      const response = await api.get('/products/search/', { params });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  }
+    const params = { search: query, ...filters };
+    const response = await api.get('/products/search/', { params });
+    return response.data;
+  },
 };
 
 export const ordersService = {
-  // Create new order
   createOrder: async (orderData) => {
-    try {
-      const response = await api.post('/orders/', orderData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/orders/', orderData);
+    return response.data;
   },
 
-  // Get user orders
   getOrders: async (params = {}) => {
-    try {
-      const response = await api.get('/orders/list/', { params });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/orders/list/', { params });
+    return response.data;
   },
 
-  // Get order by ID
   getOrder: async (id) => {
-    try {
-      const response = await api.get(`/customer/orders/${id}/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get(`/customer/orders/${id}/`);
+    return response.data;
   },
 
-  // Update order status
   updateOrderStatus: async (id, status) => {
-    try {
-      const response = await api.put(`/customer/orders/${id}/status/`, { status });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.put(`/customer/orders/${id}/status/`, { status });
+    return response.data;
   },
 
-  // Cancel PromptPay order before payment slip is verified (customer or admin token)
   cancelOrder: async (id) => {
-    try {
-      const response = await api.post(`/orders/${id}/cancel-awaiting-payment-proof/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  }
+    const response = await api.post(`/orders/${id}/cancel-awaiting-payment-proof/`);
+    return response.data;
+  },
 };
 
 export const cartService = {
-  // Add item to cart
   addToCart: async (productId, quantity = 1) => {
-    try {
-      const response = await api.post('/orders/cart/add/', {
-        product_id: productId,
-        quantity
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/orders/cart/add/', {
+      product_id: productId,
+      quantity,
+    });
+    return response.data;
   },
 
-  // Get cart items
   getCart: async () => {
-    try {
-      const response = await api.get('/orders/cart/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/orders/cart/');
+    return response.data;
   },
 
-  // Update cart item quantity
   updateCartItem: async (itemId, quantity) => {
-    try {
-      const response = await api.put('/orders/cart/update/', {
-        product_id: itemId,
-        quantity,
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.put('/orders/cart/update/', {
+      product_id: itemId,
+      quantity,
+    });
+    return response.data;
   },
 
-  // Remove item from cart
   removeFromCart: async (itemId) => {
-    try {
-      const response = await api.delete(`/orders/cart/${itemId}/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.delete(`/orders/cart/${itemId}/`);
+    return response.data;
   },
 
-  // Clear cart
   clearCart: async () => {
-    try {
-      const response = await api.delete('/orders/cart/clear/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  }
+    const response = await api.delete('/orders/cart/clear/');
+    return response.data;
+  },
 };
 
 export const paymentsService = {
-  // Create PromptPay QR
   createPromptPayQR: async (orderId, amount) => {
-    try {
-      const response = await api.post('/payments/promptpay/', {
-        order_id: orderId,
-        amount
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/payments/promptpay/', {
+      order_id: orderId,
+      amount,
+    });
+    return response.data;
   },
 
-  // Create TrueMoney QR
   createTrueMoneyQR: async (orderId, amount) => {
-    try {
-      const response = await api.post('/payments/truemoney/', {
-        order_id: orderId,
-        amount
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/payments/truemoney/', {
+      order_id: orderId,
+      amount,
+    });
+    return response.data;
   },
 
-  // Create Rabbit QR
   createRabbitQR: async (orderId, amount) => {
-    try {
-      const response = await api.post('/payments/rabbit/', {
-        order_id: orderId,
-        amount
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/payments/rabbit/', {
+      order_id: orderId,
+      amount,
+    });
+    return response.data;
   },
 
-  // Create SCB Easy QR
   createSCBEasyQR: async (orderId, amount) => {
-    try {
-      const response = await api.post('/payments/scb-easy/', {
-        order_id: orderId,
-        amount
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/payments/scb-easy/', {
+      order_id: orderId,
+      amount,
+    });
+    return response.data;
   },
 
-  // Verify payment
   verifyPayment: async (paymentId) => {
-    try {
-      const response = await api.get(`/payments/${paymentId}/verify/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  }
+    const response = await api.get(`/payments/${paymentId}/verify/`);
+    return response.data;
+  },
 };
 
 export const logisticsService = {
-  // Calculate shipping fee
   calculateShippingFee: async (addressData) => {
-    try {
-      const response = await api.post('/logistics/calculate-fee/', addressData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/logistics/calculate-fee/', addressData);
+    return response.data;
   },
 
-  // Get driver assignments
   getDriverAssignments: async (driverId) => {
-    try {
-      const response = await api.get(`/logistics/driver/${driverId}/assignments/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get(`/logistics/driver/${driverId}/assignments/`);
+    return response.data;
   },
 
-  // Update delivery status
   updateDeliveryStatus: async (assignmentId, status, location = null) => {
-    try {
-      const response = await api.put(`/logistics/driver/assignments/${assignmentId}/update/`, {
-        status,
-        location
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.put(`/logistics/driver/assignments/${assignmentId}/update/`, {
+      status,
+      location,
+    });
+    return response.data;
   },
 
-  // Get tracking info
   getTrackingInfo: async (trackingNumber) => {
-    try {
-      const response = await api.get(`/logistics/tracking/${trackingNumber}/`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  }
+    const response = await api.get(`/logistics/tracking/${trackingNumber}/`);
+    return response.data;
+  },
 };
 
 export const pdpaService = {
-  // Get privacy policy
   getPrivacyPolicy: async () => {
-    try {
-      const response = await api.get('/pdpa/privacy-policy/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/pdpa/privacy-policy/');
+    return response.data;
   },
 
-  // Get consent status
   getConsent: async () => {
-    try {
-      const response = await api.get('/pdpa/consent/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/pdpa/consent/');
+    return response.data;
   },
 
-  // Update consent
   updateConsent: async (consentData) => {
-    try {
-      const response = await api.post('/pdpa/consent/', consentData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/pdpa/consent/', consentData);
+    return response.data;
   },
 
-  /** ลูกค้าที่ล็อกอิน: ต้องยอมรับ PDPA หรือไม่ + นโยบายที่ใช้ */
   getPdpaConsentStatus: async () => {
-    try {
-      const response = await api.get('/pdpa/consent/status/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/pdpa/consent/status/');
+    return response.data;
   },
 
-  /** ลูกค้า: สรุปสถานะความยินยอม (โปรไฟล์) */
   getConsentSummary: async () => {
-    try {
-      const response = await api.get('/pdpa/consent/summary/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.get('/pdpa/consent/summary/');
+    return response.data;
   },
 
-  /** บันทึกการยอมรับนโยบายความเป็นส่วนตัว (หลังอ่านครบ) */
   recordPrivacyPolicyConsent: async (privacyPolicyId) => {
-    try {
-      const response = await api.post('/pdpa/consent/', {
-        consent_type: 'privacy_policy',
-        is_given: true,
-        privacy_policy: privacyPolicyId,
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/pdpa/consent/', {
+      consent_type: 'privacy_policy',
+      is_given: true,
+      privacy_policy: privacyPolicyId,
+    });
+    return response.data;
   },
 
-  /** บันทึกว่าปฏิเสธนโยบาย (ไม่ให้ความยินยอม) — แนบ policy id ฉบับที่แสดงเพื่อ audit */
   recordPrivacyPolicyDecline: async (privacyPolicyId) => {
-    try {
-      const response = await api.post('/pdpa/consent/', {
-        consent_type: 'privacy_policy',
-        is_given: false,
-        privacy_policy: privacyPolicyId,
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/pdpa/consent/', {
+      consent_type: 'privacy_policy',
+      is_given: false,
+      privacy_policy: privacyPolicyId,
+    });
+    return response.data;
   },
 
-  /** ลูกค้า: ถอนความยินยอมนโยบายความเป็นส่วนตัว (PDPA) */
   withdrawPrivacyConsent: async () => {
-    try {
-      const response = await api.post('/pdpa/consent/withdraw-privacy/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/pdpa/consent/withdraw-privacy/');
+    return response.data;
   },
 
-  /** ลูกค้า: ถอนความยินยอมการตลาด */
   withdrawMarketingConsent: async () => {
-    try {
-      const response = await api.post('/pdpa/consent/withdraw-marketing/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const response = await api.post('/pdpa/consent/withdraw-marketing/');
+    return response.data;
   },
 };
 

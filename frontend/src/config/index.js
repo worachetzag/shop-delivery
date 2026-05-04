@@ -45,7 +45,6 @@ const config = {
   // API Configuration
   API_BASE_URL: resolvedApiBase,
   API_TIMEOUT: parseInt(process.env.REACT_APP_API_TIMEOUT) || 10000,
-  API_RETRY_ATTEMPTS: parseInt(process.env.REACT_APP_API_RETRY_ATTEMPTS) || 3,
   
   // LINE LIFF Configuration
   LIFF_ID: process.env.REACT_APP_LIFF_ID || '2008347227-Bd7D38KD',

@@ -5,18 +5,16 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q, Sum, Max
-from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
 import base64
 import io
 import qrcode
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 from accounts.models import Customer
 from accounts.models import DriverProfile, StaffAuditLog
 from accounts.permissions import is_admin_user as _is_admin_user
 from accounts.staff_audit import log_staff_audit
-from products.models import Product
 from line_bot.notify import send_order_status_notification
 from .models import Order, OrderItem, DriverAssignment, StoreLocation, DeliveryFeeTier
 from .store_location import get_store_location_payload
@@ -25,10 +23,14 @@ from .stock_helpers import (
     sync_order_stock_for_status_change,
 )
 from .serializers import (
-    OrderSerializer, OrderCreateSerializer, CartItemSerializer,
-    OrderTrackingSerializer, OrderStatusUpdateSerializer,
-    CartSerializer, CartUpdateSerializer, DriverAssignmentSerializer
+    OrderSerializer,
+    OrderCreateSerializer,
+    OrderTrackingSerializer,
+    OrderStatusUpdateSerializer,
+    DriverAssignmentSerializer,
 )
+from . import view_helpers as vh
+from .views_cart import CartDeleteView, CartListView, CartUpdateView, CartView
 
 
 class StoreLocationPublicView(APIView):
@@ -272,113 +274,6 @@ class AdminStoreSettingsView(APIView):
         return self.get(request)
 
 
-def _cart_cache_key(user_id):
-    return f"cart_user_{user_id}"
-
-
-def _get_cart(request):
-    if request.user.is_authenticated:
-        return cache.get(_cart_cache_key(request.user.id), {})
-    return request.session.get('cart', {})
-
-
-def _save_cart(request, cart):
-    if request.user.is_authenticated:
-        cache.set(_cart_cache_key(request.user.id), cart, timeout=60 * 60 * 24 * 7)
-        return
-    request.session['cart'] = cart
-    request.session.modified = True
-
-
-def _crc16_ccitt(payload):
-    crc = 0xFFFF
-    for char in payload:
-        crc ^= ord(char) << 8
-        for _ in range(8):
-            if crc & 0x8000:
-                crc = (crc << 1) ^ 0x1021
-            else:
-                crc <<= 1
-            crc &= 0xFFFF
-    return f"{crc:04X}"
-
-
-def _format_tlv(tag, value):
-    value_str = str(value)
-    return f"{tag}{len(value_str):02d}{value_str}"
-
-
-def _sync_driver_availability(driver_user):
-    """Sync DriverProfile availability from active assignments."""
-    if not driver_user:
-        return
-    driver_profile = getattr(driver_user, 'driver_profile', None)
-    if not driver_profile:
-        return
-    has_active_jobs = DriverAssignment.objects.filter(
-        driver=driver_user,
-        order__order_type='delivery',
-    ).exclude(status__in=['delivered', 'cancelled']).exists()
-    next_available = not has_active_jobs
-    if driver_profile.is_available != next_available:
-        driver_profile.is_available = next_available
-        driver_profile.save(update_fields=['is_available'])
-
-
-def _driver_order_stock_audit_worthy(old_os: str, new_os: str, stock_meta: dict) -> bool:
-    """บันทึก audit เฉพาะเมื่อสถานะออเดอร์เกี่ยวกับยกเลิก หรือมีการปรับ/ข้ามสต็อก"""
-    if stock_meta.get('restocked') or stock_meta.get('rededucted'):
-        return True
-    if (
-        stock_meta.get('restock_skipped_delivered')
-        or stock_meta.get('restock_skipped_not_reserved')
-        or stock_meta.get('restock_skipped_already_restocked')
-    ):
-        return True
-    if old_os != new_os and (old_os == 'cancelled' or new_os == 'cancelled'):
-        return True
-    return False
-
-
-def _build_promptpay_payload(promptpay_number, amount):
-    sanitized = ''.join(ch for ch in str(promptpay_number or '') if ch.isdigit())
-    proxy_tag = None
-    if sanitized.startswith('0') and len(sanitized) == 10:
-        # Thai mobile number -> PromptPay proxy format (0066 + 9 digits)
-        sanitized = f"0066{sanitized[1:]}"
-        proxy_tag = '01'
-    elif sanitized.startswith('66') and len(sanitized) == 11:
-        sanitized = f"00{sanitized}"
-        proxy_tag = '01'
-    elif sanitized.startswith('0066') and len(sanitized) == 13:
-        proxy_tag = '01'
-    elif len(sanitized) == 13:
-        # Thai national ID / tax ID (PromptPay proxy)
-        proxy_tag = '02'
-
-    if proxy_tag is None:
-        raise ValueError('รูปแบบพร้อมเพย์ไม่ถูกต้อง (รองรับเบอร์มือถือไทย 10 หลัก หรือเลข 13 หลัก)')
-
-    amount_decimal = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
-    merchant_account_info = (
-        _format_tlv('00', 'A000000677010111')
-        + _format_tlv(proxy_tag, sanitized)
-    )
-
-    payload_without_crc = (
-        _format_tlv('00', '01')
-        + _format_tlv('01', '12')
-        + _format_tlv('29', merchant_account_info)
-        + _format_tlv('53', '764')
-        + _format_tlv('54', f"{amount_decimal:.2f}")
-        + _format_tlv('58', 'TH')
-        + _format_tlv('62', _format_tlv('07', f"ORDER{timezone.now().strftime('%H%M%S')}"))
-        + '6304'
-    )
-    return f"{payload_without_crc}{_crc16_ccitt(payload_without_crc)}"
-
-
 class OrderCreateView(generics.CreateAPIView):
     """สร้างคำสั่งซื้อใหม่"""
     serializer_class = OrderCreateSerializer
@@ -394,7 +289,7 @@ class OrderCreateView(generics.CreateAPIView):
         
         order = serializer.save()
         # Clear cart after successful order placement.
-        _save_cart(request, {})
+        vh.save_cart(request, {})
 
         order = Order.objects.prefetch_related('items__product').get(pk=order.pk)
         order_payload = OrderSerializer(order, context={'request': request}).data
@@ -547,46 +442,6 @@ class CustomerOrderAttentionSummaryView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class CartView(APIView):
-    """จัดการตะกร้าสินค้า"""
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def post(self, request):
-        """เพิ่มสินค้าในตะกร้า"""
-        serializer = CartItemSerializer(data=request.data)
-        if serializer.is_valid():
-            product_id = serializer.validated_data['product_id']
-            quantity = serializer.validated_data['quantity']
-            
-            product = get_object_or_404(Product, id=product_id, is_available=True)
-
-            cart = _get_cart(request)
-            current_quantity = int(cart.get(str(product_id), 0))
-            new_quantity = current_quantity + quantity
-
-            available_qty = max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0))
-            if available_qty < new_quantity:
-                return Response({
-                    'error': 'สินค้าไม่เพียงพอ'
-                }, status=400)
-
-            cart[str(product_id)] = new_quantity
-            _save_cart(request, cart)
-
-            return Response({
-                'product_id': product.id,
-                'name': product.name,
-                'unit_label': product.unit_label,
-                'unit_detail': product.unit_detail,
-                'quantity': new_quantity,
-                'price': float(product.price),
-                'available_quantity': available_qty,
-                'total_price': float(product.price) * new_quantity
-            }, status=200)
-        
-        return Response(serializer.errors, status=400)
-
-
 class OrderTrackingView(generics.RetrieveAPIView):
     """ติดตามคำสั่งซื้อ"""
     serializer_class = OrderTrackingSerializer
@@ -694,7 +549,7 @@ class PromptPayQRCodeView(APIView):
             return Response({'error': 'ยังไม่ได้ตั้งค่า PromptPay Number ในระบบ'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
-            payload = _build_promptpay_payload(promptpay_number, order.total_amount)
+            payload = vh.build_promptpay_payload(promptpay_number, order.total_amount)
         except ValueError as error:
             return Response({'error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
         qr = qrcode.QRCode(version=1, box_size=10, border=3)
@@ -889,7 +744,7 @@ class OrderCancelAwaitingPaymentProofView(APIView):
                 drv = da.driver
                 da.status = 'cancelled'
                 da.save(update_fields=['status', 'updated_at'])
-                _sync_driver_availability(drv)
+                vh.sync_driver_availability(drv)
 
         action_label_th = format_order_stock_audit_label(
             order.id,
@@ -1145,7 +1000,7 @@ class DriverAssignmentStatusUpdateView(APIView):
         except ValueError as exc:
             return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        if _driver_order_stock_audit_worthy(old_os, new_os, stock_meta):
+        if vh.driver_order_stock_audit_worthy(old_os, new_os, stock_meta):
             action_label_th = format_order_stock_audit_label(
                 order.id, old_os, new_os, stock_meta, source='driver'
             )
@@ -1192,7 +1047,7 @@ class DriverAssignmentStatusUpdateView(APIView):
             'driver',
             'driver__driver_profile',
         ).get(id=assignment_id, driver=request.user)
-        _sync_driver_availability(assignment.driver)
+        vh.sync_driver_availability(assignment.driver)
 
         return Response({
             'message': 'อัปเดตสถานะงานสำเร็จ',
@@ -1290,115 +1145,4 @@ class OrderDriverTrackingView(APIView):
                     },
                 } for item in order.items.select_related('product').all()
             ],
-        }, status=status.HTTP_200_OK)
-
-
-class CartListView(APIView):
-    """ดูตะกร้าสินค้า"""
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request):
-        cart = _get_cart(request)
-        items = []
-        total_items = 0
-        total_amount = 0.0
-
-        for product_id, quantity in cart.items():
-            try:
-                product = Product.objects.get(id=int(product_id), is_available=True)
-            except Product.DoesNotExist:
-                continue
-
-            qty = int(quantity)
-            price = float(product.price)
-            item_total = price * qty
-            total_items += qty
-            total_amount += item_total
-
-            items.append({
-                'id': product.id,
-                'product_id': product.id,
-                'name': product.name,
-                'product_name': product.name,
-                'unit_label': product.unit_label,
-                'unit_detail': product.unit_detail,
-                'price': price,
-                'stock_quantity': product.stock_quantity,
-                'available_quantity': max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0)),
-                'image': product.image.url if product.image else None,
-                'category': product.category.name if product.category else '',
-                'quantity': qty,
-                'total_price': item_total,
-            })
-
-        cart_data = {
-            'items': items,
-            'total_items': total_items,
-            'total_amount': total_amount
-        }
-        
-        serializer = CartSerializer(cart_data)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class CartUpdateView(APIView):
-    """แก้ไขสินค้าในตะกร้า"""
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def put(self, request):
-        serializer = CartUpdateSerializer(data=request.data)
-        if serializer.is_valid():
-            product_id = serializer.validated_data['product_id']
-            quantity = serializer.validated_data['quantity']
-            
-            product = get_object_or_404(Product, id=product_id, is_available=True)
-            cart = _get_cart(request)
-            
-            if quantity == 0:
-                cart.pop(str(product_id), None)
-                _save_cart(request, cart)
-                return Response({
-                    'message': 'ลบสินค้าจากตะกร้าสำเร็จ',
-                    'product_id': product_id,
-                    'quantity': 0
-                }, status=status.HTTP_200_OK)
-            
-            available_qty = max(0, int(product.stock_quantity or 0) - int(product.reserved_quantity or 0))
-            if available_qty < quantity:
-                return Response({
-                    'error': 'สินค้าไม่เพียงพอ'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            cart[str(product_id)] = quantity
-            _save_cart(request, cart)
-
-            return Response({
-                'message': 'อัปเดตตะกร้าสำเร็จ',
-                'product_id': product.id,
-                'product_name': product.name,
-                'unit_label': product.unit_label,
-                'unit_detail': product.unit_detail,
-                'quantity': quantity,
-                'price': float(product.price),
-                'available_quantity': available_qty,
-                'total_price': float(product.price) * quantity
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CartDeleteView(APIView):
-    """ลบสินค้าจากตะกร้า"""
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def delete(self, request, product_id):
-        product = get_object_or_404(Product, id=product_id)
-        cart = _get_cart(request)
-        cart.pop(str(product_id), None)
-        _save_cart(request, cart)
-
-        return Response({
-            'message': 'ลบสินค้าจากตะกร้าสำเร็จ',
-            'product_id': product_id,
-            'product_name': product.name
         }, status=status.HTTP_200_OK)

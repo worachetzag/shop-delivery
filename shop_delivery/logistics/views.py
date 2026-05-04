@@ -1,10 +1,10 @@
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth.models import User
 from .models import ServiceHours, DriverAssignment
 from .serializers import DeliveryFeeCalculationSerializer, DriverAssignmentSerializer, DriverProfileSerializer
 from accounts.models import DriverProfile
+from accounts.permissions import IsStoreAdminOrSuperAdmin, is_admin_user
 from orders.delivery_pricing import fee_for_distance_km
 
 
@@ -63,47 +63,68 @@ class DriverAssignmentUpdateView(generics.UpdateAPIView):
 
 
 class DriverProfileListView(generics.ListCreateAPIView):
-    """รายการคนขับและเพิ่มคนขับใหม่"""
+    """รายการคนขับและเพิ่มคนขับใหม่ — เฉพาะแอดมินร้าน (ลูกค้าทั่วไปห้าม)"""
     serializer_class = DriverProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
+    permission_classes = [IsStoreAdminOrSuperAdmin]
+
     def get_queryset(self):
         return DriverProfile.objects.all().order_by('-created_at')
-    
+
     def perform_create(self, serializer):
         serializer.save()
 
 
 class DriverProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """ดู แก้ไข และลบข้อมูลคนขับ"""
+    """ดู แก้ไข และลบข้อมูลคนขับ — เฉพาะแอดมินร้าน"""
     serializer_class = DriverProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
+    permission_classes = [IsStoreAdminOrSuperAdmin]
+
     def get_queryset(self):
         return DriverProfile.objects.all()
 
 
 class DriverAvailabilityView(APIView):
-    """อัปเดตสถานะการพร้อมใช้งานของคนขับ"""
+    """อัปเดตสถานะการพร้อมใช้งานของคนขับ — แอดมินระบุ driver_id ได้ / คนขับแก้ได้เฉพาะตนเอง"""
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def post(self, request):
-        driver_id = request.data.get('driver_id')
+        if is_admin_user(request.user):
+            driver_id = request.data.get('driver_id')
+            if driver_id is None:
+                return Response(
+                    {'error': 'แอดมินต้องระบุ driver_id'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                driver = DriverProfile.objects.get(id=driver_id)
+            except DriverProfile.DoesNotExist:
+                return Response(
+                    {'error': 'ไม่พบข้อมูลคนขับ'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            driver = getattr(request.user, 'driver_profile', None)
+            if driver is None:
+                return Response(
+                    {'error': 'ไม่มีสิทธิ์อัปเดตสถานะคนขับ'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        if not hasattr(request.data, 'get'):
+            return Response({'error': 'รูปแบบคำขอไม่ถูกต้อง'}, status=status.HTTP_400_BAD_REQUEST)
+
         is_available = request.data.get('is_available')
-        
-        try:
-            driver = DriverProfile.objects.get(id=driver_id)
-            driver.is_available = is_available
-            driver.save()
-            
-            return Response({
-                'message': 'อัปเดตสถานะสำเร็จ',
-                'driver_id': driver.id,
-                'is_available': driver.is_available
-            }, status=status.HTTP_200_OK)
-            
-        except DriverProfile.DoesNotExist:
+        if is_available is None:
             return Response(
-                {'error': 'ไม่พบข้อมูลคนขับ'}, 
-                status=status.HTTP_404_NOT_FOUND
+                {'error': 'ต้องระบุ is_available (true/false)'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
+        driver.is_available = bool(is_available)
+        driver.save(update_fields=['is_available', 'updated_at'])
+
+        return Response({
+            'message': 'อัปเดตสถานะสำเร็จ',
+            'driver_id': driver.id,
+            'is_available': driver.is_available,
+        }, status=status.HTTP_200_OK)

@@ -25,6 +25,8 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: FRONTEND_URL

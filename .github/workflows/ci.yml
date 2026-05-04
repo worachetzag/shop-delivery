@@ -12,7 +12,10 @@ jobs:
   # Backend Tests
   backend-tests:
     runs-on: ubuntu-latest
-    
+    env:
+      SECRET_KEY: django-insecure-ci-only-not-for-production
+      DEBUG: 'false'
+
     strategy:
       matrix:
         python-version: [3.9, 3.10, 3.11]
@@ -34,7 +37,7 @@ jobs:
     - name: Lint with flake8
       run: |
         flake8 shop_delivery --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 shop_delivery --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+        flake8 shop_delivery --count --max-complexity=35 --max-line-length=88 --statistics --exclude=*/migrations/*
     
     - name: Format check with black
       run: |

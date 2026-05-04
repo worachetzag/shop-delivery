@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+import hmac
 import qrcode
 import io
 import base64
@@ -11,6 +13,37 @@ from .serializers import (
     PaymentStatusSerializer, PaymentWebhookSerializer, PaymentCheckLogSerializer
 )
 from .models import PaymentTransaction, PaymentWebhook, PaymentCheckLog
+
+_PAYMENT_WEBHOOK_META_HEADER = 'HTTP_X_PAYMENT_WEBHOOK_SECRET'
+
+
+def _payment_webhook_secret_authorized(request) -> bool:
+    """Production (DEBUG=False): ต้องตั้ง PAYMENT_WEBHOOK_SECRET และส่ง header ให้ตรงกัน"""
+    secret = (getattr(settings, 'PAYMENT_WEBHOOK_SECRET', None) or '').strip()
+    if not secret:
+        return bool(settings.DEBUG)
+    received = (request.META.get(_PAYMENT_WEBHOOK_META_HEADER) or '').strip()
+    try:
+        a = received.encode('utf-8')
+        b = secret.encode('utf-8')
+    except Exception:
+        return False
+    if len(a) != len(b):
+        return False
+    return hmac.compare_digest(a, b)
+
+
+def _webhook_type_for_payment_method(payment_method: str) -> str:
+    key = (payment_method or '').strip().lower().replace(' ', '_')
+    mapping = {
+        'promptpay': 'promptpay',
+        'truemoney': 'truemoney',
+        'rabbit_line_pay': 'rabbit',
+        'rabbit': 'rabbit',
+        'scb_easy': 'scb_easy',
+        'line_pay': 'line_pay',
+    }
+    return mapping.get(key, 'promptpay')
 
 
 class PromptPayQRView(APIView):
@@ -180,38 +213,50 @@ class PaymentStatusCheckView(APIView):
 
 
 class PaymentWebhookView(APIView):
-    """รับ webhook จาก payment gateway"""
-    permission_classes = []  # ไม่ต้อง authentication สำหรับ webhook
-    
+    """รับ webhook จาก payment gateway — ยืนยันด้วย X-Payment-Webhook-Secret เมื่อตั้ง PAYMENT_WEBHOOK_SECRET"""
+    permission_classes = []  # ไม่ใช้ user auth — ใช้ shared secret แทน
+
     def post(self, request):
+        if not _payment_webhook_secret_authorized(request):
+            return Response(
+                {'error': 'Webhook authentication failed or PAYMENT_WEBHOOK_SECRET not configured'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = PaymentWebhookSerializer(data=request.data)
         if serializer.is_valid():
             transaction_id = serializer.validated_data['transaction_id']
-            status = serializer.validated_data['status']
+            new_status = serializer.validated_data['status']
             amount = serializer.validated_data['amount']
             payment_method = serializer.validated_data['payment_method']
-            
+
             try:
-                # อัปเดตสถานะการชำระเงิน
                 payment = PaymentTransaction.objects.get(transaction_id=transaction_id)
-                payment.status = status
+                payment.status = new_status
                 payment.save()
-                
-                # บันทึก webhook
+
+                secret_configured = bool((getattr(settings, 'PAYMENT_WEBHOOK_SECRET', None) or '').strip())
+                payload = request.data
+                if hasattr(payload, 'dict'):
+                    payload = payload.dict()
+                elif not isinstance(payload, dict):
+                    payload = {'_raw': str(payload)}
+
                 PaymentWebhook.objects.create(
-                    transaction_id=transaction_id,
-                    status=status,
-                    amount=amount,
-                    payment_method=payment_method,
-                    webhook_data=request.data
+                    webhook_type=_webhook_type_for_payment_method(payment_method),
+                    transaction=payment,
+                    payload=payload,
+                    signature=(request.META.get(_PAYMENT_WEBHOOK_META_HEADER) or '')[:500],
+                    is_verified=secret_configured,
+                    processed_at=None,
                 )
-                
+
                 return Response({'status': 'success'}, status=status.HTTP_200_OK)
-                
+
             except PaymentTransaction.DoesNotExist:
                 return Response(
-                    {'error': 'Transaction not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {'error': 'Transaction not found'},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

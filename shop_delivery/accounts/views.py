@@ -175,6 +175,7 @@ class CustomerLoginView(generics.GenericAPIView):
     """เข้าสู่ระบบลูกค้า"""
     serializer_class = CustomerLoginSerializer
     authentication_classes = []
+    permission_classes = [permissions.AllowAny]
     
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -231,6 +232,7 @@ class AdminLoginView(generics.GenericAPIView):
     """เข้าสู่ระบบแอดมิน"""
     serializer_class = CustomerLoginSerializer
     authentication_classes = []
+    permission_classes = [permissions.AllowAny]
     
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -301,6 +303,7 @@ class DriverLoginView(generics.GenericAPIView):
     """เข้าสู่ระบบคนขับ"""
     serializer_class = CustomerLoginSerializer
     authentication_classes = []
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -893,7 +896,8 @@ class LineLoginView(generics.GenericAPIView):
 class CustomerRegistrationView(generics.CreateAPIView):
     """ลงทะเบียนลูกค้าใหม่"""
     serializer_class = CustomerCreateSerializer
-    
+    permission_classes = [permissions.AllowAny]
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

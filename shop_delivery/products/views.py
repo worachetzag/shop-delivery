@@ -7,7 +7,7 @@ from rest_framework import filters, generics, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import BasePermission
+from accounts.permissions import IsStoreAdminOrSuperAdmin
 from accounts.models import StaffAuditLog
 from accounts.staff_audit import log_staff_audit
 from .models import Category, HomePromotion, Product, PurchaseOrder, PurchaseOrderItem, StockMovement, Supplier
@@ -288,20 +288,6 @@ class HomePromotionListView(generics.ListAPIView):
 
     def get_queryset(self):
         return HomePromotion.objects.filter(is_active=True).order_by('sort_order', 'id')
-
-
-class IsStoreAdminOrSuperAdmin(BasePermission):
-    """Allow only store admins/super admins."""
-
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser or request.user.is_staff:
-            return True
-        role_obj = getattr(request.user, 'user_role', None)
-        if not role_obj:
-            return hasattr(request.user, 'admin_profile')
-        return role_obj.role in ['store_admin', 'super_admin', 'admin']
 
 
 class AdminHomePromotionListCreateView(generics.ListCreateAPIView):
