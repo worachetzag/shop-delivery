@@ -37,7 +37,14 @@ class ConsentRecordSerializer(serializers.ModelSerializer):
                         {'privacy_policy': 'ต้องอ้างอิงนโยบายปัจจุบัน'},
                     )
             else:
-                attrs['privacy_policy'] = None
+                # ปฏิเสธนโยบาย — อนุญาตแนบ privacy_policy = ฉบับปัจจุบันเพื่อ audit
+                current = PrivacyPolicy.objects.filter(is_active=True).order_by(
+                    '-effective_date', '-id',
+                ).first()
+                if policy is not None and current and policy.id == current.id:
+                    attrs['privacy_policy'] = current
+                else:
+                    attrs['privacy_policy'] = None
         elif policy is not None:
             attrs['privacy_policy'] = None
         return attrs

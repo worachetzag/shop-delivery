@@ -444,6 +444,20 @@ export const pdpaService = {
     }
   },
 
+  /** บันทึกว่าปฏิเสธนโยบาย (ไม่ให้ความยินยอม) — แนบ policy id ฉบับที่แสดงเพื่อ audit */
+  recordPrivacyPolicyDecline: async (privacyPolicyId) => {
+    try {
+      const response = await api.post('/pdpa/consent/', {
+        consent_type: 'privacy_policy',
+        is_given: false,
+        privacy_policy: privacyPolicyId,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
   /** ลูกค้า: ถอนความยินยอมนโยบายความเป็นส่วนตัว (PDPA) */
   withdrawPrivacyConsent: async () => {
     try {

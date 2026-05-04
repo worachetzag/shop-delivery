@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import config from '../config';
 import { pdpaService } from '../services/api';
 import { usePopup } from './PopupProvider';
 import './CustomerPdpaConsentModal.css';
@@ -49,6 +50,7 @@ export default function CustomerPdpaConsentModal() {
   const [agreed, setAgreed] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [declining, setDeclining] = useState(false);
   const scrollRef = useRef(null);
 
   const checkScrollEnd = useCallback(() => {
@@ -183,6 +185,53 @@ export default function CustomerPdpaConsentModal() {
     }
   };
 
+  const logoutCustomerSession = async () => {
+    try {
+      await fetch(`${config.LIFF_ENDPOINT_URL}/accounts/logout/`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (e) {
+      console.error(e);
+    }
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('username');
+    window.location.href = '/customer/login';
+  };
+
+  const handleDeclineAndLogout = async () => {
+    if (!policy?.id) return;
+    if (
+      !(await popup.confirm(
+        'ไม่ยอมรับนโยบายความเป็นส่วนตัว — ระบบจะบันทึกการปฏิเสธและออกจากบัญชีผู้ใช้ เพื่อใช้บริการในภายหลังคุณต้องเข้าสู่ระบบและยอมรับนโยบายใหม่',
+        { tone: 'warning', confirmText: 'ไม่ยอมรับและออกจากระบบ' },
+      ))
+    ) {
+      return;
+    }
+    setDeclining(true);
+    try {
+      await pdpaService.recordPrivacyPolicyDecline(policy.id);
+      await logoutCustomerSession();
+    } catch (err) {
+      let msg = 'บันทึกการปฏิเสธไม่สำเร็จ กรุณาลองอีกครั้ง';
+      if (typeof err === 'string') {
+        msg = err;
+      } else if (err && typeof err === 'object') {
+        if (err.error) msg = err.error;
+        else if (err.detail) msg = String(err.detail);
+        else {
+          const flat = Object.values(err).flat().filter((x) => typeof x === 'string');
+          if (flat.length) msg = flat.join(' ');
+        }
+      }
+      popup.error(msg);
+    } finally {
+      setDeclining(false);
+    }
+  };
+
   if (typeof document === 'undefined' || !open || !policy) {
     return null;
   }
@@ -236,23 +285,46 @@ export default function CustomerPdpaConsentModal() {
             />
             <span>ข้าพเจ้าได้อ่านและยอมรับนโยบายความเป็นส่วนตัวตามข้างต้น</span>
           </label>
-          <label className="customer-pdpa-consent-row customer-pdpa-consent-row--optional">
+          <label
+            className={`customer-pdpa-consent-row customer-pdpa-consent-row--optional${canCheck ? '' : ' customer-pdpa-consent-row--disabled'}`}
+          >
             <input
               type="checkbox"
               checked={marketingOptIn}
+              disabled={!canCheck}
               onChange={(ev) => setMarketingOptIn(ev.target.checked)}
             />
             <span>
               (ไม่บังคับ) ข้าพเจ้ายินยอมให้ส่งข่าวสาร โปรโมชัน หรือข้อมูลการตลาดทางช่องทางที่ระบุในนโยบาย — แยกจากการยอมรับนโยบายความเป็นส่วนตัว
             </span>
           </label>
-          <button
-            type="submit"
-            className="customer-pdpa-submit"
-            disabled={!readToEnd || !agreed || submitting}
-          >
-            {submitting ? 'กำลังบันทึก...' : 'ยอมรับและดำเนินการต่อ'}
-          </button>
+          {!readToEnd ? (
+            <p className="customer-pdpa-hint" role="status">
+              เลื่อนอ่านนโยบายในช่องด้านบนให้ครบจนสุด แล้วจึงติ๊กยอมรับนโยบาย (จำเป็น) — ช่องการตลาดเลือกได้หรือไม่ก็ได้
+            </p>
+          ) : null}
+          {readToEnd && !agreed ? (
+            <p className="customer-pdpa-hint" role="status">
+              โปรดติ๊กช่อง “ข้าพเจ้าได้อ่านและยอมรับนโยบายความเป็นส่วนตัว” ก่อนกดดำเนินการต่อ — ช่องการตลาดไม่บังคับ
+            </p>
+          ) : null}
+          <div className="customer-pdpa-dialog__actions">
+            <button
+              type="button"
+              className="customer-pdpa-decline"
+              disabled={submitting || declining}
+              onClick={handleDeclineAndLogout}
+            >
+              {declining ? 'กำลังดำเนินการ...' : 'ไม่ยอมรับ — ออกจากระบบ'}
+            </button>
+            <button
+              type="submit"
+              className="customer-pdpa-submit"
+              disabled={!readToEnd || !agreed || submitting || declining}
+            >
+              {submitting ? 'กำลังบันทึก...' : 'ยอมรับและดำเนินการต่อ'}
+            </button>
+          </div>
         </div>
       </form>
     </div>,
