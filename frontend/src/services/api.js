@@ -433,6 +433,16 @@ export const pdpaService = {
       throw error.response?.data || error;
     }
   },
+
+  /** ลูกค้า: ถอนความยินยอมนโยบายความเป็นส่วนตัว (PDPA) */
+  withdrawPrivacyConsent: async () => {
+    try {
+      const response = await api.post('/pdpa/consent/withdraw-privacy/');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 };
 
 export default api;

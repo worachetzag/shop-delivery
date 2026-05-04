@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AddressPicker from '../components/AddressPicker';
 import config from '../config';
+import { pdpaService } from '../services/api';
 import { usePopup } from '../components/PopupProvider';
 import {
   digitsOnly,
@@ -105,6 +106,7 @@ const Profile = () => {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [withdrawingPrivacy, setWithdrawingPrivacy] = useState(false);
   const [showAddAddress, setShowAddAddress] = useState(false);
   const phoneInputRef = useRef(null);
   const [editingAddressId, setEditingAddressId] = useState(null);
@@ -215,11 +217,13 @@ const Profile = () => {
     const id =
       sectionFocus === 'personal'
         ? 'profile-section-personal'
-        : sectionFocus === 'addresses' && PROFILE_UI_SHOW_ADDRESSES
-          ? 'profile-section-addresses'
-          : sectionFocus === 'account' && PROFILE_UI_SHOW_ACCOUNT
-            ? 'profile-section-account'
-            : null;
+        : sectionFocus === 'pdpa'
+          ? 'profile-section-pdpa'
+          : sectionFocus === 'addresses' && PROFILE_UI_SHOW_ADDRESSES
+            ? 'profile-section-addresses'
+            : sectionFocus === 'account' && PROFILE_UI_SHOW_ACCOUNT
+              ? 'profile-section-account'
+              : null;
     if (!id) return;
     const tid = window.setTimeout(() => {
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -472,6 +476,39 @@ const Profile = () => {
 
   const handleDataExport = () => {
     popup.info('กำลังส่งออกข้อมูล...');
+  };
+
+  const handleWithdrawPrivacyConsent = async () => {
+    if (
+      !(await popup.confirm(
+        'ถอนความยินยอมนโยบายความเป็นส่วนตัวหรือไม่? เมื่อใช้งานครั้งถัดไป ระบบจะแสดงนโยบายให้คุณยอมรับอีกครั้ง',
+        { tone: 'warning', confirmText: 'ถอนความยินยอม' },
+      ))
+    ) {
+      return;
+    }
+    setWithdrawingPrivacy(true);
+    try {
+      await pdpaService.withdrawPrivacyConsent();
+      popup.success(
+        'ถอนความยินยอมนโยบายความเป็นส่วนตัวแล้ว เมื่อใช้งานครั้งถัดไประบบจะขอให้ยอมรับอีกครั้ง',
+      );
+    } catch (err) {
+      let msg = 'ไม่สามารถถอนความยินยอมได้ กรุณาลองอีกครั้ง';
+      if (typeof err === 'string') {
+        msg = err;
+      } else if (err && typeof err === 'object') {
+        if (err.error) msg = err.error;
+        else if (err.detail) msg = String(err.detail);
+        else {
+          const flat = Object.values(err).flat().filter((x) => typeof x === 'string');
+          if (flat.length) msg = flat.join(' ');
+        }
+      }
+      popup.error(msg);
+    } finally {
+      setWithdrawingPrivacy(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -794,6 +831,24 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+          </section>
+
+          <section id="profile-section-pdpa" className="profile-section profile-section-pdpa">
+            <div className="section-header">
+              <h3 className="section-title">ความเป็นส่วนตัว (PDPA)</h3>
+            </div>
+            <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.9rem', lineHeight: 1.5 }}>
+              คุณสามารถถอนความยินยอมนโยบายความเป็นส่วนตัวได้ทุกเมื่อ โดยไม่เสียค่าใช้จ่าย
+              หลังถอน ระบบจะขอให้คุณอ่านและยอมรับนโยบายฉบับปัจจุบันอีกครั้งก่อนใช้งานต่อ
+            </p>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={withdrawingPrivacy}
+              onClick={handleWithdrawPrivacyConsent}
+            >
+              {withdrawingPrivacy ? 'กำลังดำเนินการ...' : 'ถอนความยินยอมนโยบายความเป็นส่วนตัว'}
+            </button>
           </section>
 
           {PROFILE_UI_SHOW_ADDRESSES ? (

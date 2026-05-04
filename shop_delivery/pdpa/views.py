@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from accounts.models import Customer
 from accounts.permissions import is_admin_user as _is_admin_user
 from .models import ConsentRecord, PrivacyPolicy
@@ -79,6 +80,35 @@ class PdpaConsentStatusView(APIView):
         if accepted:
             return Response({'requires_consent': False, 'policy': ser.data})
         return Response({'requires_consent': True, 'policy': ser.data})
+
+
+class PdpaWithdrawPrivacyConsentView(APIView):
+    """ลูกค้าถอนความยินยอมนโยบายความเป็นส่วนตัว — ระบบจะขอให้ยอมรับฉบับปัจจุบันอีกครั้งในขั้นตอนถัดไป"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        role_obj = getattr(request.user, 'user_role', None)
+        if not role_obj or role_obj.role != 'customer':
+            return Response(
+                {'error': 'ไม่มีสิทธิ์ดำเนินการนี้'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        customer = get_object_or_404(Customer, user=request.user)
+        now = timezone.now()
+        updated = ConsentRecord.objects.filter(
+            customer=customer,
+            consent_type='privacy_policy',
+            is_given=True,
+            withdrawn_at__isnull=True,
+        ).update(withdrawn_at=now)
+        return Response(
+            {
+                'message': 'ถอนความยินยอมนโยบายความเป็นส่วนตัวแล้ว',
+                'records_updated': updated,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AdminPrivacyPolicyView(APIView):

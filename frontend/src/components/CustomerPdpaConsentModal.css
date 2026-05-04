@@ -50,6 +50,23 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+.customer-pdpa-dialog__intro {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--customer-text-muted, #4b5563);
+  margin: 0 0 1rem;
+  padding: 0 0 1rem;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.customer-pdpa-dialog__intro p {
+  margin: 0 0 0.65em;
+}
+
+.customer-pdpa-dialog__intro p:last-child {
+  margin-bottom: 0;
+}
+
 .customer-pdpa-dialog__content {
   font-size: 0.9rem;
   line-height: 1.55;
@@ -134,6 +151,12 @@
 .customer-pdpa-consent-row--disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.customer-pdpa-consent-row--optional {
+  padding-top: 2px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 2px;
 }
 
 .customer-pdpa-submit {

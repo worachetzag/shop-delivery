@@ -47,6 +47,7 @@ export default function CustomerPdpaConsentModal() {
   const [policy, setPolicy] = useState(null);
   const [readToEnd, setReadToEnd] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef(null);
 
@@ -64,6 +65,7 @@ export default function CustomerPdpaConsentModal() {
     if (!open || !policy) return;
     setReadToEnd(false);
     setAgreed(false);
+    setMarketingOptIn(false);
     const el = scrollRef.current;
     if (el) el.scrollTop = 0;
     const raf = requestAnimationFrame(() => {
@@ -148,9 +150,21 @@ export default function CustomerPdpaConsentModal() {
     setSubmitting(true);
     try {
       await pdpaService.recordPrivacyPolicyConsent(policy.id);
+      let marketingNote = '';
+      if (marketingOptIn) {
+        try {
+          await pdpaService.updateConsent({
+            consent_type: 'marketing',
+            is_given: true,
+          });
+        } catch {
+          marketingNote =
+            ' ยังบันทึกความยินยอมการตลาดไม่สำเร็จ — คุณสามารถลองอีกครั้งในหน้าโปรไฟล์ได้';
+        }
+      }
       setOpen(false);
       setPolicy(null);
-      popup.success('ยอมรับนโยบายความเป็นส่วนตัวแล้ว');
+      popup.success(`ยอมรับนโยบายความเป็นส่วนตัวแล้ว${marketingNote}`);
     } catch (err) {
       let msg = 'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง';
       if (typeof err === 'string') {
@@ -195,6 +209,15 @@ export default function CustomerPdpaConsentModal() {
           ref={scrollRef}
           onScroll={onScrollBody}
         >
+          <div className="customer-pdpa-dialog__intro">
+            <p>
+              การให้ความยินยอมเป็นไปโดยสมัครใจ โปรดอ่านรายละเอียดด้านล่างก่อนติ๊กยอมรับ
+              หากคุณเข้าสู่ระบบด้วย LINE หรือบริการบุคคลที่สามอื่น อาจมีการส่งข้อมูลบางส่วนระหว่างผู้ให้บริการ — รายละเอียดอยู่ในนโยบายด้านล่าง
+            </p>
+            <p>
+              คุณสามารถถอนความยินยอมนโยบายความเป็นส่วนตัวได้ทุกเมื่อที่เมนูโปรไฟล์ → ส่วน «ความเป็นส่วนตัว (PDPA)»
+            </p>
+          </div>
           <div
             className="customer-pdpa-dialog__content"
             dangerouslySetInnerHTML={{ __html: safeHtml }}
@@ -212,6 +235,16 @@ export default function CustomerPdpaConsentModal() {
               onChange={(ev) => setAgreed(ev.target.checked)}
             />
             <span>ข้าพเจ้าได้อ่านและยอมรับนโยบายความเป็นส่วนตัวตามข้างต้น</span>
+          </label>
+          <label className="customer-pdpa-consent-row customer-pdpa-consent-row--optional">
+            <input
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={(ev) => setMarketingOptIn(ev.target.checked)}
+            />
+            <span>
+              (ไม่บังคับ) ข้าพเจ้ายินยอมให้ส่งข่าวสาร โปรโมชัน หรือข้อมูลการตลาดทางช่องทางที่ระบุในนโยบาย — แยกจากการยอมรับนโยบายความเป็นส่วนตัว
+            </span>
           </label>
           <button
             type="submit"
