@@ -14,6 +14,17 @@ export function sanitizeCustomerOAuthNext(raw) {
     const base = pathPart.split('#')[0];
     if (base.includes('..')) return defaultNext;
     const lowerBase = base.toLowerCase();
+    /** LINE notify / LIFF Endpoint …/customer/ — path หลัง liffId เป็นแค่ orders/<id> (ดู backend line_bot.notify._order_detail_url) */
+    const bareOrdersDetail = /^\/orders\/(\d+)\/?$/i.exec(base);
+    if (bareOrdersDetail) {
+      const q = restQuery.split('#')[0];
+      const path = `/customer/orders/${bareOrdersDetail[1]}`;
+      return q ? `${path}?${q}` : path;
+    }
+    if (/^\/orders\/?$/i.test(base)) {
+      const q = restQuery.split('#')[0];
+      return q ? `/customer/orders?${q}` : '/customer/orders';
+    }
     if (lowerBase === '/customer') {
       const q = restQuery.split('#')[0];
       return q ? `/customer?${q}` : '/customer';
@@ -95,6 +106,14 @@ function parseLiffStateRoute(rawState, routeMap) {
   if (fromQuery) return fromQuery;
 
   const segments = pathPart.replace(/^\/+/, '').split('/').filter(Boolean);
+  if ((segments[0] || '').toLowerCase() === 'orders') {
+    if (segments.length >= 2 && /^\d+$/.test(segments[1])) {
+      return `/customer/orders/${segments[1]}`;
+    }
+    if (segments.length === 1) {
+      return '/customer/orders';
+    }
+  }
   const lastSeg = segments[segments.length - 1] || '';
   const fromPath = routeForPageKey(routeMap, lastSeg);
   if (fromPath) return fromPath;

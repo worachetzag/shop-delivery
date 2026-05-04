@@ -17,6 +17,7 @@ from django.core.validators import EmailValidator
 from django.db.models import Count, DecimalField, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce
 import requests
+import re
 import logging
 import secrets
 from urllib.parse import quote_plus, unquote, urlencode
@@ -47,6 +48,12 @@ def _sanitize_line_oauth_next(raw_next) -> str:
     base = base.split('#', 1)[0]
     if '..' in base:
         return default
+    # ลิงก์จาก LIFF notify: path หลัง liffId เป็น orders/<id> (ไม่มี prefix /customer)
+    om = re.match(r'^/orders/(\d+)/?$', base, re.I)
+    if om:
+        base = f'/customer/orders/{om.group(1)}'
+    elif re.match(r'^/orders/?$', base, re.I):
+        base = '/customer/orders'
     if base == '/customer':
         out = base
     elif base.startswith('/customer/') and not base.startswith('/customer/login'):
