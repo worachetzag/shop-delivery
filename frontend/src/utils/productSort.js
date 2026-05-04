@@ -30,6 +30,11 @@ export function availabilitySortKey(product) {
   return avail > 0 ? 0 : 1;
 }
 
+/** มีจำนวนพร้อมขาย > 0 */
+export function isProductInStock(product) {
+  return availabilitySortKey(product) === 0;
+}
+
 /** พารามิเตอร์ `ordering` สำหรับ API — `discount-desc` โหลดชุดแล้วเรียงฝั่ง client */
 export function apiOrderingForSortKey(sortKey) {
   const map = {

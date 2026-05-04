@@ -1018,6 +1018,7 @@ class DriverAssignmentListView(generics.ListAPIView):
                 'order',
                 'order__customer',
                 'order__customer__user',
+                'order__customer__user__line_user',
                 'driver',
                 'driver__driver_profile',
             )
@@ -1040,6 +1041,7 @@ class DriverAssignmentDetailView(generics.RetrieveAPIView):
             'order',
             'order__customer',
             'order__customer__user',
+            'order__customer__user__line_user',
             'driver',
             'driver__driver_profile',
         ).prefetch_related('order__items__product')
@@ -1186,6 +1188,7 @@ class DriverAssignmentStatusUpdateView(APIView):
             'order',
             'order__customer',
             'order__customer__user',
+            'order__customer__user__line_user',
             'driver',
             'driver__driver_profile',
         ).get(id=assignment_id, driver=request.user)
@@ -1204,6 +1207,9 @@ class OrderDriverTrackingView(APIView):
     def get(self, request, order_id):
         order = get_object_or_404(
             Order.objects.select_related(
+                'customer',
+                'customer__user',
+                'customer__user__line_user',
                 'driver_assignment__driver__driver_profile',
             ).prefetch_related('items__product'),
             id=order_id,
@@ -1241,6 +1247,14 @@ class OrderDriverTrackingView(APIView):
             {'code': 'delivered', 'title': 'จัดส่งสำเร็จ', 'completed': order.status == 'delivered', 'current': order.status == 'delivered'},
         ]
 
+        cust_user = getattr(order.customer, 'user', None)
+        line_u = getattr(cust_user, 'line_user', None) if cust_user else None
+        raw_pic = (getattr(line_u, 'picture_url', None) or '').strip() if line_u else ''
+        customer_photo_url = raw_pic or None
+        customer_name = ''
+        if cust_user:
+            customer_name = (cust_user.get_full_name() or '').strip() or (cust_user.username or '').strip()
+
         return Response({
             'order_id': order.id,
             'order_number': order.order_number,
@@ -1254,6 +1268,8 @@ class OrderDriverTrackingView(APIView):
             'delivery_latitude': order.delivery_latitude,
             'delivery_longitude': order.delivery_longitude,
             'last_location_at': assignment.last_location_at if assignment else None,
+            'customer_photo_url': customer_photo_url,
+            'customer_name': customer_name,
             'driver': driver_payload,
             'delivery_address': order.delivery_address,
             'timeline': timeline,

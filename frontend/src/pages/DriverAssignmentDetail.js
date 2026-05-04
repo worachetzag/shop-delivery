@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { assignmentContactPhone, assignmentCustomerLabel } from '../utils/driverAssignmentCustomer';
+import { createCustomerPhotoMarkerIcon, createMotorbikeMarkerIcon } from '../utils/mapMarkers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import './DriverDashboard.css';
@@ -222,6 +223,18 @@ const DriverAssignmentDetail = () => {
     fetchRoute();
   }, [assignment]);
 
+  const driverMapIcon = useMemo(() => createMotorbikeMarkerIcon(), []);
+
+  const customerLabelForMap = assignment ? assignmentCustomerLabel(assignment) : '';
+  const customerMapIcon = useMemo(
+    () =>
+      createCustomerPhotoMarkerIcon(
+        assignment?.customer_photo_url,
+        customerLabelForMap,
+      ),
+    [assignment?.customer_photo_url, customerLabelForMap],
+  );
+
   const formatRouteSummary = (meta) => {
     if (!meta) return '';
     const km = Number(meta.distanceKm || 0).toFixed(1);
@@ -361,22 +374,28 @@ const DriverAssignmentDetail = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {hasDriverPosition && (
-                <CircleMarker
-                  center={[Number(assignment.current_latitude), Number(assignment.current_longitude)]}
-                  radius={10}
-                  pathOptions={{ color: '#00B900' }}
+                <Marker
+                  position={[Number(assignment.current_latitude), Number(assignment.current_longitude)]}
+                  icon={driverMapIcon}
                 >
                   <Popup>ตำแหน่งคนขับ</Popup>
-                </CircleMarker>
+                </Marker>
               )}
               {hasDeliveryPosition && (
-                <CircleMarker
-                  center={[Number(assignment.delivery_latitude), Number(assignment.delivery_longitude)]}
-                  radius={9}
-                  pathOptions={{ color: '#ef4444' }}
+                <Marker
+                  position={[Number(assignment.delivery_latitude), Number(assignment.delivery_longitude)]}
+                  icon={customerMapIcon}
                 >
-                  <Popup>ตำแหน่งลูกค้า (ปลายทาง)</Popup>
-                </CircleMarker>
+                  <Popup>
+                    จุดรับของ (ลูกค้า)
+                    {customerLabelForMap && customerLabelForMap !== '—' ? (
+                      <>
+                        <br />
+                        {customerLabelForMap}
+                      </>
+                    ) : null}
+                  </Popup>
+                </Marker>
               )}
               {hasDriverPosition && hasDeliveryPosition && (
                 <Polyline
@@ -391,8 +410,8 @@ const DriverAssignmentDetail = () => {
               )}
             </MapContainer>
             <div className="route-legend">
-              <span>จุดสีเขียว: คนขับ</span>
-              <span>จุดสีแดง: ลูกค้า</span>
+              <span>ไอคอนรถ: คนขับ</span>
+              <span>รูปโปรไฟล์ / วงแดง: จุดลูกค้า</span>
               <span>เส้นสีน้ำเงิน: เส้นทางตามถนน</span>
             </div>
             {hasDriverPosition && hasDeliveryPosition && routeMeta && (

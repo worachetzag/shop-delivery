@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import CustomerInlineBack from '../components/CustomerInlineBack';
 import { AdminBackLink } from '../components/AdminBackButton';
+import { createCustomerPhotoMarkerIcon, createMotorbikeMarkerIcon } from '../utils/mapMarkers';
 import './Tracking.css';
 
 const Tracking = () => {
@@ -53,6 +54,8 @@ const Tracking = () => {
             deliveryLatitude: data.delivery_latitude !== null && data.delivery_latitude !== undefined ? Number(data.delivery_latitude) : null,
             deliveryLongitude: data.delivery_longitude !== null && data.delivery_longitude !== undefined ? Number(data.delivery_longitude) : null,
             lastLocationAt: data.last_location_at,
+            customerPhotoUrl: data.customer_photo_url || null,
+            customerName: (data.customer_name || '').trim(),
             driver: data.driver || {
               name: 'กำลังรอการมอบหมาย',
               phone: null,
@@ -135,6 +138,17 @@ const Tracking = () => {
     };
     fetchRoute();
   }, [trackingInfo]);
+
+  const driverMapIcon = useMemo(() => createMotorbikeMarkerIcon(), []);
+
+  const customerMapIcon = useMemo(
+    () =>
+      createCustomerPhotoMarkerIcon(
+        trackingInfo?.customerPhotoUrl,
+        trackingInfo?.customerName,
+      ),
+    [trackingInfo?.customerPhotoUrl, trackingInfo?.customerName],
+  );
 
   const formatRouteSummary = (meta) => {
     if (!meta) return '';
@@ -306,17 +320,32 @@ const Tracking = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   {hasDriverPosition && (
-                    <CircleMarker center={[trackingInfo.currentLatitude, trackingInfo.currentLongitude]} radius={10} pathOptions={{ color: '#00B900' }}>
+                    <Marker
+                      position={[trackingInfo.currentLatitude, trackingInfo.currentLongitude]}
+                      icon={driverMapIcon}
+                    >
                       <Popup>
-                        {trackingInfo.driver?.name || 'คนขับ'}<br />
+                        {trackingInfo.driver?.name || 'คนขับ'}
+                        <br />
                         {trackingInfo.currentLocation}
                       </Popup>
-                    </CircleMarker>
+                    </Marker>
                   )}
                   {hasDeliveryDestination && (
-                    <CircleMarker center={[trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude]} radius={9} pathOptions={{ color: '#ef4444' }}>
-                      <Popup>ตำแหน่งลูกค้า (ปลายทาง)</Popup>
-                    </CircleMarker>
+                    <Marker
+                      position={[trackingInfo.deliveryLatitude, trackingInfo.deliveryLongitude]}
+                      icon={customerMapIcon}
+                    >
+                      <Popup>
+                        จุดรับของ (ลูกค้า)
+                        {trackingInfo.customerName ? (
+                          <>
+                            <br />
+                            {trackingInfo.customerName}
+                          </>
+                        ) : null}
+                      </Popup>
+                    </Marker>
                   )}
                   {shouldShowRoute && (
                     <Polyline

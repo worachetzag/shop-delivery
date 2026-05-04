@@ -396,6 +396,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     activeDrivers: 0
   });
   const [stockDrafts, setStockDrafts] = useState({});
+  const [priceDrafts, setPriceDrafts] = useState({});
   const [compareAtDrafts, setCompareAtDrafts] = useState({});
   const [featuredDrafts, setFeaturedDrafts] = useState({});
   const [productQuickSaveLoading, setProductQuickSaveLoading] = useState({});
@@ -994,6 +995,13 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     }));
   };
 
+  const handlePriceDraftChange = (productId, value) => {
+    setPriceDrafts((prev) => ({
+      ...prev,
+      [productId]: value,
+    }));
+  };
+
   const handleCompareAtDraftChange = (productId, value) => {
     setCompareAtDrafts((prev) => ({
       ...prev,
@@ -1011,16 +1019,22 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
   /** sync draft inputs เมื่อโหลดรายการสินค้าใหม่ (เปลี่ยนหน้า / กรอง / หลังบันทึก) */
   useEffect(() => {
     const s = {};
+    const pr = {};
     const c = {};
     const f = {};
     for (const p of products) {
       const pid = p.id;
       s[pid] = String(p.stock_quantity ?? 0);
+      pr[pid] =
+        p.price != null && p.price !== ''
+          ? String(Number(p.price))
+          : '';
       const cmp = p.compare_at_price;
       c[pid] = cmp != null && cmp !== '' ? String(Number(cmp)) : '';
       f[pid] = Boolean(p.is_featured);
     }
     setStockDrafts(s);
+    setPriceDrafts(pr);
     setCompareAtDrafts(c);
     setFeaturedDrafts(f);
   }, [products]);
@@ -1032,6 +1046,18 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
     if (Number.isNaN(parsedStock) || parsedStock < 0) {
       popup.info('กรุณากรอกจำนวนสต็อกเป็นตัวเลข 0 ขึ้นไป');
+      return;
+    }
+
+    const priceDraftRaw =
+      priceDrafts[id] !== undefined
+        ? priceDrafts[id]
+        : product.price != null && product.price !== ''
+          ? String(Number(product.price))
+          : '';
+    const priceParsed = parseFloat(String(priceDraftRaw).trim().replace(/,/g, ''));
+    if (Number.isNaN(priceParsed) || priceParsed < 0) {
+      popup.info('กรุณากรอกราคาขายเป็นตัวเลขที่ไม่ติดลบ');
       return;
     }
 
@@ -1051,8 +1077,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
         popup.info('กรุณากรอกราคาก่อนลดเป็นตัวเลขมากกว่า 0 หรือเว้นว่างถ้าไม่ลดราคา');
         return;
       }
-      const salePrice = Number(product.price || 0);
-      if (cmp <= salePrice) {
+      if (cmp <= priceParsed) {
         popup.info('ราคาก่อนลดต้องมากกว่าราคาขาย');
         return;
       }
@@ -1074,14 +1099,17 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
     const stockUnchanged = parsedStock === Number(product.stock_quantity || 0);
     const featuredUnchanged = featuredNext === Boolean(product.is_featured);
+    const prevPrice = Number(product.price ?? 0);
+    const priceUnchanged = Math.abs(priceParsed - prevPrice) < 1e-9;
 
-    if (stockUnchanged && compareUnchanged && featuredUnchanged) {
+    if (stockUnchanged && compareUnchanged && featuredUnchanged && priceUnchanged) {
       popup.info('ไม่มีการเปลี่ยนแปลง');
       return;
     }
 
     const body = {};
     if (!stockUnchanged) body.stock_quantity = parsedStock;
+    if (!priceUnchanged) body.price = priceParsed;
     if (!compareUnchanged) body.compare_at_price = comparePayload;
     if (!featuredUnchanged) body.is_featured = featuredNext;
 
@@ -1101,11 +1129,15 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
       const errData = await response.json().catch(() => ({}));
       if (!response.ok) {
         const cmpErr = errData?.compare_at_price;
-        const msg = Array.isArray(cmpErr)
-          ? cmpErr[0]
-          : typeof cmpErr === 'string'
-            ? cmpErr
-            : errData?.detail || errData?.error || `บันทึกไม่สำเร็จ (${response.status})`;
+        const priceErr = errData?.price;
+        const firstPrice = Array.isArray(priceErr) ? priceErr[0] : typeof priceErr === 'string' ? priceErr : null;
+        const firstCmp = Array.isArray(cmpErr) ? cmpErr[0] : typeof cmpErr === 'string' ? cmpErr : null;
+        const msg =
+          firstCmp ||
+          firstPrice ||
+          errData?.detail ||
+          errData?.error ||
+          `บันทึกไม่สำเร็จ (${response.status})`;
         popup.info(msg);
         return;
       }
@@ -1798,7 +1830,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
             <div className="products-manage-table">
               <h3>จัดการสต็อกสินค้า</h3>
               <p className="products-row-click-hint" style={{ margin: '0 0 12px', color: '#666', fontSize: '14px' }}>
-                คลิกที่แถวสินค้า (ยกเว้นช่องแก้ไขในตาราง) เพื่อเปิดหน้าแก้ไข · ปุ่มบันทึกจะบันทึกสต็อก ราคาก่อนลด และติ๊กแนะนำพร้อมกัน ·{' '}
+                คลิกที่แถวสินค้า (ยกเว้นช่องแก้ไขในตาราง) เพื่อเปิดหน้าแก้ไข · ปุ่มบันทึกจะบันทึกสต็อก ราคาขาย ราคาก่อนลด และติ๊กแนะนำพร้อมกัน ·{' '}
                 <span className="muted">เรียงลำดับจากหัวคอลัมน์ในตาราง (↑ / ↓)</span>
               </p>
               <div className="admin-products-filter-panel">
@@ -2044,7 +2076,26 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                         <td>{product.name}</td>
                         <td>{product.category_name || '-'}</td>
                         <td>{product.unit_label || 'ชิ้น'}{product.unit_detail ? ` (${product.unit_detail})` : ''}</td>
-                        <td>฿{Number(product.price || 0).toLocaleString()}</td>
+                        <td className="admin-product-price-cell" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="number"
+                            className="admin-product-price-input"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            title="ราคาขาย (บาท)"
+                            aria-label={`ราคาขาย — ${product.name || ''}`}
+                            disabled={Boolean(productQuickSaveLoading[product.id])}
+                            value={
+                              priceDrafts[product.id] !== undefined
+                                ? priceDrafts[product.id]
+                                : product.price != null && product.price !== ''
+                                  ? String(Number(product.price))
+                                  : ''
+                            }
+                            onChange={(e) => handlePriceDraftChange(product.id, e.target.value)}
+                          />
+                        </td>
                         <td className="admin-product-compare-price-cell" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="number"

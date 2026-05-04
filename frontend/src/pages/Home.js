@@ -18,13 +18,16 @@ import {
   apiOrderingForSortKey,
   availabilitySortKey,
   isDiscountDescSort,
+  isProductInStock,
 } from '../utils/productSort';
 import './Home.css';
 
 /** จำนวนสินค้าที่แสดงต่อหมวดในหน้าแรก — ให้ลูกค้ากดดูทั้งหมดในหน้ารายการสินค้า */
 const HOME_SECTION_PREVIEW_COUNT = 4;
-/** โหลดชุดใหญ่พอสำหรับเรียงลดราคาในฝั่งลูกค้า แล้วค่อยตัดเหลือ HOME_SECTION_PREVIEW_COUNT */
-const PROMO_SORT_POOL_PAGE_SIZE = 24;
+/** โหลดชุดใหญ่พอสำหรับเรียงลดราคาในฝั่งลูกค้า แล้วกรองหมดสต็อก ตัดเหลือ HOME_SECTION_PREVIEW_COUNT */
+const PROMO_SORT_POOL_PAGE_SIZE = 48;
+/** ดึงแนะนำชุดใหญ่แล้วตัดของหมดออก เพื่อให้เหลือการ์ดครบช่วงพรีวิวได้ */
+const HOME_FEATURED_FETCH_POOL_SIZE = 48;
 
 const HOME_FEATURED_SORT_OPTIONS = [PRODUCT_SORT_OPTION_CREATED_DESC, ...PRODUCT_SORT_OPTIONS_STANDARD];
 const HOME_PROMO_SORT_OPTIONS = [PRODUCT_SORT_OPTION_DISCOUNT_DESC, ...PRODUCT_SORT_OPTIONS_STANDARD];
@@ -422,7 +425,7 @@ const Home = () => {
         const ordering = apiOrderingForSortKey(featuredSort);
         const params = {
           featured: 'true',
-          page_size: HOME_SECTION_PREVIEW_COUNT,
+          page_size: HOME_FEATURED_FETCH_POOL_SIZE,
           ordering,
         };
         if (featuredCategory) params.category_id = featuredCategory;
@@ -435,7 +438,7 @@ const Home = () => {
 
         if (!featuredCategory && products.length === 0) {
           const fallbackResponse = await productsService.getProducts({
-            page_size: HOME_SECTION_PREVIEW_COUNT,
+            page_size: HOME_FEATURED_FETCH_POOL_SIZE,
             ordering,
           });
           if (cancelled) return;
@@ -443,6 +446,7 @@ const Home = () => {
           products = Array.isArray(fallbackList) ? fallbackList : [];
         }
 
+        products = products.filter(isProductInStock);
         setFeaturedProducts(products.slice(0, HOME_SECTION_PREVIEW_COUNT));
       } catch (error) {
         console.error('Error fetching featured products:', error);
@@ -477,6 +481,7 @@ const Home = () => {
 
         let products = res.results || res || [];
         products = Array.isArray(products) ? products : [];
+        products = products.filter(isProductInStock);
         const sliced = isDiscountDescSort(promoSort)
           ? sortPromoProducts(products).slice(0, HOME_SECTION_PREVIEW_COUNT)
           : products.slice(0, HOME_SECTION_PREVIEW_COUNT);

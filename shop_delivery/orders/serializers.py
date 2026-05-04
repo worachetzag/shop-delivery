@@ -405,6 +405,7 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='order.customer.user.get_full_name', read_only=True, allow_blank=True)
     customer_username = serializers.CharField(source='order.customer.user.username', read_only=True, allow_blank=True)
     customer_phone = serializers.CharField(source='order.customer.phone_number', read_only=True, allow_blank=True)
+    customer_photo_url = serializers.SerializerMethodField()
     order_type_display = serializers.CharField(source='order.get_order_type_display', read_only=True)
     payment_method = serializers.CharField(source='order.payment_method', read_only=True)
     payment_method_display = serializers.CharField(source='order.get_payment_method_display', read_only=True)
@@ -420,7 +421,7 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
             'current_latitude', 'current_longitude', 'current_location_text', 'last_location_at',
             'assigned_at', 'updated_at', 'order_total_amount', 'delivery_address',
             'delivery_phone', 'delivery_notes', 'delivery_latitude', 'delivery_longitude',
-            'customer_name', 'customer_username', 'customer_phone', 'order_type_display',
+            'customer_name', 'customer_username', 'customer_phone', 'customer_photo_url', 'order_type_display',
             'payment_method', 'payment_method_display', 'payment_slip_status',
             'order_items',
         ]
@@ -429,6 +430,14 @@ class DriverAssignmentSerializer(serializers.ModelSerializer):
     def get_driver_phone(self, obj):
         driver_profile = getattr(obj.driver, 'driver_profile', None)
         return getattr(driver_profile, 'phone_number', '')
+
+    def get_customer_photo_url(self, obj):
+        user = getattr(getattr(obj.order, 'customer', None), 'user', None)
+        if not user:
+            return None
+        lu = getattr(user, 'line_user', None)
+        raw = (getattr(lu, 'picture_url', None) or '').strip() if lu else ''
+        return raw or None
 
     def get_driver_photo_url(self, obj):
         request = self.context.get('request')

@@ -589,6 +589,20 @@
   opacity: 0.78;
 }
 
+.admin-product-price-cell {
+  vertical-align: middle;
+}
+
+.admin-product-price-input {
+  width: 88px;
+  max-width: 100%;
+  border: 1px solid #d3d9e8;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
 .admin-product-compare-price-cell {
   vertical-align: middle;
 }
