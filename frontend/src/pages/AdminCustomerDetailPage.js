@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
-import { AdminBackButton } from '../components/AdminBackButton';
 import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
@@ -103,11 +102,6 @@ const AdminCustomerDetailPage = () => {
     return (
       <AdminPageShell>
         <div className="empty-state">ไม่พบลูกค้า</div>
-        <AdminBackButton
-          ariaLabel="รายการลูกค้า"
-          onClick={() => navigate('/admin/customers')}
-          style={{ marginTop: 12 }}
-        />
       </AdminPageShell>
     );
   }
@@ -130,7 +124,6 @@ const AdminCustomerDetailPage = () => {
         <AdminPageHeader
           title="ลูกค้า"
           subtitle={subtitleParts.join(' · ')}
-          leading={<AdminBackButton ariaLabel="รายการลูกค้า" onClick={() => navigate('/admin/customers')} />}
           actions={(
             <Link className="btn-primary" style={{ textDecoration: 'none' }} to={`/admin/orders?customer_id=${customer.id}`}>
               ดูออเดอร์ทั้งหมดของลูกค้านี้

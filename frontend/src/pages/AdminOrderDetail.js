@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { usePopup } from '../components/PopupProvider';
-import { AdminBackLink } from '../components/AdminBackButton';
 import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
@@ -285,7 +284,6 @@ const AdminOrderDetail = () => {
           <AdminPageHeader
             title="คำสั่งซื้อ"
             subtitle="ไม่พบคำสั่งซื้อ"
-            leading={<AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />}
           />
         )}
       />
@@ -329,7 +327,6 @@ const AdminOrderDetail = () => {
         <AdminPageHeader
           title="คำสั่งซื้อ"
           subtitle={`รายละเอียด ${order.order_number || `#${order.id}`}`}
-          leading={<AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />}
         />
       )}
     >
@@ -552,7 +549,6 @@ const AdminOrderDetail = () => {
               ติดตามคนขับ
             </Link>
           )}
-          <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
         </div>
     </AdminPageShell>
   );

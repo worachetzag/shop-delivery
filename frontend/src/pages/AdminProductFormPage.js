@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
-import { AdminBackLink } from '../components/AdminBackButton';
 import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
@@ -231,7 +230,6 @@ const AdminProductFormPage = () => {
           <AdminPageHeader
             title="สินค้า"
             subtitle={pageTitle}
-            leading={<AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />}
           />
         )}
       >
@@ -246,7 +244,6 @@ const AdminProductFormPage = () => {
         <AdminPageHeader
           title="สินค้า"
           subtitle={pageTitle}
-          leading={<AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />}
         />
       )}
     >
@@ -354,7 +351,6 @@ const AdminProductFormPage = () => {
                 </button>
               </>
             )}
-            <AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />
           </div>
         </form>
         </section>

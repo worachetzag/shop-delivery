@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { usePopup } from '../components/PopupProvider';
-import { AdminBackLink } from '../components/AdminBackButton';
 import config from '../config';
 import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
 import './AdminDashboard.css';
@@ -92,7 +91,6 @@ const AdminPurchaseOrderDetailPage = () => {
           <AdminPageHeader
             title="ใบสั่งซื้อ (PO)"
             subtitle="ไม่พบข้อมูลใบสั่งซื้อ"
-            leading={<AdminBackLink to="/admin/inventory/purchase-orders" ariaLabel="รายการใบสั่งซื้อ" />}
           />
         )}
       />
@@ -105,7 +103,6 @@ const AdminPurchaseOrderDetailPage = () => {
         <AdminPageHeader
           title="ใบสั่งซื้อ (PO)"
           subtitle={purchaseOrder.reference ? `เลขอ้างอิง ${purchaseOrder.reference}` : null}
-          leading={<AdminBackLink to="/admin/inventory/purchase-orders" ariaLabel="รายการใบสั่งซื้อ" />}
           actions={(
             <button type="button" className="btn btn-primary" onClick={receiveAll} disabled={receiving}>
               {receiving ? 'กำลังรับเข้า...' : 'รับเข้าคงค้างทั้งหมด'}

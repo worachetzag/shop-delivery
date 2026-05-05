@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
-import { AdminBackLink } from '../components/AdminBackButton';
 import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { resolveMediaUrl } from '../utils/media';
@@ -324,7 +323,6 @@ const AdminHomePromotionsPage = () => {
         <AdminPageHeader
           title="โปรหน้าแรก"
           subtitle="อัปโหลดรูปแบนเนอร์ได้ — ลูกค้าคลิกที่รูปแล้วไปตามที่เลือกด้านล่าง (หมวดสินค้า / สินค้าแนะนำ / ลดราคา / หน้ารวมสินค้า / สินค้ารายการเดียว)"
-          leading={<AdminBackLink to="/admin/dashboard" ariaLabel="ภาพรวมแอดมิน" />}
         />
       )}
     >

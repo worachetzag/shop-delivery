@@ -8,7 +8,6 @@ import { displayProductLineName } from '../utils/helpers';
 import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import CustomerInlineBack from '../components/CustomerInlineBack';
-import { AdminBackLink } from '../components/AdminBackButton';
 import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { createCustomerPhotoMarkerIcon, createDeliveryVehicleMarkerIcon } from '../utils/mapMarkers';
@@ -284,13 +283,10 @@ const Tracking = () => {
     window.location.assign(`tel:${phone.replace(/\s/g, '')}`);
   };
 
-  const adminBackTo = orderId ? `/admin/orders/${orderId}` : '/admin/orders';
-
   const adminTrackingHeader = (
     <AdminPageHeader
       title="ติดตามการจัดส่ง"
       subtitle={trackingInfo?.trackingNumber ? `เลขอ้างอิง ${trackingInfo.trackingNumber}` : undefined}
-      leading={<AdminBackLink to={adminBackTo} ariaLabel="รายละเอียดคำสั่งซื้อ" />}
     />
   );
 
