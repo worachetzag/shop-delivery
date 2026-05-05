@@ -326,6 +326,58 @@ const AdminHomePromotionsPage = () => {
         />
       )}
     >
+        <div className="admin-toolbar-row">
+          <input
+            type="search"
+            className="form-input"
+            placeholder="ค้นหาหัวข้อ คำอธิบาย ป้ายลิงก์…"
+            value={listSearchDraft}
+            onChange={(e) => setListSearchDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyListSearch();
+            }}
+            aria-label="ค้นหาการ์ดโปรโมชั่น"
+          />
+          <button type="button" className="btn-primary" onClick={applyListSearch}>
+            ค้นหา
+          </button>
+          <label className="admin-toolbar-ordering">
+            <span className="muted">เรียงตาม</span>
+            <select
+              className="form-input"
+              value={listOrdering}
+              onChange={(e) => setListOrdering(e.target.value)}
+              aria-label="เรียงลำดับการ์ด"
+            >
+              <option value="sort_order">ลำดับแสดง (น้อยขึ้นก่อน)</option>
+              <option value="-sort_order">ลำดับแสดง (มากขึ้นก่อน)</option>
+              <option value="-id">เพิ่มล่าสุดก่อน (รหัสมากสุดก่อน)</option>
+              <option value="id">เพิ่มเก่าสุดก่อน</option>
+              <option value="title">หัวข้อ A → Z</option>
+              <option value="-title">หัวข้อ Z → A</option>
+              <option value="-created_at">สร้างเมื่อ — ใหม่สุดก่อน</option>
+              <option value="created_at">สร้างเมื่อ — เก่าสุดก่อน</option>
+              <option value="-is_active">เปิดใช้ก่อน</option>
+              <option value="is_active">ปิดใช้ก่อน</option>
+              <option value="-updated_at">แก้ล่าสุดก่อน</option>
+              <option value="updated_at">แก้เก่าสุดก่อน</option>
+            </select>
+          </label>
+          {(listSearch || listSearchDraft || listOrdering !== 'sort_order') && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setListSearchDraft('');
+                setListSearch('');
+                setListOrdering('sort_order');
+              }}
+            >
+              ล้างตัวกรอง
+            </button>
+          )}
+        </div>
+
         <section className="store-settings-card" style={{ marginBottom: '1.25rem' }}>
           <h2 className="store-settings-card__title">{editingId ? 'แก้ไขการ์ด' : 'เพิ่มการ์ดใหม่'}</h2>
           <form className="store-settings-form" onSubmit={handleSubmit}>
@@ -497,62 +549,10 @@ const AdminHomePromotionsPage = () => {
           </form>
         </section>
 
-        <div className="admin-toolbar-row">
-          <input
-            type="search"
-            className="form-input"
-            placeholder="ค้นหาหัวข้อ คำอธิบาย ป้ายลิงก์…"
-            value={listSearchDraft}
-            onChange={(e) => setListSearchDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') applyListSearch();
-            }}
-            aria-label="ค้นหาการ์ดโปรโมชั่น"
-          />
-          <button type="button" className="btn-primary" onClick={applyListSearch}>
-            ค้นหา
-          </button>
-          <label className="admin-toolbar-ordering">
-            <span className="muted">เรียงตาม</span>
-            <select
-              className="form-input"
-              value={listOrdering}
-              onChange={(e) => setListOrdering(e.target.value)}
-              aria-label="เรียงลำดับการ์ด"
-            >
-              <option value="sort_order">ลำดับแสดง (น้อยขึ้นก่อน)</option>
-              <option value="-sort_order">ลำดับแสดง (มากขึ้นก่อน)</option>
-              <option value="-id">เพิ่มล่าสุดก่อน (รหัสมากสุดก่อน)</option>
-              <option value="id">เพิ่มเก่าสุดก่อน</option>
-              <option value="title">หัวข้อ A → Z</option>
-              <option value="-title">หัวข้อ Z → A</option>
-              <option value="-created_at">สร้างเมื่อ — ใหม่สุดก่อน</option>
-              <option value="created_at">สร้างเมื่อ — เก่าสุดก่อน</option>
-              <option value="-is_active">เปิดใช้ก่อน</option>
-              <option value="is_active">ปิดใช้ก่อน</option>
-              <option value="-updated_at">แก้ล่าสุดก่อน</option>
-              <option value="updated_at">แก้เก่าสุดก่อน</option>
-            </select>
-          </label>
-          {(listSearch || listSearchDraft || listOrdering !== 'sort_order') && (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => {
-                setListSearchDraft('');
-                setListSearch('');
-                setListOrdering('sort_order');
-              }}
-            >
-              ล้างตัวกรอง
-            </button>
-          )}
-        </div>
-
         {loading ? (
           <p className="muted">กำลังโหลด...</p>
         ) : items.length === 0 ? (
-          <p className="muted">ยังไม่มีการ์ด — เพิ่มด้านบน</p>
+          <p className="muted">ยังไม่มีการ์ด — ใช้แบบฟอร์ม «เพิ่มการ์ดใหม่» ด้านบน</p>
         ) : (
           <div className="admin-data-table-wrap">
             <table className="admin-data-table">

@@ -114,7 +114,7 @@ const AdminAuditLogPage = () => {
         />
       )}
     >
-      <form className="admin-audit-toolbar" onSubmit={submitSearch}>
+      <form className="admin-toolbar-row admin-audit-toolbar" onSubmit={submitSearch}>
         <input
           type="search"
           className="form-input"

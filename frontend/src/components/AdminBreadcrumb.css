@@ -2,12 +2,12 @@
   margin: 0 0 12px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: linear-gradient(100deg, #052e16 0%, #14532d 42%, #166534 100%);
-  color: #f8fafc;
+  background: linear-gradient(105deg, #ecfdf5 0%, #d1fae5 48%, #ecfdf5 100%);
+  color: #166534;
   font-size: 0.875rem;
   line-height: 1.45;
-  box-shadow: 0 4px 14px rgba(5, 46, 22, 0.22);
-  border: 1px solid rgba(187, 247, 208, 0.2);
+  box-shadow: 0 2px 12px rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.18);
 }
 
 .admin-breadcrumb__list {
@@ -28,7 +28,7 @@
 }
 
 .admin-breadcrumb__link {
-  color: #ecfdf5;
+  color: #15803d;
   text-decoration: none;
   font-weight: 600;
   padding: 2px 2px;
@@ -37,24 +37,24 @@
 }
 
 .admin-breadcrumb__link:hover {
-  color: #fff;
+  color: #14532d;
   text-decoration: underline;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.65);
 }
 
 .admin-breadcrumb__link:focus-visible {
-  outline: 2px solid #bbf7d0;
+  outline: 2px solid #22c55e;
   outline-offset: 2px;
 }
 
 .admin-breadcrumb__current {
-  color: #bbf7d0;
+  color: #14532d;
   font-weight: 700;
   padding: 2px 2px;
 }
 
 .admin-breadcrumb__sep {
-  color: rgba(241, 245, 249, 0.55);
+  color: rgba(22, 101, 52, 0.38);
   font-weight: 700;
   user-select: none;
   margin: 0 2px;

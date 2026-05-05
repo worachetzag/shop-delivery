@@ -214,6 +214,25 @@
   margin-bottom: 14px;
 }
 
+/* ปุ่มหลัก (เพิ่มข้อมูล) — ชิดขวาแถบเดียวกับตัวกรอง */
+.admin-toolbar-primary-action {
+  margin-left: auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.admin-products-filter-panel__row > .admin-toolbar-primary-action {
+  margin-left: auto;
+}
+
+/* หน้าที่ไม่มีตัวกรอง — แถวเดียวจัดปุ่มชิดขวา */
+.admin-toolbar-row--actions-only {
+  justify-content: flex-end;
+}
+
 .admin-toolbar-row .form-input {
   min-width: 200px;
   flex: 1 1 180px;
@@ -749,12 +768,6 @@
 .drivers-section {
   display: grid;
   gap: 20px;
-}
-
-.personnel-create-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
 }
 
 .btn-secondary {

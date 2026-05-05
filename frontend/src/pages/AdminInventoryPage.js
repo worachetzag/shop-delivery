@@ -362,68 +362,6 @@ const AdminInventoryPage = ({ section = 'all' }) => {
 
       {(section === 'all' || section === 'purchase-orders') && (
       <section className="store-settings-card" style={{ marginBottom: 20 }}>
-        <h2 className="store-settings-card__title">สร้างใบสั่งซื้อ (PO)</h2>
-        <form className="store-settings-form" onSubmit={submitPurchaseOrder}>
-          <div className="store-settings-stack">
-            <div className="store-settings-field">
-              <label className="form-label" htmlFor="inv-po-supplier">ผู้จำหน่าย (ถ้ามี)</label>
-              <select id="inv-po-supplier" className="form-input" value={poForm.supplier} onChange={(e) => setPoForm((p) => ({ ...p, supplier: e.target.value }))}>
-                <option value="">ไม่ระบุผู้จำหน่าย</option>
-                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div className="store-settings-stack" style={{ gap: 'var(--space-3)' }}>
-              {(poForm.items || []).map((item, idx) => (
-                <div key={`po-item-${idx}`} className="admin-po-item-row">
-                  <select
-                    className="form-input"
-                    value={item.product}
-                    onChange={(e) => updatePoItem(idx, 'product', e.target.value)}
-                    required
-                  >
-                    <option value="">เลือกสินค้า</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    className="form-input"
-                    type="number"
-                    min="1"
-                    placeholder="จำนวน"
-                    value={item.ordered_quantity}
-                    onChange={(e) => updatePoItem(idx, 'ordered_quantity', e.target.value)}
-                    required
-                  />
-                  <input
-                    className="form-input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="ต้นทุน/หน่วย"
-                    value={item.unit_cost}
-                    onChange={(e) => updatePoItem(idx, 'unit_cost', e.target.value)}
-                  />
-                  <button type="button" className="btn-secondary" onClick={() => removePoItemRow(idx)}>
-                    ลบ
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="store-settings-btn-row">
-              <button type="button" className="btn-outline" onClick={addPoItemRow}>+ เพิ่มรายการสินค้า</button>
-            </div>
-            <input className="form-input" placeholder="หมายเหตุ" value={poForm.notes} onChange={(e) => setPoForm((p) => ({ ...p, notes: e.target.value }))} />
-            <div className="store-settings-btn-row">
-              <button type="submit" className="btn-primary">สร้างใบสั่งซื้อ</button>
-            </div>
-          </div>
-        </form>
-      </section>
-      )}
-
-      {(section === 'all' || section === 'purchase-orders') && (
-      <section className="store-settings-card" style={{ marginBottom: 20 }}>
         <h2 className="store-settings-card__title">ใบสั่งซื้อล่าสุด</h2>
         <div className="admin-toolbar-row">
           <input
@@ -499,6 +437,68 @@ const AdminInventoryPage = ({ section = 'all' }) => {
           </tbody>
         </table>
         </div>
+      </section>
+      )}
+
+      {(section === 'all' || section === 'purchase-orders') && (
+      <section className="store-settings-card" style={{ marginBottom: 20 }}>
+        <h2 className="store-settings-card__title">สร้างใบสั่งซื้อ (PO)</h2>
+        <form className="store-settings-form" onSubmit={submitPurchaseOrder}>
+          <div className="store-settings-stack">
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="inv-po-supplier">ผู้จำหน่าย (ถ้ามี)</label>
+              <select id="inv-po-supplier" className="form-input" value={poForm.supplier} onChange={(e) => setPoForm((p) => ({ ...p, supplier: e.target.value }))}>
+                <option value="">ไม่ระบุผู้จำหน่าย</option>
+                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="store-settings-stack" style={{ gap: 'var(--space-3)' }}>
+              {(poForm.items || []).map((item, idx) => (
+                <div key={`po-item-${idx}`} className="admin-po-item-row">
+                  <select
+                    className="form-input"
+                    value={item.product}
+                    onChange={(e) => updatePoItem(idx, 'product', e.target.value)}
+                    required
+                  >
+                    <option value="">เลือกสินค้า</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="1"
+                    placeholder="จำนวน"
+                    value={item.ordered_quantity}
+                    onChange={(e) => updatePoItem(idx, 'ordered_quantity', e.target.value)}
+                    required
+                  />
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="ต้นทุน/หน่วย"
+                    value={item.unit_cost}
+                    onChange={(e) => updatePoItem(idx, 'unit_cost', e.target.value)}
+                  />
+                  <button type="button" className="btn-secondary" onClick={() => removePoItemRow(idx)}>
+                    ลบ
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="store-settings-btn-row">
+              <button type="button" className="btn-outline" onClick={addPoItemRow}>+ เพิ่มรายการสินค้า</button>
+            </div>
+            <input className="form-input" placeholder="หมายเหตุ" value={poForm.notes} onChange={(e) => setPoForm((p) => ({ ...p, notes: e.target.value }))} />
+            <div className="store-settings-btn-row">
+              <button type="submit" className="btn-primary">สร้างใบสั่งซื้อ</button>
+            </div>
+          </div>
+        </form>
       </section>
       )}
 

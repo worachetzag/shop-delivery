@@ -20,16 +20,16 @@
     'Tahoma',
     sans-serif;
   background:
-    radial-gradient(120% 140% at 20% 0%, rgba(34, 197, 94, 0.28) 0%, rgba(15, 23, 42, 0) 46%),
-    linear-gradient(180deg, #052e16 0%, #0c1f14 100%);
+    radial-gradient(120% 90% at 0% 0%, rgba(167, 243, 208, 0.55) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 42%, #f8fafc 100%);
   color: var(--admin-nav-text);
-  border-right: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 10px 0 28px rgba(2, 6, 23, 0.35);
+  border-right: 1px solid rgba(34, 197, 94, 0.14);
+  box-shadow: 4px 0 22px rgba(15, 23, 42, 0.06);
 }
 
 /* Shared nav controls (desktop sidebar + drawer) */
 .admin-nav-link {
-  color: #ecfdf5;
+  color: #166534;
   text-decoration: none;
   padding: 11px 12px;
   border-radius: 12px;
@@ -39,30 +39,30 @@
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  background: rgba(15, 23, 42, 0.48);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(34, 197, 94, 0.16);
   touch-action: manipulation;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .admin-nav-link:hover {
-  background: rgba(30, 41, 59, 0.82);
-  border-color: rgba(134, 239, 172, 0.55);
-  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(34, 197, 94, 0.32);
+  color: #14532d;
 }
 
 .admin-nav-link--active {
-  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
-  color: #fff;
-  border-color: rgba(187, 247, 208, 0.95);
-  box-shadow: 0 10px 22px rgba(21, 128, 61, 0.38);
+  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+  color: #14532d;
+  border-color: rgba(21, 128, 61, 0.2);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.18);
   font-weight: 700;
 }
 
 .admin-nav-link--active:hover {
-  background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
-  color: #fff;
-  border-color: rgba(187, 247, 208, 0.95);
+  background: linear-gradient(135deg, #86efac 0%, #6ee7b7 100%);
+  color: #052e16;
+  border-color: rgba(21, 128, 61, 0.25);
 }
 
 .admin-nav-link--with-badge {
@@ -92,45 +92,46 @@
 
 .admin-nav-link--active .admin-nav-badge {
   background: #fff;
-  color: #166534;
-  box-shadow: none;
+  color: #16a34a;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
 }
 
 .admin-nav-section-label {
   font-size: 0.74rem;
-  color: #86efac;
+  color: #15803d;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: 10px 0 4px;
   padding: 0 4px;
   font-weight: 700;
+  opacity: 0.88;
 }
 
 .admin-nav-group-btn {
-  color: #ecfdf5;
+  color: #166534;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.92rem;
   font-weight: 600;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.16);
   width: 100%;
   text-align: left;
   cursor: pointer;
   min-height: 44px;
   touch-action: manipulation;
-  background: rgba(15, 23, 42, 0.5);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  background: rgba(255, 255, 255, 0.65);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .admin-nav-group-btn:hover {
-  background: rgba(30, 41, 59, 0.82);
-  border-color: rgba(134, 239, 172, 0.5);
-  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #14532d;
 }
 
 .admin-nav-group-btn--open {
-  background: rgba(22, 101, 52, 0.35);
-  border-color: rgba(187, 247, 208, 0.72);
+  background: rgba(220, 252, 231, 0.95);
+  border-color: rgba(34, 197, 94, 0.35);
   font-weight: 600;
 }
 
@@ -140,7 +141,7 @@
   gap: 6px;
   margin-top: 6px;
   padding-left: 12px;
-  border-left: 3px solid rgba(74, 222, 128, 0.88);
+  border-left: 3px solid rgba(74, 222, 128, 0.45);
 }
 
 /* ——— Desktop sidebar ——— */
@@ -411,30 +412,31 @@
 }
 
 .admin-header__brand-desktop {
-  color: #f8fafc;
+  color: #14532d;
   text-decoration: none;
   margin-bottom: 10px;
   padding: 10px 12px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.16);
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.08);
 }
 
 .admin-header__brand-desktop h1 {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #14532d;
   line-height: 1.35;
 }
 
 .admin-header__logout-full {
   width: 100%;
   padding: 10px 12px;
-  background: rgba(15, 23, 42, 0.45);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 12px;
-  color: #cbd5e1;
+  color: #64748b;
   cursor: pointer;
   touch-action: manipulation;
   font-size: 0.92rem;
@@ -443,9 +445,9 @@
 }
 
 .admin-header__logout-full:hover {
-  background: rgba(127, 29, 29, 0.4);
-  border-color: rgba(248, 113, 113, 0.65);
-  color: #fecaca;
+  background: rgba(254, 242, 242, 0.95);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #b91c1c;
 }
 
 /*
@@ -453,37 +455,37 @@
  * (ไม่ใช้ -webkit-text-fill-color: unset — บางเวอร์ชัน WebKit ทำให้ตัวหนังสือโปร่ง)
  */
 .admin-header.admin-header--desktop .admin-nav-link:not(.admin-nav-link--active) {
-  color: #ecfdf5 !important;
+  color: #166534 !important;
 }
 
 .admin-header.admin-header--desktop .admin-nav-link--active {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff;
+  color: #14532d !important;
+  -webkit-text-fill-color: #14532d;
 }
 
 .admin-header.admin-header--desktop .admin-nav-group-btn {
-  color: #ecfdf5 !important;
+  color: #166534 !important;
 }
 
 .admin-header.admin-header--desktop .admin-nav-section-label {
-  color: #86efac !important;
+  color: #15803d !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__brand-desktop,
 .admin-header.admin-header--desktop .admin-header__brand-desktop h1 {
-  color: #f8fafc !important;
+  color: #14532d !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__user-row {
-  color: #bfdbfe !important;
+  color: #64748b !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__logout-full {
-  color: #cbd5e1 !important;
+  color: #64748b !important;
 }
 
 .admin-header.admin-header--desktop .admin-header__logout-full:hover {
-  color: #fecaca !important;
+  color: #b91c1c !important;
 }
 
 .admin-header__drawer-panel .admin-nav-link:not(.admin-nav-link--active) {
@@ -491,8 +493,8 @@
 }
 
 .admin-header__drawer-panel .admin-nav-link--active {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff;
+  color: #14532d !important;
+  -webkit-text-fill-color: #14532d;
 }
 
 .admin-header__drawer-panel .admin-nav-group-btn {

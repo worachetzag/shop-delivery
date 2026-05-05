@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import AddressPicker from '../components/AddressPicker';
 import config from '../config';
 import { pdpaService } from '../services/api';
@@ -59,6 +60,30 @@ function maskIdCard(raw) {
   const s = digitsOnly(raw);
   if (s.length !== 13) return s ? `${s.slice(0, 4)}…` : '—';
   return `${s.slice(0, 3)}-xxxxx-xx-${s.slice(11)}`;
+}
+
+/** @see CustomerPdpaConsentModal — entity-escaped markup จากแอดมิน */
+function normalizeEscapedMarkup(html) {
+  if (!html || typeof html !== 'string') return '';
+  if (!/&lt;[a-z!?/]/i.test(html)) {
+    return html;
+  }
+  return html
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number.parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(Number.parseInt(h, 16)));
+}
+
+function sanitizePolicyHtml(html) {
+  if (!html || typeof html !== 'string') return '';
+  const normalized = normalizeEscapedMarkup(html);
+  return DOMPurify.sanitize(normalized, {
+    ADD_ATTR: ['style', 'class', 'target', 'rel'],
+  });
 }
 
 function recipientDisplayName(personal) {
@@ -138,7 +163,73 @@ const Profile = () => {
   });
   const sectionFocus = queryParams.get('section');
 
+  const profileHubSection = (() => {
+    const s = sectionFocus || '';
+    if (s === 'personal') return 'personal';
+    if (s === 'pdpa') return 'pdpa';
+    if (s === 'addresses' && PROFILE_UI_SHOW_ADDRESSES) return 'addresses';
+    if (s === 'account' && PROFILE_UI_SHOW_ACCOUNT) return 'account';
+    return 'menu';
+  })();
+
+  const [policyViewerOpen, setPolicyViewerOpen] = useState(false);
+  const [policyViewerTitle, setPolicyViewerTitle] = useState('');
+  const [policyViewerHtml, setPolicyViewerHtml] = useState('');
+  const [policyViewerLoading, setPolicyViewerLoading] = useState(false);
+
   const displayNameOneLine = recipientDisplayName(personal) || 'ผู้ใช้';
+
+  const navigateProfileHub = useCallback(
+    (next) => {
+      const qp = new URLSearchParams(location.search);
+      if (next === 'menu') {
+        qp.delete('section');
+      } else {
+        qp.set('section', next);
+      }
+      const qs = qp.toString();
+      navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
+    },
+    [location.pathname, location.search, navigate],
+  );
+
+  const handleCustomerLogout = useCallback(async () => {
+    try {
+      await fetch(`${config.LIFF_ENDPOINT_URL}/accounts/logout/`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error logging out:', error);
+    } finally {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('username');
+      window.location.href = '/customer/login';
+    }
+  }, []);
+
+  const openPrivacyPolicyViewer = useCallback(async () => {
+    setPolicyViewerLoading(true);
+    try {
+      const data = await pdpaService.getPrivacyPolicy();
+      const list = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.results) ? data.results : []);
+      const policy = list[0];
+      if (!policy?.content) {
+        popup.error('ยังไม่มีเอกสารนโยบายให้แสดง');
+        return;
+      }
+      setPolicyViewerTitle(policy.title || 'นโยบายความเป็นส่วนตัว');
+      setPolicyViewerHtml(sanitizePolicyHtml(policy.content));
+      setPolicyViewerOpen(true);
+    } catch {
+      popup.error('ไม่สามารถโหลดนโยบายได้');
+    } finally {
+      setPolicyViewerLoading(false);
+    }
+  }, [popup]);
 
   const refreshPdpaSummary = useCallback(async () => {
     try {
@@ -238,26 +329,6 @@ const Profile = () => {
       });
     }
   }, [location.search]);
-
-  useEffect(() => {
-    if (loading || !profileCompleted) return;
-    if (!sectionFocus || sectionFocus === 'menu') return;
-    const id =
-      sectionFocus === 'personal'
-        ? 'profile-section-personal'
-        : sectionFocus === 'pdpa'
-          ? 'profile-section-pdpa'
-          : sectionFocus === 'addresses' && PROFILE_UI_SHOW_ADDRESSES
-            ? 'profile-section-addresses'
-            : sectionFocus === 'account' && PROFILE_UI_SHOW_ACCOUNT
-              ? 'profile-section-account'
-              : null;
-    if (!id) return;
-    const tid = window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 120);
-    return () => window.clearTimeout(tid);
-  }, [loading, profileCompleted, sectionFocus]);
 
   const handlePersonalChange = (name, value) => {
     setPersonal((prev) => ({ ...prev, [name]: value }));
@@ -736,12 +807,41 @@ const Profile = () => {
     );
   }
 
+  const hubPageTitle =
+    profileHubSection === 'personal'
+      ? 'ข้อมูลส่วนตัว'
+      : profileHubSection === 'pdpa'
+        ? 'ความเป็นส่วนตัว (PDPA)'
+        : profileHubSection === 'addresses'
+          ? 'ที่อยู่อ้างอิง'
+          : profileHubSection === 'account'
+            ? 'การจัดการบัญชี'
+            : 'โปรไฟล์ของฉัน';
+
+  const pdpaMenuSubtitle =
+    pdpaSummaryLoaded && pdpaSummary
+      ? `${pdpaSummary.privacy_policy.accepted ? 'นโยบาย: ยอมรับแล้ว' : 'นโยบาย: ยังไม่ยอมรับ'} · ${pdpaSummary.marketing.opt_in ? 'การตลาด: ยินยอม' : 'การตลาด: ไม่ยินยอม'}`
+      : 'ดูสถานะ ถอนความยินยอม และอ่านนโยบายฉบับเต็ม';
+
   return (
     <div className="profile-page">
       <div className="container">
         <div className="page-header">
-          <h1 className="page-title">โปรไฟล์ของฉัน</h1>
-          {fromCheckout && (
+          <h1 className="page-title">{hubPageTitle}</h1>
+          {profileHubSection !== 'menu' ? (
+            <p className="page-subtitle profile-subpage-head">
+              <button
+                type="button"
+                className="profile-back-button"
+                onClick={() => navigateProfileHub('menu')}
+              >
+                ← กลับเมนูโปรไฟล์
+              </button>
+            </p>
+          ) : (
+            <p className="page-subtitle">จัดการบัญชีและการตั้งค่า</p>
+          )}
+          {fromCheckout && profileHubSection === 'menu' ? (
             <div
               style={{
                 marginTop: '16px',
@@ -757,10 +857,106 @@ const Profile = () => {
                 ไปหน้าชำระเงิน
               </button>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="profile-content profile-content--flat">
+          {profileHubSection === 'menu' ? (
+            <>
+              <section className="profile-section profile-hub-summary" aria-label="สรุปโปรไฟล์">
+                <div className="profile-hub-card-inner">
+                  <div className="profile-avatar profile-avatar--sm">
+                    {pictureUrl ? (
+                      <img src={pictureUrl} alt="" className="avatar-image" />
+                    ) : (
+                      <span className="avatar-text">
+                        {(displayNameOneLine || '?').charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="profile-hub-text">
+                    <h2 className="profile-hub-name">{displayNameOneLine}</h2>
+                    <p className="profile-hub-phone muted">
+                      {formatMobileTenDisplay(personal.phone) || '—'}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <nav className="profile-menu-list" aria-label="เมนูโปรไฟล์">
+                <button
+                  type="button"
+                  className="profile-menu-item"
+                  onClick={() => navigateProfileHub('personal')}
+                >
+                  <span className="profile-menu-item-main">
+                    <span className="profile-menu-title">ข้อมูลส่วนตัว</span>
+                    <span className="profile-menu-subtitle">
+                      ชื่อ เลขบัตร เบอร์โทร ที่อยู่ตามบัตร — แก้ไขเมื่อจำเป็น
+                    </span>
+                  </span>
+                  <span className="profile-menu-chevron" aria-hidden>
+                    ›
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="profile-menu-item"
+                  onClick={() => navigateProfileHub('pdpa')}
+                >
+                  <span className="profile-menu-item-main">
+                    <span className="profile-menu-title">ความเป็นส่วนตัวและ PDPA</span>
+                    <span className="profile-menu-subtitle">{pdpaMenuSubtitle}</span>
+                  </span>
+                  <span className="profile-menu-chevron" aria-hidden>
+                    ›
+                  </span>
+                </button>
+                {PROFILE_UI_SHOW_ADDRESSES ? (
+                  <button
+                    type="button"
+                    className="profile-menu-item"
+                    onClick={() => navigateProfileHub('addresses')}
+                  >
+                    <span className="profile-menu-item-main">
+                      <span className="profile-menu-title">ที่อยู่อ้างอิง</span>
+                      <span className="profile-menu-subtitle">จัดการที่อยู่จัดส่ง</span>
+                    </span>
+                    <span className="profile-menu-chevron" aria-hidden>
+                      ›
+                    </span>
+                  </button>
+                ) : null}
+                {PROFILE_UI_SHOW_ACCOUNT ? (
+                  <button
+                    type="button"
+                    className="profile-menu-item"
+                    onClick={() => navigateProfileHub('account')}
+                  >
+                    <span className="profile-menu-item-main">
+                      <span className="profile-menu-title">การจัดการบัญชี</span>
+                      <span className="profile-menu-subtitle">ส่งออกข้อมูล หรือลบบัญชี</span>
+                    </span>
+                    <span className="profile-menu-chevron" aria-hidden>
+                      ›
+                    </span>
+                  </button>
+                ) : null}
+              </nav>
+
+              <div className="profile-logout-wrap">
+                <button
+                  type="button"
+                  className="btn btn-outline profile-logout-btn"
+                  onClick={handleCustomerLogout}
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+            </>
+          ) : null}
+
+          {profileHubSection === 'personal' ? (
           <section id="profile-section-personal" className="profile-section profile-section-personal">
               <div className="section-header">
                 <h3 className="section-title">ข้อมูลส่วนตัว</h3>
@@ -929,10 +1125,20 @@ const Profile = () => {
                 </div>
               ) : null}
           </section>
+          ) : null}
 
+          {profileHubSection === 'pdpa' ? (
           <section id="profile-section-pdpa" className="profile-section profile-section-pdpa">
-            <div className="section-header">
+            <div className="section-header section-header--wrap">
               <h3 className="section-title">ความเป็นส่วนตัว (PDPA)</h3>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm profile-pdpa-policy-btn"
+                disabled={policyViewerLoading}
+                onClick={openPrivacyPolicyViewer}
+              >
+                {policyViewerLoading ? 'กำลังโหลด...' : 'ดูนโยบายฉบับเต็ม'}
+              </button>
             </div>
             <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.9rem', lineHeight: 1.5 }}>
               คุณสามารถถอนความยินยอมนโยบายความเป็นส่วนตัวหรือการตลาดได้แยกกัน โดยไม่เสียค่าใช้จ่าย
@@ -1034,8 +1240,9 @@ const Profile = () => {
               </p>
             )}
           </section>
+          ) : null}
 
-          {PROFILE_UI_SHOW_ADDRESSES ? (
+          {PROFILE_UI_SHOW_ADDRESSES && profileHubSection === 'addresses' ? (
           <section id="profile-section-addresses" className="profile-section addresses-section">
               <div className="section-header">
                 <h3 className="section-title">ที่อยู่อ้างอิง</h3>
@@ -1193,7 +1400,7 @@ const Profile = () => {
           </section>
           ) : null}
 
-          {PROFILE_UI_SHOW_ACCOUNT ? (
+          {PROFILE_UI_SHOW_ACCOUNT && profileHubSection === 'account' ? (
           <section id="profile-section-account" className="profile-section account-actions-section">
               <h3 className="section-title">การจัดการบัญชี</h3>
 
@@ -1224,6 +1431,34 @@ const Profile = () => {
           ) : null}
         </div>
       </div>
+
+      {policyViewerOpen ? (
+        <div
+          className="profile-policy-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="profile-policy-viewer-title"
+        >
+          <div className="profile-policy-sheet">
+            <div className="profile-policy-sheet-head">
+              <h2 id="profile-policy-viewer-title" className="profile-policy-sheet-title">
+                {policyViewerTitle}
+              </h2>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => setPolicyViewerOpen(false)}
+              >
+                ปิด
+              </button>
+            </div>
+            <div
+              className="profile-policy-body"
+              dangerouslySetInnerHTML={{ __html: policyViewerHtml }}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

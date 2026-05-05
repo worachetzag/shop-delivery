@@ -1,39 +1,74 @@
 /**
- * ธีมแอดมิน — สามระดับสีเขียวหลัก (เข้ม / กลาง / อ่อน)
+ * ธีมแอดมิน — เขียวอ่อน อ่านง่าย พื้นสว่าง (ไม่ทึบ)
  * ใช้บน .App.app-role-admin เท่านั้น (โหลดจาก App.js)
  */
 .App.app-role-admin:not(.admin-login-layout) {
-  --admin-green-deep: #14532d;
-  --admin-green-mid: #15803d;
-  --admin-green-light: #bbf7d0;
-  --admin-green-soft-bg: #ecfdf5;
-  --admin-green-mint: #f0fdf4;
+  --admin-green-deep: #166534;
+  --admin-green-mid: #16a34a;
+  --admin-green-light: #d1fae5;
+  --admin-green-soft-bg: #f0fdf4;
+  --admin-green-mint: #fafefb;
 
-  --admin-accent-solid: var(--admin-green-mid);
-  --admin-accent-gradient: linear-gradient(135deg, #166534 0%, #22c55e 100%);
-  --admin-accent-gradient-hover: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+  --admin-accent-solid: #22c55e;
+  --admin-accent-gradient: linear-gradient(135deg, #34d399 0%, #22c55e 100%);
+  --admin-accent-gradient-hover: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
 
   --admin-text-on-light: #0f172a;
-  --admin-text-muted: #475569;
+  --admin-text-muted: #64748b;
 
-  --admin-surface-card-tint: rgba(240, 253, 244, 0.92);
-  --admin-border-soft: rgba(21, 128, 61, 0.18);
+  --admin-surface-card-tint: rgba(255, 255, 255, 0.94);
+  --admin-border-soft: rgba(34, 197, 94, 0.14);
 
   background:
-    radial-gradient(120% 90% at 8% 0%, rgba(34, 197, 94, 0.14) 0%, rgba(15, 23, 42, 0) 46%),
-    linear-gradient(180deg, var(--admin-green-mint) 0%, #eef8f3 55%, #f1f5f9 100%);
+    radial-gradient(110% 70% at 12% 0%, rgba(167, 243, 208, 0.35) 0%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(180deg, #fafefb 0%, #f5fcf9 42%, #f8fafc 100%);
 }
 
 .App.app-role-admin:not(.admin-login-layout) .admin-content {
   background: var(--admin-surface-card-tint);
   border-color: var(--admin-border-soft);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
 }
 
-/* ปุ่มหลักในโหลดแอดมิน — สอดคล้องธีมเขียวสามระดับ */
+/* การ์ดสถิติในหน้าแอดมิน — โทนอ่อน ข้อความเขียวเข้ม */
+.App.app-role-admin:not(.admin-login-layout) .stat-card {
+  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+  color: var(--admin-green-deep);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.08);
+}
+
+.App.app-role-admin:not(.admin-login-layout) .stat-card.pending {
+  background: linear-gradient(145deg, #d1fae5 0%, #bbf7d0 100%);
+  color: var(--admin-green-deep);
+}
+
+.App.app-role-admin:not(.admin-login-layout) .stat-card.revenue {
+  background: linear-gradient(145deg, #bbf7d0 0%, #86efac 100%);
+  color: #14532d;
+}
+
+.App.app-role-admin:not(.admin-login-layout) .stat-card.revenue p {
+  color: #166534;
+  opacity: 0.92;
+}
+
+.App.app-role-admin:not(.admin-login-layout) .stat-card p {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.App.app-role-admin:not(.admin-login-layout) .admin-tabs button.active {
+  background: var(--admin-accent-gradient);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.22);
+}
+
+/* ปุ่มหลัก — เขียวสดแต่ไม่ทึบเกิน */
 .App.app-role-admin:not(.admin-login-layout) .btn-primary,
 .App.app-role-admin:not(.admin-login-layout) button.btn-primary {
   background: var(--admin-accent-gradient);
-  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.28);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.22);
 }
 
 .App.app-role-admin:not(.admin-login-layout) .btn-primary:hover,

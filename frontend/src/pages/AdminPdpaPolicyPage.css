@@ -1,12 +1,4 @@
-/* โครงการ์ด/หัวข้อใช้ร่วมกับหน้าแอดมินอื่น (AdminPageShell + admin-theme) — เหลือเฉพาะส่วนที่จำเป็นในฟอร์ม/ตาราง/บรรณาธิกร */
-
-.admin-pdpa-versions__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
+/* โครงการ์ด/หัวข้อใช้ร่วมกับหน้าแอดมินอื่น — แถบเครื่องมือใช้ admin-toolbar-row จาก AdminDashboard.css */
 
 .admin-pdpa-versions__empty {
   margin: 16px 0 0;
@@ -60,27 +52,10 @@
   color: #475569;
 }
 
-.admin-pdpa-form-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: var(--space-4);
-  flex-wrap: wrap;
-}
-
 .admin-pdpa-form-toolbar__title {
   font-weight: 700;
   font-size: 1rem;
   color: #0f172a;
-}
-
-.admin-pdpa-content-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
 }
 
 /* TipTap rich text (แทน react-quill — รองรับ React 19) */

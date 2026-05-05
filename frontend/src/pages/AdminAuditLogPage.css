@@ -1,10 +1,6 @@
-/* ประวัติพนักงาน — แถบค้นหาและตารางให้สอดคล้องฟอร์มแอดมินอื่น */
+/* ประวัติพนักงาน — ใช้ admin-toolbar-row ร่วมกับแอดมินอื่น */
 
 .admin-audit-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
   margin-bottom: 16px;
 }
 

@@ -1605,7 +1605,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                 </button>
               </div>
             ) : null}
-            <div style={{ padding: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="admin-toolbar-row" style={{ padding: '0 12px' }}>
               <input
                 type="text"
                 className="form-input"
@@ -1817,20 +1817,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
         {activeTab === 'products' && (
           <div className="products-section">
-            <div className="personnel-create-actions" style={{ marginBottom: '12px' }}>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() =>
-                  navigate('/admin/products/new', {
-                    state: { adminProductsReturnSearch },
-                  })
-                }
-              >
-                ➕ เพิ่มสินค้าใหม่
-              </button>
-            </div>
-
             <div className="products-manage-table">
               <h3>จัดการสต็อกสินค้า</h3>
               <p className="products-row-click-hint" style={{ margin: '0 0 12px', color: '#666', fontSize: '14px' }}>
@@ -1888,6 +1874,19 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                       ล้างตัวกรอง
                     </button>
                   )}
+                  <span className="admin-toolbar-primary-action">
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() =>
+                        navigate('/admin/products/new', {
+                          state: { adminProductsReturnSearch },
+                        })
+                      }
+                    >
+                      ➕ เพิ่มสินค้าใหม่
+                    </button>
+                  </span>
                 </div>
                 <div
                   className="admin-products-filter-panel__stock"
@@ -2185,34 +2184,81 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
         {activeTab === 'categories' && (
           <div className="products-section">
-            <form className="product-form" onSubmit={handleCreateCategory}>
-              <h3>เพิ่มหมวดหมู่สินค้า</h3>
-              <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.88rem', maxWidth: '720px' }}>
-                ไม่เลือกรูปได้ — หน้าลูกค้าจะใช้อิโมจิตามชื่อหมวดอัตโนมัติ ถ้าอัปโหลดรูปจะใช้เป็นไอคอนในแถบหมวดหมู่แทน
-              </p>
-              <div className="product-form-grid category-form-grid">
-                <input
-                  name="name"
-                  value={categoryForm.name}
-                  onChange={handleCategoryInputChange}
-                  placeholder="ชื่อหมวดหมู่"
-                  required
-                />
-                <input
-                  name="description"
-                  value={categoryForm.description}
-                  onChange={handleCategoryInputChange}
-                  placeholder="คำอธิบายหมวดหมู่ (ไม่บังคับ)"
-                />
-                <label className="category-icon-upload-label">
-                  <span className="form-label">ไอคอนแถบหมวด (ไม่บังคับ)</span>
-                  <input ref={categoryCreateIconRef} type="file" accept="image/*" className="form-input" />
-                </label>
-              </div>
-              <button type="submit" className="btn-primary" disabled={savingCategory}>
-                {savingCategory ? 'กำลังบันทึก...' : '➕ เพิ่มหมวดหมู่'}
-              </button>
-            </form>
+            <div className="products-manage-table">
+              <h3>หมวดหมู่สินค้า</h3>
+              {!editingCategory ? (
+                <div className="admin-toolbar-row">
+                  <input
+                    type="search"
+                    className="form-input"
+                    style={{ minWidth: 240, flex: '1 1 200px' }}
+                    placeholder="ค้นหาชื่อหรือคำอธิบายหมวด"
+                    value={categoriesSearchDraft}
+                    onChange={(e) => setCategoriesSearchDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applyCategoriesSearch();
+                    }}
+                    aria-label="ค้นหาหมวดหมู่"
+                  />
+                  <button type="button" className="btn-primary" onClick={applyCategoriesSearch}>
+                    ค้นหา
+                  </button>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+                    <span className="muted">เรียงตาม</span>
+                    <select
+                      className="form-input"
+                      style={{ minWidth: 180, padding: '6px 10px' }}
+                      value={categoriesOrdering}
+                      onChange={(e) => handleCategoriesOrderingChange(e.target.value)}
+                      aria-label="เรียงลำดับหมวดหมู่"
+                    >
+                      <option value="name">ชื่อ ก → ฮ</option>
+                      <option value="-name">ชื่อ ฮ → ก</option>
+                      <option value="id">รหัสน้อยสุดก่อน</option>
+                      <option value="-id">รหัสมากสุดก่อน</option>
+                      <option value="created_at">สร้างเก่าสุดก่อน</option>
+                      <option value="-created_at">สร้างใหม่สุดก่อน</option>
+                    </select>
+                  </label>
+                  {(categoriesSearch ||
+                    categoriesSearchDraft ||
+                    categoriesOrdering !== 'name') && (
+                    <button type="button" className="btn-secondary" onClick={clearCategoriesListFilters}>
+                      ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
+              ) : null}
+
+              <form className="product-form" onSubmit={handleCreateCategory}>
+                <h3>เพิ่มหมวดหมู่สินค้า</h3>
+                <p className="muted" style={{ margin: '0 0 12px', fontSize: '0.88rem', maxWidth: '720px' }}>
+                  ไม่เลือกรูปได้ — หน้าลูกค้าจะใช้อิโมจิตามชื่อหมวดอัตโนมัติ ถ้าอัปโหลดรูปจะใช้เป็นไอคอนในแถบหมวดหมู่แทน
+                </p>
+                <div className="product-form-grid category-form-grid">
+                  <input
+                    name="name"
+                    value={categoryForm.name}
+                    onChange={handleCategoryInputChange}
+                    placeholder="ชื่อหมวดหมู่"
+                    required
+                  />
+                  <input
+                    name="description"
+                    value={categoryForm.description}
+                    onChange={handleCategoryInputChange}
+                    placeholder="คำอธิบายหมวดหมู่ (ไม่บังคับ)"
+                  />
+                  <label className="category-icon-upload-label">
+                    <span className="form-label">ไอคอนแถบหมวด (ไม่บังคับ)</span>
+                    <input ref={categoryCreateIconRef} type="file" accept="image/*" className="form-input" />
+                  </label>
+                </div>
+                <button type="submit" className="btn-primary" disabled={savingCategory}>
+                  {savingCategory ? 'กำลังบันทึก...' : '➕ เพิ่มหมวดหมู่'}
+                </button>
+              </form>
+            </div>
 
             {editingCategory && (
               <div className="personnel-card">
@@ -2292,58 +2338,9 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
               </div>
             )}
 
-            {!editingCategory && (
-              <div className="products-manage-table">
-                <h3>รายการหมวดหมู่</h3>
-                <div
-                  style={{
-                    marginBottom: 14,
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 10,
-                    alignItems: 'center',
-                  }}
-                >
-                  <input
-                    type="search"
-                    className="form-input"
-                    style={{ minWidth: 240, flex: '1 1 200px' }}
-                    placeholder="ค้นหาชื่อหรือคำอธิบายหมวด"
-                    value={categoriesSearchDraft}
-                    onChange={(e) => setCategoriesSearchDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') applyCategoriesSearch();
-                    }}
-                    aria-label="ค้นหาหมวดหมู่"
-                  />
-                  <button type="button" className="btn-primary" onClick={applyCategoriesSearch}>
-                    ค้นหา
-                  </button>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
-                    <span className="muted">เรียงตาม</span>
-                    <select
-                      className="form-input"
-                      style={{ minWidth: 180, padding: '6px 10px' }}
-                      value={categoriesOrdering}
-                      onChange={(e) => handleCategoriesOrderingChange(e.target.value)}
-                      aria-label="เรียงลำดับหมวดหมู่"
-                    >
-                      <option value="name">ชื่อ ก → ฮ</option>
-                      <option value="-name">ชื่อ ฮ → ก</option>
-                      <option value="id">รหัสน้อยสุดก่อน</option>
-                      <option value="-id">รหัสมากสุดก่อน</option>
-                      <option value="created_at">สร้างเก่าสุดก่อน</option>
-                      <option value="-created_at">สร้างใหม่สุดก่อน</option>
-                    </select>
-                  </label>
-                  {(categoriesSearch ||
-                    categoriesSearchDraft ||
-                    categoriesOrdering !== 'name') && (
-                    <button type="button" className="btn-secondary" onClick={clearCategoriesListFilters}>
-                      ล้างตัวกรอง
-                    </button>
-                  )}
-                </div>
+            {!editingCategory ? (
+              <div className="products-manage-table" style={{ marginTop: '8px' }}>
+                <h3 style={{ marginTop: 0 }}>รายการหมวดหมู่</h3>
                 {categories.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '24px' }}>ยังไม่มีหมวดหมู่</div>
                 ) : (
@@ -2382,13 +2379,13 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
                   </table>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
         {activeTab === 'drivers' && (
           <div className="drivers-section">
-            <div className="personnel-create-actions">
+            <div className="admin-toolbar-row admin-toolbar-row--actions-only">
               {canManageStaff && showStaffSection && (
                 <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('staff')}>
                   ➕ เพิ่มพนักงาน

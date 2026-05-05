@@ -114,7 +114,8 @@ const AdminCustomersPage = () => {
     >
         <form
           onSubmit={submitSearch}
-          style={{ padding: '12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+          className="admin-toolbar-row"
+          style={{ padding: '12px' }}
         >
           <input
             type="search"

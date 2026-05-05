@@ -215,17 +215,17 @@ const AdminPdpaPolicyPage = () => {
 
           {mode === 'list' && !loading ? (
             <section className="store-settings-card admin-pdpa-versions">
-              <div className="admin-pdpa-versions__toolbar">
-                <h2 className="store-settings-card__title" style={{ margin: 0 }}>
-                  รายการเวอร์ชัน
-                </h2>
-                <button type="button" className="btn-primary btn-sm" onClick={goFormCreate}>
-                  + สร้างเวอร์ชันใหม่
-                </button>
-              </div>
-              <p className="store-settings-card__hint" style={{ marginTop: 8 }}>
+              <h2 className="store-settings-card__title">รายการเวอร์ชัน</h2>
+              <p className="store-settings-card__hint">
                 เรียงจากวันที่มีผลล่าสุด — ไม่ลบฉบับเก่าเพื่อให้สอดคล้องกับประวัติความยินยอม
               </p>
+              <div className="admin-toolbar-row">
+                <span className="admin-toolbar-primary-action">
+                  <button type="button" className="btn-primary" onClick={goFormCreate}>
+                    ➕ สร้างเวอร์ชันใหม่
+                  </button>
+                </span>
+              </div>
               {policies.length === 0 ? (
                 <p className="admin-pdpa-versions__empty">ยังไม่มีนโยบาย — กด «สร้างเวอร์ชันใหม่» เพื่อเพิ่มฉบับแรก</p>
               ) : (
@@ -273,11 +273,11 @@ const AdminPdpaPolicyPage = () => {
 
           {mode === 'form' ? (
             <form className="store-settings-form" onSubmit={submit}>
-              <div className="admin-pdpa-form-toolbar">
+              <div className="admin-toolbar-row">
                 <button type="button" className="btn-outline btn-sm" onClick={goList} disabled={saving}>
                   ← กลับรายการ
                 </button>
-                <span className="admin-pdpa-form-toolbar__title">{formTitle}</span>
+                <strong className="admin-pdpa-form-toolbar__title">{formTitle}</strong>
               </div>
 
               {loading ? (
@@ -338,16 +338,16 @@ const AdminPdpaPolicyPage = () => {
                   </section>
 
                   <section className="store-settings-card">
-                    <div className="admin-pdpa-content-tools">
-                      <h2 className="store-settings-card__title" style={{ margin: 0 }}>
-                        เนื้อหา
-                      </h2>
-                      {editingId == null ? (
-                        <button type="button" className="btn-outline btn-sm" onClick={copyBodyFromActive}>
-                          คัดลอกเนื้อหาจากฉบับที่ใช้งาน
-                        </button>
-                      ) : null}
-                    </div>
+                    <h2 className="store-settings-card__title">เนื้อหา</h2>
+                    {editingId == null ? (
+                      <div className="admin-toolbar-row">
+                        <span className="admin-toolbar-primary-action">
+                          <button type="button" className="btn-outline btn-sm" onClick={copyBodyFromActive}>
+                            คัดลอกเนื้อหาจากฉบับที่ใช้งาน
+                          </button>
+                        </span>
+                      </div>
+                    ) : null}
                     <p className="store-settings-card__hint">
                       จัดรูปแบบจากแถบเครื่องมือ — บันทึกเป็น HTML
                     </p>
