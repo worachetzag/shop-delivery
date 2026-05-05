@@ -285,7 +285,17 @@ function AppContent() {
     const timer = setTimeout(() => setRouteLoading(false), 250);
     return () => clearTimeout(timer);
   }, [location.pathname, location.search]);
-  
+
+  /** แอดมิน: เลื่อนไปบนสุดทุกครั้งที่เปลี่ยนหน้า (pathname) */
+  useLayoutEffect(() => {
+    if (!showAdminChrome) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    if (typeof document !== 'undefined') {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [location.pathname, showAdminChrome]);
+
   return (
     <div className={`App ${appRoleClass}${isAdminLoginRoute ? ' admin-login-layout' : ''}${isDriverLoginRoute ? ' driver-login-layout' : ''}`}>
       {showAdminChrome ? (
