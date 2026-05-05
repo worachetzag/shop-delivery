@@ -9,6 +9,8 @@ import { PLACEHOLDER_IMAGES, pickLineItemImage } from '../utils/media';
 import 'leaflet/dist/leaflet.css';
 import CustomerInlineBack from '../components/CustomerInlineBack';
 import { AdminBackLink } from '../components/AdminBackButton';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { createCustomerPhotoMarkerIcon, createDeliveryVehicleMarkerIcon } from '../utils/mapMarkers';
 import './Tracking.css';
 import { useAdminBreadcrumbSegment } from '../context/AdminBreadcrumbContext';
@@ -282,7 +284,24 @@ const Tracking = () => {
     window.location.assign(`tel:${phone.replace(/\s/g, '')}`);
   };
 
+  const adminBackTo = orderId ? `/admin/orders/${orderId}` : '/admin/orders';
+
+  const adminTrackingHeader = (
+    <AdminPageHeader
+      title="ติดตามการจัดส่ง"
+      subtitle={trackingInfo?.trackingNumber ? `เลขอ้างอิง ${trackingInfo.trackingNumber}` : undefined}
+      leading={<AdminBackLink to={adminBackTo} ariaLabel="รายละเอียดคำสั่งซื้อ" />}
+    />
+  );
+
   if (loading) {
+    if (isAdminTracking) {
+      return (
+        <AdminPageShell header={adminTrackingHeader}>
+          <div className="loading">กำลังโหลดข้อมูลการติดตาม...</div>
+        </AdminPageShell>
+      );
+    }
     return (
       <div className="loading">
         กำลังโหลดข้อมูลการติดตาม...
@@ -291,19 +310,23 @@ const Tracking = () => {
   }
 
   if (!trackingInfo) {
+    if (isAdminTracking) {
+      return (
+        <AdminPageShell header={adminTrackingHeader}>
+          <div className="admin-tracking-shell__body">
+            <div className="error-state">
+              <div className="error-icon">❌</div>
+              <h3>ไม่พบข้อมูลการติดตาม</h3>
+              <p>หมายเลขติดตามไม่ถูกต้องหรือไม่มีอยู่</p>
+            </div>
+          </div>
+        </AdminPageShell>
+      );
+    }
     return (
       <div className="tracking-page">
         <div className="container">
-          {isAdminTracking ? (
-            <div style={{ marginBottom: 12 }}>
-              <AdminBackLink
-                to={orderId ? `/admin/orders/${orderId}` : '/admin/orders'}
-                ariaLabel="รายละเอียดคำสั่งซื้อ"
-              />
-            </div>
-          ) : (
-            <CustomerInlineBack />
-          )}
+          <CustomerInlineBack />
           <div className="error-state">
             <div className="error-icon">❌</div>
             <h3>ไม่พบข้อมูลการติดตาม</h3>
@@ -321,23 +344,7 @@ const Tracking = () => {
   const shouldShowMap = !isDeliveryCompleted && (hasDriverPosition || hasDeliveryDestination);
   const shouldShowRoute = trackingInfo.status === 'delivering' && hasDriverPosition && hasDeliveryDestination;
 
-  return (
-    <div className={`tracking-page ${isAdminTracking ? 'admin-tracking-page' : ''}`}>
-      <div className="container">
-        {isAdminTracking ? (
-          <div style={{ marginBottom: 12 }}>
-            <AdminBackLink
-              to={orderId ? `/admin/orders/${orderId}` : '/admin/orders'}
-              ariaLabel="รายละเอียดคำสั่งซื้อ"
-            />
-          </div>
-        ) : (
-          <CustomerInlineBack />
-        )}
-        <div className="page-header">
-          <h1 className="page-title">ติดตามการจัดส่ง</h1>
-        </div>
-
+  const trackingBody = (
         <div className="tracking-content">
           <div className="order-summary">
             <h3 className="section-title">สถานะคำสั่งซื้อ</h3>
@@ -478,6 +485,26 @@ const Tracking = () => {
             </div>
           )}
         </div>
+  );
+
+  if (isAdminTracking) {
+    return (
+      <AdminPageShell header={adminTrackingHeader}>
+        <div className={`tracking-page admin-tracking-page tracking-page--admin-shell`}>
+          {trackingBody}
+        </div>
+      </AdminPageShell>
+    );
+  }
+
+  return (
+    <div className="tracking-page">
+      <div className="container">
+        <CustomerInlineBack />
+        <div className="page-header">
+          <h1 className="page-title">ติดตามการจัดส่ง</h1>
+        </div>
+        {trackingBody}
       </div>
     </div>
   );

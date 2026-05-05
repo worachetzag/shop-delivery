@@ -8,6 +8,7 @@ import AdminPageShell from '../components/AdminPageShell';
 import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
 import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
+import './AdminStoreSettingsPage.css';
 
 const UNIT_OPTIONS = ['ชิ้น', 'แพ็ค', 'ขวด', 'กิโลกรัม', 'กรัม', 'มิลลิลิตร', 'ลิตร', 'อื่นๆ'];
 const UNIT_DETAIL_OPTIONS = ['มล.', 'ลิตร', 'กรัม', 'กก.', 'ชิ้น', 'แพ็ค', 'ขวด', 'กล่อง', 'ซอง', 'ถุง'];
@@ -224,7 +225,19 @@ const AdminProductFormPage = () => {
   };
 
   if (loading) {
-    return <div className="loading">กำลังโหลดข้อมูลสินค้า...</div>;
+    return (
+      <AdminPageShell
+        header={(
+          <AdminPageHeader
+            title="สินค้า"
+            subtitle={pageTitle}
+            leading={<AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />}
+          />
+        )}
+      >
+        <div className="loading">กำลังโหลดข้อมูลสินค้า...</div>
+      </AdminPageShell>
+    );
   }
 
   return (
@@ -237,7 +250,8 @@ const AdminProductFormPage = () => {
         />
       )}
     >
-        <form className="product-form" onSubmit={handleSubmit}>
+        <section className="store-settings-card">
+        <form className="product-form product-form--embedded" onSubmit={handleSubmit}>
           {isEditMode && form.image && (
             <div style={{ marginBottom: '10px' }}>
               <img
@@ -343,6 +357,7 @@ const AdminProductFormPage = () => {
             <AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />
           </div>
         </form>
+        </section>
     </AdminPageShell>
   );
 };

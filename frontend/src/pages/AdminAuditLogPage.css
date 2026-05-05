@@ -1,0 +1,66 @@
+/* ประวัติพนักงาน — แถบค้นหาและตารางให้สอดคล้องฟอร์มแอดมินอื่น */
+
+.admin-audit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-audit-toolbar .form-input {
+  min-width: 200px;
+  flex: 1 1 220px;
+}
+
+.admin-audit-toolbar select.form-input {
+  min-width: 200px;
+  flex: 0 1 auto;
+  padding: 6px 10px;
+}
+
+.admin-audit-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--admin-border-soft, rgba(21, 128, 61, 0.18));
+  border-radius: 10px;
+  background: #fff;
+}
+
+.admin-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-audit-table thead tr {
+  background: rgba(241, 245, 249, 0.95);
+  text-align: left;
+}
+
+.admin-audit-table th {
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  font-weight: 600;
+  color: var(--admin-text-on-light, #0f172a);
+}
+
+.admin-audit-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  vertical-align: top;
+}
+
+.admin-audit-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-audit-table__mono {
+  word-break: break-all;
+  color: var(--admin-text-muted, #475569);
+}
+
+.admin-audit-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--admin-text-muted, #475569);
+}

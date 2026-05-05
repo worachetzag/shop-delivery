@@ -6,6 +6,7 @@ import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
+import './AdminStoreSettingsPage.css';
 
 const HOME_PROMO_ORDERINGS = new Set([
   'sort_order',
@@ -327,75 +328,67 @@ const AdminHomePromotionsPage = () => {
         />
       )}
     >
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            marginBottom: '1.5rem',
-            padding: '1rem',
-            border: '1px solid #e5e7eb',
-            borderRadius: 12,
-            background: '#fafafa',
-            display: 'grid',
-            gap: 10,
-          }}
-        >
-          <h3 style={{ margin: 0 }}>{editingId ? 'แก้ไขการ์ด' : 'เพิ่มการ์ดใหม่'}</h3>
-          <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>
-            รูปแบนเนอร์ (แนะนำแนวนอน)
+        <section className="store-settings-card" style={{ marginBottom: '1.25rem' }}>
+          <h2 className="store-settings-card__title">{editingId ? 'แก้ไขการ์ด' : 'เพิ่มการ์ดใหม่'}</h2>
+          <form className="store-settings-form" onSubmit={handleSubmit}>
+            <div className="store-settings-stack">
+          <div className="store-settings-field">
+            <label className="form-label" htmlFor="home-promo-banner-file">
+              รูปแบนเนอร์ (แนะนำแนวนอน)
+            </label>
             <input
+              id="home-promo-banner-file"
               name="banner_image_file"
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
+              className="form-input"
               onChange={handleChange}
-              style={{ display: 'block', marginTop: 6, fontSize: '0.85rem' }}
+              style={{ padding: '8px 10px' }}
             />
-          </label>
+          </div>
           {form.banner_image_file ? (
-            <p style={{ margin: 0, fontSize: '0.8rem', color: '#059669' }}>เลือกไฟล์ใหม่แล้ว — จะแทนที่เมื่อบันทึก</p>
+            <p className="store-settings-field__hint" style={{ color: '#15803d', marginTop: -4 }}>
+              เลือกไฟล์ใหม่แล้ว — จะแทนที่เมื่อบันทึก
+            </p>
           ) : null}
           {editingId ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
+            <label className="store-settings-checkbox">
               <input
                 name="remove_banner_image"
                 type="checkbox"
                 checked={form.remove_banner_image}
                 onChange={handleChange}
               />
-              ลบรูปแบนเนอร์เดิม (ใช้การ์ดข้อความแทน)
+              <span>ลบรูปแบนเนอร์เดิม (ใช้การ์ดข้อความแทน)</span>
             </label>
           ) : null}
 
           <input
             name="title"
+            className="form-input"
             value={form.title}
             onChange={handleChange}
             placeholder="หัวข้อ — ไม่บังคับถ้ามีรูปแบนเนอร์ (ใช้เป็น alt ถ้ากรอก)"
-            style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
           />
           <textarea
             name="description"
+            className="form-textarea"
             value={form.description}
             onChange={handleChange}
             placeholder="คำอธิบายใต้แบนเนอร์ (ไม่บังคับ)"
             rows={2}
-            style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
           />
 
-          <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>
-            เมื่อคลิกแบนเนอร์ไปที่
+          <div className="store-settings-field">
+            <label className="form-label" htmlFor="home-promo-link-target">
+              เมื่อคลิกแบนเนอร์ไปที่
+            </label>
             <select
+              id="home-promo-link-target"
               name="link_target"
               value={form.link_target}
               onChange={handleChange}
-              style={{
-                display: 'block',
-                marginTop: 6,
-                width: '100%',
-                padding: '0.45rem 0.5rem',
-                borderRadius: 8,
-                border: '1px solid #d0d7e5',
-                fontSize: '0.9rem',
-              }}
+              className="form-input"
             >
               {LINK_TARGET_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -403,24 +396,20 @@ const AdminHomePromotionsPage = () => {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
 
           {form.link_target === 'category' ? (
-            <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>
-              เลือกหมวดหมู่
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="home-promo-category">
+                เลือกหมวดหมู่
+              </label>
               <select
+                id="home-promo-category"
                 name="link_category_id"
                 value={form.link_category_id}
                 onChange={handleChange}
                 required
-                style={{
-                  display: 'block',
-                  marginTop: 6,
-                  width: '100%',
-                  padding: '0.45rem 0.5rem',
-                  borderRadius: 8,
-                  border: '1px solid #d0d7e5',
-                }}
+                className="form-input"
               >
                 <option value="">— เลือก —</option>
                 {categories.map((c) => (
@@ -429,26 +418,22 @@ const AdminHomePromotionsPage = () => {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           ) : null}
 
           {form.link_target === 'product' ? (
-            <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>
-              เลือกสินค้า (ชื่อในระบบ)
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="home-promo-product">
+                เลือกสินค้า (ชื่อในระบบ)
+              </label>
               <select
+                id="home-promo-product"
                 name="link_product_id"
                 value={form.link_product_id}
                 onChange={handleChange}
                 required
-                style={{
-                  display: 'block',
-                  marginTop: 6,
-                  width: '100%',
-                  padding: '0.45rem 0.5rem',
-                  borderRadius: 8,
-                  border: '1px solid #d0d7e5',
-                  maxHeight: 220,
-                }}
+                className="form-input"
+                style={{ maxHeight: 220 }}
               >
                 <option value="">— เลือก —</option>
                 {products.map((p) => (
@@ -457,50 +442,50 @@ const AdminHomePromotionsPage = () => {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           ) : null}
 
           {form.link_target === 'custom' ? (
             <input
               name="link_url"
+              className="form-input"
               value={form.link_url}
               onChange={handleChange}
               placeholder="ลิงก์ เช่น /customer/products หรือ https://…"
               required
-              style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
             />
           ) : null}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="store-settings-row-2">
             <input
               name="link_label"
+              className="form-input"
               value={form.link_label}
               onChange={handleChange}
               placeholder="ข้อความปุ่มใต้การ์ด (ไม่บังคับ)"
-              style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
             />
             <input
               name="icon"
+              className="form-input"
               value={form.icon}
               onChange={handleChange}
               placeholder="ไม่มีรูป: emoji เช่น 🎉"
-              style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
             />
           </div>
           <input
             name="sort_order"
             type="number"
             min={0}
+            className="form-input"
             value={form.sort_order}
             onChange={handleChange}
             placeholder="ลำดับ (เลขน้อยขึ้นก่อน)"
-            style={{ padding: '0.5rem 0.6rem', borderRadius: 8, border: '1px solid #d0d7e5' }}
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+          <label className="store-settings-checkbox">
             <input name="is_active" type="checkbox" checked={form.is_active} onChange={handleChange} />
-            แสดงบนหน้าแรก
+            <span>แสดงบนหน้าแรก</span>
           </label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="store-settings-btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'กำลังบันทึก...' : editingId ? 'บันทึกการแก้ไข' : 'เพิ่มการ์ด'}
             </button>
@@ -510,21 +495,14 @@ const AdminHomePromotionsPage = () => {
               </button>
             ) : null}
           </div>
-        </form>
+            </div>
+          </form>
+        </section>
 
-        <div
-          style={{
-            marginBottom: 14,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            alignItems: 'center',
-          }}
-        >
+        <div className="admin-toolbar-row">
           <input
             type="search"
             className="form-input"
-            style={{ minWidth: 220, flex: '1 1 180px' }}
             placeholder="ค้นหาหัวข้อ คำอธิบาย ป้ายลิงก์…"
             value={listSearchDraft}
             onChange={(e) => setListSearchDraft(e.target.value)}
@@ -536,11 +514,10 @@ const AdminHomePromotionsPage = () => {
           <button type="button" className="btn-primary" onClick={applyListSearch}>
             ค้นหา
           </button>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+          <label className="admin-toolbar-ordering">
             <span className="muted">เรียงตาม</span>
             <select
               className="form-input"
-              style={{ minWidth: 200, padding: '6px 10px' }}
               value={listOrdering}
               onChange={(e) => setListOrdering(e.target.value)}
               aria-label="เรียงลำดับการ์ด"
@@ -575,12 +552,12 @@ const AdminHomePromotionsPage = () => {
         </div>
 
         {loading ? (
-          <p>กำลังโหลด...</p>
+          <p className="muted">กำลังโหลด...</p>
         ) : items.length === 0 ? (
-          <p style={{ color: '#64748b' }}>ยังไม่มีการ์ด — เพิ่มด้านบน</p>
+          <p className="muted">ยังไม่มีการ์ด — เพิ่มด้านบน</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
+          <div className="admin-data-table-wrap">
+            <table className="admin-data-table">
               <thead>
                 <tr>
                   <th>ลำดับ</th>

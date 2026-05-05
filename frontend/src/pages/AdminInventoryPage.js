@@ -6,6 +6,7 @@ import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { ADMIN_SECTION_LABELS } from '../utils/adminNavTitles';
 import './AdminDashboard.css';
+import './AdminStoreSettingsPage.css';
 
 const MOV_ORDERINGS = new Set(['-created_at', 'created_at', 'id', '-id', 'quantity_change', '-quantity_change', 'movement_type', '-movement_type']);
 const PO_ORDERINGS = new Set([
@@ -296,109 +297,147 @@ const AdminInventoryPage = ({ section = 'all' }) => {
       )}
 
       {(section === 'all' || section === 'adjustments') && (
-      <div className="products-section" style={{ marginBottom: 20 }}>
-        <h3>ปรับสต็อกด้วยมือ</h3>
-        <form className="personnel-form" onSubmit={submitAdjustment}>
-          <select value={adjustForm.product_id} onChange={(e) => setAdjustForm((p) => ({ ...p, product_id: e.target.value }))} required>
-            <option value="">เลือกสินค้า</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>{p.name} (คงเหลือ {p.available_quantity ?? p.stock_quantity})</option>
-            ))}
-          </select>
-          <input
-            type="number"
-            placeholder="จำนวน (+ เพิ่ม / - ลด)"
-            value={adjustForm.quantity_change}
-            onChange={(e) => setAdjustForm((p) => ({ ...p, quantity_change: e.target.value }))}
-            required
-          />
-          <input placeholder="Reference" value={adjustForm.reference} onChange={(e) => setAdjustForm((p) => ({ ...p, reference: e.target.value }))} />
-          <input placeholder="หมายเหตุ" value={adjustForm.note} onChange={(e) => setAdjustForm((p) => ({ ...p, note: e.target.value }))} />
-          <button type="submit" className="btn-primary">บันทึกปรับสต็อก</button>
+      <section className="store-settings-card" style={{ marginBottom: 20 }}>
+        <h2 className="store-settings-card__title">ปรับสต็อกด้วยมือ</h2>
+        <form className="store-settings-form" onSubmit={submitAdjustment}>
+          <div className="store-settings-stack">
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="inv-adjust-product">สินค้า</label>
+              <select
+                id="inv-adjust-product"
+                className="form-input"
+                value={adjustForm.product_id}
+                onChange={(e) => setAdjustForm((p) => ({ ...p, product_id: e.target.value }))}
+                required
+              >
+                <option value="">เลือกสินค้า</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name} (คงเหลือ {p.available_quantity ?? p.stock_quantity})</option>
+                ))}
+              </select>
+            </div>
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="inv-adjust-qty">จำนวน (+ เพิ่ม / - ลด)</label>
+              <input
+                id="inv-adjust-qty"
+                className="form-input"
+                type="number"
+                value={adjustForm.quantity_change}
+                onChange={(e) => setAdjustForm((p) => ({ ...p, quantity_change: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="store-settings-row-2">
+              <input className="form-input" placeholder="Reference" value={adjustForm.reference} onChange={(e) => setAdjustForm((p) => ({ ...p, reference: e.target.value }))} />
+              <input className="form-input" placeholder="หมายเหตุ" value={adjustForm.note} onChange={(e) => setAdjustForm((p) => ({ ...p, note: e.target.value }))} />
+            </div>
+            <div className="store-settings-btn-row">
+              <button type="submit" className="btn-primary">บันทึกปรับสต็อก</button>
+            </div>
+          </div>
         </form>
-      </div>
+      </section>
       )}
 
       {(section === 'all' || section === 'suppliers') && (
-      <div className="products-section" style={{ marginBottom: 20 }}>
-        <h3>ผู้จำหน่าย</h3>
-        <form className="personnel-form" onSubmit={submitSupplier}>
-          <input placeholder="ชื่อผู้จำหน่าย" value={supplierForm.name} onChange={(e) => setSupplierForm((p) => ({ ...p, name: e.target.value }))} required />
-          <input placeholder="ผู้ติดต่อ" value={supplierForm.contact_name} onChange={(e) => setSupplierForm((p) => ({ ...p, contact_name: e.target.value }))} />
-          <input placeholder="เบอร์โทร" value={supplierForm.phone} onChange={(e) => setSupplierForm((p) => ({ ...p, phone: e.target.value }))} />
-          <button type="submit" className="btn-primary">เพิ่มผู้จำหน่าย</button>
-        </form>
-      </div>
-      )}
-
-      {(section === 'all' || section === 'purchase-orders') && (
-      <div className="products-section" style={{ marginBottom: 20 }}>
-        <h3>สร้างใบสั่งซื้อ (PO)</h3>
-        <form className="personnel-form" onSubmit={submitPurchaseOrder}>
-          <select value={poForm.supplier} onChange={(e) => setPoForm((p) => ({ ...p, supplier: e.target.value }))}>
-            <option value="">ไม่ระบุผู้จำหน่าย</option>
-            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {(poForm.items || []).map((item, idx) => (
-              <div key={`po-item-${idx}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8 }}>
-                <select
-                  value={item.product}
-                  onChange={(e) => updatePoItem(idx, 'product', e.target.value)}
-                  required
-                >
-                  <option value="">เลือกสินค้า</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="จำนวน"
-                  value={item.ordered_quantity}
-                  onChange={(e) => updatePoItem(idx, 'ordered_quantity', e.target.value)}
-                  required
-                />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="ต้นทุน/หน่วย"
-                  value={item.unit_cost}
-                  onChange={(e) => updatePoItem(idx, 'unit_cost', e.target.value)}
-                />
-                <button type="button" className="btn-secondary" onClick={() => removePoItemRow(idx)}>
-                  ลบ
-                </button>
-              </div>
-            ))}
+      <section className="store-settings-card" style={{ marginBottom: 20 }}>
+        <h2 className="store-settings-card__title">ผู้จำหน่าย</h2>
+        <form className="store-settings-form" onSubmit={submitSupplier}>
+          <div className="store-settings-stack">
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="inv-supplier-name">ชื่อผู้จำหน่าย</label>
+              <input id="inv-supplier-name" className="form-input" value={supplierForm.name} onChange={(e) => setSupplierForm((p) => ({ ...p, name: e.target.value }))} required />
+            </div>
+            <div className="store-settings-row-2">
+              <input className="form-input" placeholder="ผู้ติดต่อ" value={supplierForm.contact_name} onChange={(e) => setSupplierForm((p) => ({ ...p, contact_name: e.target.value }))} />
+              <input className="form-input" placeholder="เบอร์โทร" value={supplierForm.phone} onChange={(e) => setSupplierForm((p) => ({ ...p, phone: e.target.value }))} />
+            </div>
+            <div className="store-settings-btn-row">
+              <button type="submit" className="btn-primary">เพิ่มผู้จำหน่าย</button>
+            </div>
           </div>
-          <button type="button" className="btn-outline" onClick={addPoItemRow}>+ เพิ่มรายการสินค้า</button>
-          <input placeholder="หมายเหตุ" value={poForm.notes} onChange={(e) => setPoForm((p) => ({ ...p, notes: e.target.value }))} />
-          <button type="submit" className="btn-primary">สร้างใบสั่งซื้อ</button>
         </form>
-      </div>
+      </section>
       )}
 
       {(section === 'all' || section === 'purchase-orders') && (
-      <div className="products-manage-table" style={{ marginBottom: 20 }}>
-        <h3>ใบสั่งซื้อล่าสุด</h3>
-        <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+      <section className="store-settings-card" style={{ marginBottom: 20 }}>
+        <h2 className="store-settings-card__title">สร้างใบสั่งซื้อ (PO)</h2>
+        <form className="store-settings-form" onSubmit={submitPurchaseOrder}>
+          <div className="store-settings-stack">
+            <div className="store-settings-field">
+              <label className="form-label" htmlFor="inv-po-supplier">ผู้จำหน่าย (ถ้ามี)</label>
+              <select id="inv-po-supplier" className="form-input" value={poForm.supplier} onChange={(e) => setPoForm((p) => ({ ...p, supplier: e.target.value }))}>
+                <option value="">ไม่ระบุผู้จำหน่าย</option>
+                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="store-settings-stack" style={{ gap: 'var(--space-3)' }}>
+              {(poForm.items || []).map((item, idx) => (
+                <div key={`po-item-${idx}`} className="admin-po-item-row">
+                  <select
+                    className="form-input"
+                    value={item.product}
+                    onChange={(e) => updatePoItem(idx, 'product', e.target.value)}
+                    required
+                  >
+                    <option value="">เลือกสินค้า</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="1"
+                    placeholder="จำนวน"
+                    value={item.ordered_quantity}
+                    onChange={(e) => updatePoItem(idx, 'ordered_quantity', e.target.value)}
+                    required
+                  />
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="ต้นทุน/หน่วย"
+                    value={item.unit_cost}
+                    onChange={(e) => updatePoItem(idx, 'unit_cost', e.target.value)}
+                  />
+                  <button type="button" className="btn-secondary" onClick={() => removePoItemRow(idx)}>
+                    ลบ
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="store-settings-btn-row">
+              <button type="button" className="btn-outline" onClick={addPoItemRow}>+ เพิ่มรายการสินค้า</button>
+            </div>
+            <input className="form-input" placeholder="หมายเหตุ" value={poForm.notes} onChange={(e) => setPoForm((p) => ({ ...p, notes: e.target.value }))} />
+            <div className="store-settings-btn-row">
+              <button type="submit" className="btn-primary">สร้างใบสั่งซื้อ</button>
+            </div>
+          </div>
+        </form>
+      </section>
+      )}
+
+      {(section === 'all' || section === 'purchase-orders') && (
+      <section className="store-settings-card" style={{ marginBottom: 20 }}>
+        <h2 className="store-settings-card__title">ใบสั่งซื้อล่าสุด</h2>
+        <div className="admin-toolbar-row">
           <input
             type="search"
             className="form-input"
-            style={{ minWidth: 200, flex: '1 1 160px' }}
             placeholder="ค้นหาเลข PO หมายเหตุ ชื่อผู้จำหน่าย"
             value={poListSearch}
             onChange={(e) => setPoListSearch(e.target.value)}
             aria-label="ค้นหาใบสั่งซื้อ"
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
+          <label className="admin-toolbar-ordering">
             <span className="muted">เรียง</span>
             <select
               className="form-input"
-              style={{ minWidth: 180, padding: '6px 10px' }}
               value={poListOrdering}
               onChange={(e) => setPoListOrdering(e.target.value)}
               aria-label="เรียงใบสั่งซื้อ"
@@ -429,7 +468,8 @@ const AdminInventoryPage = ({ section = 'all' }) => {
             </button>
           )}
         </div>
-        <table>
+        <div className="admin-data-table-wrap">
+          <table className="admin-data-table">
           <thead>
             <tr><th>PO</th><th>ผู้จำหน่าย</th><th>สถานะ</th><th>รายการ</th><th>จัดการ</th></tr>
           </thead>
@@ -458,27 +498,26 @@ const AdminInventoryPage = ({ section = 'all' }) => {
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      </section>
       )}
 
       {(section === 'all' || section === 'movements') && (
-      <div className="products-manage-table">
-        <h3>ประวัติการเคลื่อนไหวสต็อก</h3>
-        <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+      <section className="store-settings-card">
+        <h2 className="store-settings-card__title">ประวัติการเคลื่อนไหวสต็อก</h2>
+        <div className="admin-toolbar-row">
           <input
             type="search"
             className="form-input"
-            style={{ minWidth: 200, flex: '1 1 160px' }}
             placeholder="ค้นหาสินค้า อ้างอิง หมายเหตุ ที่มา"
             value={movementSearch}
             onChange={(e) => setMovementSearch(e.target.value)}
             aria-label="ค้นหาประวัติสต็อก"
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem' }}>
+          <label className="admin-toolbar-ordering">
             <span className="muted">เรียง</span>
             <select
               className="form-input"
-              style={{ minWidth: 180, padding: '6px 10px' }}
               value={movementOrdering}
               onChange={(e) => setMovementOrdering(e.target.value)}
               aria-label="เรียงประวัติสต็อก"
@@ -507,7 +546,8 @@ const AdminInventoryPage = ({ section = 'all' }) => {
             </button>
           )}
         </div>
-        <table>
+        <div className="admin-data-table-wrap">
+          <table className="admin-data-table">
           <thead>
             <tr><th>เวลา</th><th>สินค้า</th><th>ประเภท</th><th>ผู้ทำรายการ</th><th>จำนวน</th><th>ก่อน/หลัง</th><th>ที่มา</th></tr>
           </thead>
@@ -537,7 +577,8 @@ const AdminInventoryPage = ({ section = 'all' }) => {
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      </section>
       )}
     </AdminPageShell>
   );

@@ -220,6 +220,20 @@
   height: clamp(320px, 70vh, 640px);
 }
 
+/* แอดมิน — อยู่ใน AdminPageShell (การ์ดเดียวกับหน้าอื่น) */
+.tracking-page.tracking-page--admin-shell {
+  min-height: 0;
+  padding: 0;
+}
+
+.tracking-page.tracking-page--admin-shell .tracking-content {
+  margin: 0 auto;
+}
+
+.admin-tracking-shell__body .error-state {
+  box-shadow: none;
+}
+
 .driver-location-time {
   display: block;
   margin-top: 4px;

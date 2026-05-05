@@ -5,6 +5,7 @@ import AdminPageHeader from '../components/AdminPageHeader';
 import AdminPageShell from '../components/AdminPageShell';
 import { usePopup } from '../components/PopupProvider';
 import './AdminDashboard.css';
+import './AdminAuditLogPage.css';
 
 const PAGE_SIZE = 20;
 
@@ -113,33 +114,23 @@ const AdminAuditLogPage = () => {
         />
       )}
     >
-      <form
-        onSubmit={submitSearch}
-        style={{
-          marginBottom: 16,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 8,
-          alignItems: 'center',
-        }}
-      >
+      <form className="admin-audit-toolbar" onSubmit={submitSearch}>
         <input
           type="search"
           className="form-input"
-          style={{ minWidth: 260, flex: '1 1 220px', padding: '8px 10px', borderRadius: 8, border: '1px solid #ccc' }}
           placeholder="ค้นหาในสรุป การกระทำ ผู้ทำ IP เป้าหมาย…"
           value={searchDraft}
           onChange={(e) => setSearchDraft(e.target.value)}
         />
-        <button type="submit" className="btn-primary" style={{ padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+        <button type="submit" className="btn-primary">
           ค้นหา
         </button>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-          <span style={{ color: '#555' }}>เรียงตาม</span>
+        <label className="admin-toolbar-ordering">
+          <span className="muted">เรียงตาม</span>
           <select
+            className="form-input"
             value={ordering}
             onChange={(e) => setOrdering(e.target.value)}
-            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ccc' }}
             aria-label="เรียงประวัติ"
           >
             <option value="-created_at">เวลาล่าสุดก่อน</option>
@@ -155,7 +146,7 @@ const AdminAuditLogPage = () => {
         {(searchApplied || searchDraft || ordering !== '-created_at') && (
           <button
             type="button"
-            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #bbb', background: '#fff', cursor: 'pointer' }}
+            className="btn-secondary"
             onClick={() => {
               setSearchDraft('');
               setSearchApplied('');
@@ -168,46 +159,39 @@ const AdminAuditLogPage = () => {
       </form>
 
       {loading ? (
-        <p>กำลังโหลด...</p>
+        <p className="muted">กำลังโหลด...</p>
       ) : (
         <>
-          <div style={{ overflowX: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px' }}>
-            <table
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                fontSize: '13px',
-                background: '#fff',
-              }}
-            >
+          <div className="admin-audit-table-wrap">
+            <table className="admin-audit-table">
               <thead>
-                <tr style={{ background: '#f5f5f5', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 8px', borderBottom: '1px solid #ddd' }}>เวลา</th>
-                  <th style={{ padding: '10px 8px', borderBottom: '1px solid #ddd' }}>ผู้ทำ</th>
-                  <th style={{ padding: '10px 8px', borderBottom: '1px solid #ddd' }}>การกระทำ</th>
-                  <th style={{ padding: '10px 8px', borderBottom: '1px solid #ddd' }}>สรุป</th>
-                  <th style={{ padding: '10px 8px', borderBottom: '1px solid #ddd' }}>รายละเอียด</th>
-                  <th style={{ padding: '10px 8px', borderBottom: '1px solid #ddd' }}>IP</th>
+                <tr>
+                  <th>เวลา</th>
+                  <th>ผู้ทำ</th>
+                  <th>การกระทำ</th>
+                  <th>สรุป</th>
+                  <th>รายละเอียด</th>
+                  <th>IP</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#888' }}>
+                    <td colSpan={6} className="admin-audit-empty">
                       ไม่มีข้อมูล
                     </td>
                   </tr>
                 ) : (
                   rows.map((row) => (
-                    <tr key={row.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatTime(row.created_at)}</td>
-                      <td style={{ padding: '8px' }}>{row.actor_username || '—'}</td>
-                      <td style={{ padding: '8px' }}>{row.action_display || row.action}</td>
-                      <td style={{ padding: '8px', maxWidth: '280px' }}>{row.summary || '—'}</td>
-                      <td style={{ padding: '8px', maxWidth: '200px', wordBreak: 'break-all', color: '#666' }}>
+                    <tr key={row.id}>
+                      <td style={{ whiteSpace: 'nowrap' }}>{formatTime(row.created_at)}</td>
+                      <td>{row.actor_username || '—'}</td>
+                      <td>{row.action_display || row.action}</td>
+                      <td style={{ maxWidth: 280 }}>{row.summary || '—'}</td>
+                      <td style={{ maxWidth: 200 }} className="admin-audit-table__mono">
                         {formatDetail(row.detail)}
                       </td>
-                      <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{row.ip_address || '—'}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{row.ip_address || '—'}</td>
                     </tr>
                   ))
                 )}

@@ -201,10 +201,8 @@ const AdminPdpaPolicyPage = () => {
 
   return (
     <AdminPageShell
-      className="admin-pdpa-page"
       header={(
         <AdminPageHeader
-          className="admin-pdpa-page__head"
           title="นโยบาย PDPA"
           subtitle={`จัดเก็บได้หลายเวอร์ชัน — ฉบับเก่ายังอยู่ในระบบ ลูกค้าจะเห็นเฉพาะฉบับที่เปิดใช้งาน (หนึ่งฉบับ)${mode === 'list' ? ' — เลือกแก้ไขฉบับเก่าหรือสร้างฉบับใหม่เมื่อมีนโยบายเปลี่ยนแปลง' : ''}`}
         />
