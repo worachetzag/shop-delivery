@@ -1,6 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import config from '../config';
 import AdminPdpaRichTextEditor from '../components/AdminPdpaRichTextEditor';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
+import { useAdminBreadcrumbSegment } from '../context/AdminBreadcrumbContext';
 import { usePopup } from '../components/PopupProvider';
 import './AdminDashboard.css';
 import './AdminStoreSettingsPage.css';
@@ -185,19 +188,28 @@ const AdminPdpaPolicyPage = () => {
 
   const formTitle = editingId != null ? `แก้ไขนโยบาย (ID ${editingId})` : 'สร้างเวอร์ชันใหม่';
 
-  return (
-    <div className="admin-dashboard admin-pdpa-page">
-      <div className="admin-content">
-        <header className="admin-pdpa-page__head">
-          <h1 className="admin-pdpa-page__title">นโยบายความเป็นส่วนตัว (PDPA)</h1>
-          <p className="admin-pdpa-page__lede">
-            จัดเก็บได้หลายเวอร์ชัน — ฉบับเก่ายังอยู่ในระบบ ลูกค้าจะเห็นเฉพาะฉบับที่เปิดใช้งาน (หนึ่งฉบับ)
-            {mode === 'list'
-              ? ' — เลือกแก้ไขฉบับเก่าหรือสร้างฉบับใหม่เมื่อมีนโยบายเปลี่ยนแปลง'
-              : null}
-          </p>
-        </header>
+  const pdpaBreadcrumbTail = useMemo(() => {
+    if (mode !== 'form') return null;
+    if (editingId != null) {
+      const v = (form.version || '').trim();
+      return v ? `แก้ไขเวอร์ชัน ${v}` : 'แก้ไขนโยบาย';
+    }
+    return 'สร้างเวอร์ชันใหม่';
+  }, [mode, editingId, form.version]);
 
+  useAdminBreadcrumbSegment(1, pdpaBreadcrumbTail);
+
+  return (
+    <AdminPageShell
+      className="admin-pdpa-page"
+      header={(
+        <AdminPageHeader
+          className="admin-pdpa-page__head"
+          title="นโยบาย PDPA"
+          subtitle={`จัดเก็บได้หลายเวอร์ชัน — ฉบับเก่ายังอยู่ในระบบ ลูกค้าจะเห็นเฉพาะฉบับที่เปิดใช้งาน (หนึ่งฉบับ)${mode === 'list' ? ' — เลือกแก้ไขฉบับเก่าหรือสร้างฉบับใหม่เมื่อมีนโยบายเปลี่ยนแปลง' : ''}`}
+        />
+      )}
+    >
         <div className="store-settings-page store-settings-page--embedded">
           {loading && mode === 'list' ? (
             <div className="store-settings-loading">กำลังโหลดข้อมูล...</div>
@@ -359,8 +371,7 @@ const AdminPdpaPolicyPage = () => {
             </form>
           ) : null}
         </div>
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

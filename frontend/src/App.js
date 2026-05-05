@@ -12,6 +12,8 @@ import Header from './components/Header';
 import CustomerViewportChrome from './components/CustomerViewportChrome';
 import CustomerPdpaConsentModal from './components/CustomerPdpaConsentModal';
 import AdminHeader from './components/AdminHeader';
+import AdminBreadcrumb from './components/AdminBreadcrumb';
+import { AdminBreadcrumbProvider } from './context/AdminBreadcrumbContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -51,6 +53,7 @@ import {
   stripCustomerRoutingParams,
 } from './utils/customerDeepLink';
 import './App.css';
+import './styles/admin-theme.css';
 
 /** Navigate ที่เก็บ ?query และ #hash — LINE เปิดที่ / หรือ /liff พร้อม ?page= ไม่ให้หายไประหว่าง redirect */
 function NavigatePreserveSearch({ to }) {
@@ -302,6 +305,7 @@ function AppContent() {
         </div>
       )}
       <main className="main-content">
+        {showAdminChrome ? <AdminBreadcrumb /> : null}
         <Routes>
           {/* Customer Routes (canonical) */}
           <Route path="/" element={<NavigatePreserveSearch to="/customer" />} />
@@ -649,7 +653,9 @@ function App() {
   return (
     <PopupProvider>
       <Router>
-        <AppContent />
+        <AdminBreadcrumbProvider>
+          <AppContent />
+        </AdminBreadcrumbProvider>
       </Router>
     </PopupProvider>
   );

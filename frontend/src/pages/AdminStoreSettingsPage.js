@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import config from '../config';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { usePopup } from '../components/PopupProvider';
+import { ADMIN_SECTION_LABELS } from '../utils/adminNavTitles';
 import './AdminDashboard.css';
 import './AdminStoreSettingsPage.css';
 
@@ -174,16 +177,17 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
     });
   };
 
-  return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>ตั้งค่าร้าน</h1>
-        <p style={{ margin: 0, color: '#666', fontSize: '0.92rem' }}>
-          ข้อมูลร้าน พิกัด เวลาทำการ การชำระเงิน และค่าจัดส่ง — ใช้ฟอร์มเดียวกับธีมแอดมินทั้งระบบ
-        </p>
-      </div>
+  const heading = ADMIN_SECTION_LABELS.store[section] || 'ตั้งค่าร้าน';
 
-      <div className="admin-content">
+  return (
+    <AdminPageShell
+      header={(
+        <AdminPageHeader
+          title={heading}
+          subtitle="ข้อมูลร้าน พิกัด เวลาทำการ การชำระเงิน และค่าจัดส่ง — แก้ไขตามแท็บเมนูด้านซ้าย"
+        />
+      )}
+    >
         <div className="store-settings-page store-settings-page--embedded">
           {loading ? (
             <div className="store-settings-loading">กำลังโหลดข้อมูล...</div>
@@ -465,8 +469,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
             </form>
           )}
         </div>
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

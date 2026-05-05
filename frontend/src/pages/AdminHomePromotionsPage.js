@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { AdminBackLink } from '../components/AdminBackButton';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
 
@@ -316,25 +318,15 @@ const AdminHomePromotionsPage = () => {
   };
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-content">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
-            marginBottom: 14,
-          }}
-        >
-          <AdminBackLink to="/admin/dashboard" ariaLabel="ภาพรวมแอดมิน" />
-          <h2 style={{ margin: 0 }}>โปรโมชั่นหน้าแรกลูกค้า</h2>
-        </div>
-        <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '1rem', lineHeight: 1.6 }}>
-          อัปโหลด<strong>รูปแบนเนอร์</strong>ได้ — ลูกค้าคลิกที่รูปแล้วไปตามที่เลือกด้านล่าง ไม่ต้องพิมพ์ลิงก์ถ้าเลือกเมนูสำเร็จรูป
-          (หมวดสินค้า / สินค้าแนะนำ / ลดราคา / หน้ารวมสินค้า / สินค้ารายการเดียว)
-        </p>
-
+    <AdminPageShell
+      header={(
+        <AdminPageHeader
+          title="โปรหน้าแรก"
+          subtitle="อัปโหลดรูปแบนเนอร์ได้ — ลูกค้าคลิกที่รูปแล้วไปตามที่เลือกด้านล่าง (หมวดสินค้า / สินค้าแนะนำ / ลดราคา / หน้ารวมสินค้า / สินค้ารายการเดียว)"
+          leading={<AdminBackLink to="/admin/dashboard" ariaLabel="ภาพรวมแอดมิน" />}
+        />
+      )}
+    >
         <form
           onSubmit={handleSubmit}
           style={{
@@ -648,8 +640,7 @@ const AdminHomePromotionsPage = () => {
             </table>
           </div>
         )}
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

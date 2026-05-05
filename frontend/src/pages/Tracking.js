@@ -11,6 +11,7 @@ import CustomerInlineBack from '../components/CustomerInlineBack';
 import { AdminBackLink } from '../components/AdminBackButton';
 import { createCustomerPhotoMarkerIcon, createDeliveryVehicleMarkerIcon } from '../utils/mapMarkers';
 import './Tracking.css';
+import { useAdminBreadcrumbSegment } from '../context/AdminBreadcrumbContext';
 
 /** ไอคอนรถส่งของในการ์ดคนขับ — ไม่ใช้รูปโปรไฟล์ */
 function DriverDeliveryAvatarGlyph() {
@@ -98,6 +99,12 @@ const Tracking = () => {
   const [routePath, setRoutePath] = useState([]);
   const [routeMeta, setRouteMeta] = useState(null);
   const isAdminTracking = location.pathname.startsWith('/admin/');
+
+  /** ขั้นก่อนสุดท้าย (ลิงก์ไปรายละเอียดออเดอร์) ใช้เลขอ้างอิงจริง — ขั้นสุดท้ายยังเป็น «ติดตามคนขับ» */
+  useAdminBreadcrumbSegment(
+    2,
+    isAdminTracking && trackingInfo?.trackingNumber ? String(trackingInfo.trackingNumber) : null,
+  );
 
   useEffect(() => {
     let intervalId = null;

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import config from '../config';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import './AdminDashboard.css';
 
 const AdminOverviewPage = () => {
@@ -74,15 +76,15 @@ const AdminOverviewPage = () => {
     const revenueForBar =
       revenueBaht <= 0 ? 0 : Math.max(Math.round(revenueBaht / 1000), 1);
     const rows = [
-      { key: 'total_orders', label: 'ออเดอร์ทั้งหมด', value: Number(stats.total_orders || 0), barScale: Number(stats.total_orders || 0), color: '#667eea' },
-      { key: 'pending_orders', label: 'รอจัดเตรียม', value: Number(stats.pending_orders || 0), barScale: Number(stats.pending_orders || 0), color: '#f5576c' },
-      { key: 'active_drivers', label: 'คนขับพร้อมงาน', value: Number(stats.active_drivers || 0), barScale: Number(stats.active_drivers || 0), color: '#34d399' },
+      { key: 'total_orders', label: 'ออเดอร์ทั้งหมด', value: Number(stats.total_orders || 0), barScale: Number(stats.total_orders || 0), color: '#14532d' },
+      { key: 'pending_orders', label: 'รอจัดเตรียม', value: Number(stats.pending_orders || 0), barScale: Number(stats.pending_orders || 0), color: '#15803d' },
+      { key: 'active_drivers', label: 'คนขับพร้อมงาน', value: Number(stats.active_drivers || 0), barScale: Number(stats.active_drivers || 0), color: '#22c55e' },
       {
         key: 'revenue',
         label: 'รายได้รวม (บาท)',
         value: revenueBaht,
         barScale: revenueForBar,
-        color: '#00c2ff',
+        color: '#86efac',
       },
     ];
     const max = Math.max(...rows.map((item) => item.barScale), 1);
@@ -133,10 +135,9 @@ const AdminOverviewPage = () => {
   );
 
   return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <h1 style={{ marginBottom: 8 }}>แอดมินร้านค้า</h1>
-      <p style={{ marginTop: 0, color: '#666', marginBottom: 16 }}>ภาพรวมระบบและข้อมูลเชิงสรุป</p>
-
+    <AdminPageShell
+      header={<AdminPageHeader title="ภาพรวม" subtitle="ภาพรวมระบบและข้อมูลเชิงสรุป" />}
+    >
       <div className="admin-stats" style={{ marginBottom: 16 }}>
         <div className="stat-card">
           <h3>{loading ? '...' : stats.total_orders}</h3>
@@ -234,7 +235,7 @@ const AdminOverviewPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

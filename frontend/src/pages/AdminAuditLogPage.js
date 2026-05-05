@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { usePopup } from '../components/PopupProvider';
 import './AdminDashboard.css';
 
@@ -102,14 +104,15 @@ const AdminAuditLogPage = () => {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto', marginTop: '72px' }}>
-      <h2 style={{ marginBottom: '8px' }}>📋 ประวัติการทำงาน</h2>
-      <p style={{ color: '#555', marginBottom: '20px', lineHeight: 1.5 }}>
-        บันทึกล็อกอิน/ออกจากระบบแอดมิน การตั้งค่าร้าน (พิกัด เวลา ค่าส่ง) การเพิ่มหรือแก้ไขสินค้าและหมวดหมู่ แบนเนอร์/โปรหน้าแรก
-        ผู้จำหน่ายและใบสั่งซื้อ ปรับสต็อกมือ การเปลี่ยนสถานะคำสั่งซื้อ การตรวจสลิป การมอบหมายคนขับ
-        การเพิ่ม/แก้ไข/ลบบัญชีพนักงานและคนขับ — เห็นได้เฉพาะเจ้าของร้าน
-      </p>
-
+    <AdminPageShell
+      narrow
+      header={(
+        <AdminPageHeader
+          title="ประวัติพนักงาน"
+          subtitle="บันทึกล็อกอิน/ออกจากระบบแอดมิน การตั้งค่าร้าน (พิกัด เวลา ค่าส่ง) การเพิ่มหรือแก้ไขสินค้าและหมวดหมู่ แบนเนอร์/โปรหน้าแรก ผู้จำหน่ายและใบสั่งซื้อ ปรับสต็อกมือ การเปลี่ยนสถานะคำสั่งซื้อ การตรวจสลิป การมอบหมายคนขับ การเพิ่ม/แก้ไข/ลบบัญชีพนักงานและคนขับ — เห็นได้เฉพาะเจ้าของร้าน"
+        />
+      )}
+    >
       <form
         onSubmit={submitSearch}
         style={{
@@ -219,7 +222,7 @@ const AdminAuditLogPage = () => {
           />
         </>
       )}
-    </div>
+    </AdminPageShell>
   );
 };
 

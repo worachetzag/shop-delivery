@@ -4,7 +4,11 @@ import config from '../config';
 import { displayProductLineName } from '../utils/helpers';
 import { usePopup } from '../components/PopupProvider';
 import { AdminBackLink } from '../components/AdminBackButton';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
+import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
 import './AdminOrderDetail.css';
+import './AdminDashboard.css';
 
 const AdminOrderDetail = () => {
   const popup = usePopup();
@@ -18,6 +22,8 @@ const AdminOrderDetail = () => {
   const [savingAssign, setSavingAssign] = useState(false);
   const [savingCancel, setSavingCancel] = useState(false);
   const [slipPreviewUrl, setSlipPreviewUrl] = useState('');
+
+  useAdminBreadcrumbTail(order?.order_number ? String(order.order_number) : null);
 
   const getAdminToken = () => localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
 
@@ -265,17 +271,24 @@ const AdminOrderDetail = () => {
   };
 
   if (loading) {
-    return <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>;
+    return (
+      <AdminPageShell>
+        <div className="loading">กำลังโหลดรายละเอียดคำสั่งซื้อ...</div>
+      </AdminPageShell>
+    );
   }
 
   if (!order) {
     return (
-      <div className="admin-dashboard">
-        <div className="admin-content">
-          <p>ไม่พบคำสั่งซื้อ</p>
-          <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
-        </div>
-      </div>
+      <AdminPageShell
+        header={(
+          <AdminPageHeader
+            title="คำสั่งซื้อ"
+            subtitle="ไม่พบคำสั่งซื้อ"
+            leading={<AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />}
+          />
+        )}
+      />
     );
   }
 
@@ -311,14 +324,15 @@ const AdminOrderDetail = () => {
     : (subtotalFromItems > 0 ? subtotalFromItems : Math.max(orderTotal - deliveryFee, 0));
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-content">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-          <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
-          <h2 style={{ margin: 0 }}>
-            รายละเอียดคำสั่งซื้อ {order.order_number || `#${order.id}`}
-          </h2>
-        </div>
+    <AdminPageShell
+      header={(
+        <AdminPageHeader
+          title="คำสั่งซื้อ"
+          subtitle={`รายละเอียด ${order.order_number || `#${order.id}`}`}
+          leading={<AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />}
+        />
+      )}
+    >
         <p>
           <strong>ลูกค้า:</strong>{' '}
           {customerId ? (
@@ -540,8 +554,7 @@ const AdminOrderDetail = () => {
           )}
           <AdminBackLink to="/admin/orders" ariaLabel="รายการคำสั่งซื้อ" />
         </div>
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

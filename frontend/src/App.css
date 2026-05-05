@@ -17,9 +17,7 @@
 
 .App.app-role-admin {
   max-width: 1400px;
-  background:
-    radial-gradient(120% 90% at 8% 0%, rgba(56, 189, 248, 0.18) 0%, rgba(15, 23, 42, 0) 45%),
-    linear-gradient(180deg, #f3f8ff 0%, #eef4fb 100%);
+  /* พื้นหลังหลักของแอดมินอยู่ที่ styles/admin-theme.css (ธีมเขียว) */
   box-shadow: none;
   border-radius: 0;
 }

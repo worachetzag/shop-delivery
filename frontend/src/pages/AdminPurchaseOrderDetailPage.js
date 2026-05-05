@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import config from '../config';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { usePopup } from '../components/PopupProvider';
 import { AdminBackLink } from '../components/AdminBackButton';
+import config from '../config';
+import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
+import './AdminDashboard.css';
 
 const AdminPurchaseOrderDetailPage = () => {
   const popup = usePopup();
@@ -11,6 +15,8 @@ const AdminPurchaseOrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [receiving, setReceiving] = useState(false);
   const [purchaseOrder, setPurchaseOrder] = useState(null);
+
+  useAdminBreadcrumbTail(purchaseOrder?.reference ? String(purchaseOrder.reference) : null);
 
   const authHeaders = {
     Authorization: `Token ${token}`,
@@ -73,35 +79,41 @@ const AdminPurchaseOrderDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="admin-dashboard" style={{ padding: 16 }}>
-        <h1>รายละเอียดใบสั่งซื้อ</h1>
-        <p>กำลังโหลดรายละเอียด...</p>
-      </div>
+      <AdminPageShell
+        header={<AdminPageHeader title="ใบสั่งซื้อ (PO)" subtitle="กำลังโหลดรายละเอียด..." />}
+      />
     );
   }
 
   if (!purchaseOrder) {
     return (
-      <div className="admin-dashboard" style={{ padding: 16 }}>
-        <h1>รายละเอียดใบสั่งซื้อ</h1>
-        <p>ไม่พบข้อมูลใบสั่งซื้อ</p>
-        <AdminBackLink to="/admin/inventory" ariaLabel="สต็อกและคลัง" />
-      </div>
+      <AdminPageShell
+        header={(
+          <AdminPageHeader
+            title="ใบสั่งซื้อ (PO)"
+            subtitle="ไม่พบข้อมูลใบสั่งซื้อ"
+            leading={<AdminBackLink to="/admin/inventory/purchase-orders" ariaLabel="รายการใบสั่งซื้อ" />}
+          />
+        )}
+      />
     );
   }
 
   return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        <AdminBackLink to="/admin/inventory" ariaLabel="สต็อกและคลัง" />
-        <h1 style={{ margin: 0, flex: '1 1 200px' }}>รายละเอียดใบสั่งซื้อ {purchaseOrder.reference}</h1>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
-          <button type="button" className="btn btn-primary" onClick={receiveAll} disabled={receiving}>
-            {receiving ? 'กำลังรับเข้า...' : 'รับเข้าคงค้างทั้งหมด'}
-          </button>
-        </div>
-      </div>
-
+    <AdminPageShell
+      header={(
+        <AdminPageHeader
+          title="ใบสั่งซื้อ (PO)"
+          subtitle={purchaseOrder.reference ? `เลขอ้างอิง ${purchaseOrder.reference}` : null}
+          leading={<AdminBackLink to="/admin/inventory/purchase-orders" ariaLabel="รายการใบสั่งซื้อ" />}
+          actions={(
+            <button type="button" className="btn btn-primary" onClick={receiveAll} disabled={receiving}>
+              {receiving ? 'กำลังรับเข้า...' : 'รับเข้าคงค้างทั้งหมด'}
+            </button>
+          )}
+        />
+      )}
+    >
       <div className="products-manage-table" style={{ marginBottom: 16 }}>
         <div style={{ display: 'grid', gap: 6 }}>
           <p><strong>เลขใบสั่งซื้อ:</strong> {purchaseOrder.reference || '-'}</p>
@@ -141,7 +153,7 @@ const AdminPurchaseOrderDetailPage = () => {
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

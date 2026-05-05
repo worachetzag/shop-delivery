@@ -3,6 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { AdminBackButton } from '../components/AdminBackButton';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
+import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
 import { formatCitizenThirteenDisplay, formatMobileTenDisplay } from '../utils/thaiFormInputs';
 import './AdminDashboard.css';
 
@@ -40,6 +43,15 @@ const AdminCustomerDetailPage = () => {
   const token = useMemo(() => localStorage.getItem('admin_token') || localStorage.getItem('auth_token'), []);
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState(null);
+
+  const customerBreadcrumbLabel = useMemo(() => {
+    if (!customer) return null;
+    const u = customer.user_info || {};
+    const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || '';
+    return name.trim() || null;
+  }, [customer]);
+
+  useAdminBreadcrumbTail(customerBreadcrumbLabel);
 
   const authHeaders = useMemo(
     () => ({
@@ -81,22 +93,22 @@ const AdminCustomerDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="admin-dashboard" style={{ padding: 16 }}>
+      <AdminPageShell>
         <div className="empty-state">กำลังโหลด...</div>
-      </div>
+      </AdminPageShell>
     );
   }
 
   if (!customer) {
     return (
-      <div className="admin-dashboard" style={{ padding: 16 }}>
+      <AdminPageShell>
         <div className="empty-state">ไม่พบลูกค้า</div>
         <AdminBackButton
           ariaLabel="รายการลูกค้า"
           onClick={() => navigate('/admin/customers')}
           style={{ marginTop: 12 }}
         />
-      </div>
+      </AdminPageShell>
     );
   }
 
@@ -105,22 +117,28 @@ const AdminCustomerDetailPage = () => {
   const stats = customer.stats || {};
   const line = customer.line_profile;
 
+  const subtitleParts = [
+    displayName,
+    `@${u.username || '—'}`,
+    customer.contact_email ? `อีเมลลูกค้า: ${customer.contact_email}` : null,
+    !customer.contact_email && u.email ? u.email : null,
+  ].filter(Boolean);
+
   return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <div style={{ marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-        <AdminBackButton ariaLabel="รายการลูกค้า" onClick={() => navigate('/admin/customers')} />
-        <Link className="btn-primary" style={{ textDecoration: 'none' }} to={`/admin/orders?customer_id=${customer.id}`}>
-          ดูออเดอร์ทั้งหมดของลูกค้านี้
-        </Link>
-      </div>
-
-      <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>{displayName}</h1>
-      <p style={{ margin: '0 0 16px', color: '#666' }}>
-        @{u.username || '—'}
-        {customer.contact_email ? ` · อีเมลลูกค้า: ${customer.contact_email}` : ''}
-        {!customer.contact_email && u.email ? ` · ${u.email}` : ''}
-      </p>
-
+    <AdminPageShell
+      header={(
+        <AdminPageHeader
+          title="ลูกค้า"
+          subtitle={subtitleParts.join(' · ')}
+          leading={<AdminBackButton ariaLabel="รายการลูกค้า" onClick={() => navigate('/admin/customers')} />}
+          actions={(
+            <Link className="btn-primary" style={{ textDecoration: 'none' }} to={`/admin/orders?customer_id=${customer.id}`}>
+              ดูออเดอร์ทั้งหมดของลูกค้านี้
+            </Link>
+          )}
+        />
+      )}
+    >
       <div className="admin-stats" style={{ marginBottom: 16 }}>
         <div className="stat-card">
           <h3>{stats.order_count ?? 0}</h3>
@@ -151,7 +169,7 @@ const AdminCustomerDetailPage = () => {
         </div>
       </div>
 
-      <div className="admin-content" style={{ marginBottom: 16 }}>
+      <section className="admin-page-shell__section" style={{ marginBottom: 16 }}>
         <h3 style={{ marginTop: 0 }}>โปรไฟล์</h3>
         <table className="orders-table" style={{ boxShadow: 'none' }}>
           <tbody>
@@ -214,9 +232,9 @@ const AdminCustomerDetailPage = () => {
             บัญชีนี้ยังไม่เชื่อมโปรไฟล์ LINE ในระบบ
           </p>
         )}
-      </div>
+      </section>
 
-      <div className="admin-content" style={{ marginBottom: 16 }}>
+      <section className="admin-page-shell__section" style={{ marginBottom: 16 }}>
         <h3 style={{ marginTop: 0 }}>ที่อยู่จัดส่งที่บันทึกไว้</h3>
         {Array.isArray(customer.addresses) && customer.addresses.length > 0 ? (
           <ul style={{ paddingLeft: 20, margin: 0 }}>
@@ -241,9 +259,9 @@ const AdminCustomerDetailPage = () => {
         ) : (
           <p className="muted">ยังไม่มีที่อยู่ที่บันทึกในระบบ</p>
         )}
-      </div>
+      </section>
 
-      <div className="admin-content">
+      <section className="admin-page-shell__section">
         <h3 style={{ marginTop: 0 }}>ออเดอร์ล่าสุด</h3>
         <p className="muted" style={{ marginTop: 0 }}>
           แสดงสูงสุด 40 รายการ — คลิกแถวเพื่อเปิดรายละเอียด
@@ -286,8 +304,8 @@ const AdminCustomerDetailPage = () => {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </section>
+    </AdminPageShell>
   );
 };
 

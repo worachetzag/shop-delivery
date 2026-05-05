@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
+import { ADMIN_SECTION_LABELS } from '../utils/adminNavTitles';
+import './AdminDashboard.css';
 
 const MOV_ORDERINGS = new Set(['-created_at', 'created_at', 'id', '-id', 'quantity_change', '-quantity_change', 'movement_type', '-movement_type']);
 const PO_ORDERINGS = new Set([
@@ -265,18 +269,23 @@ const AdminInventoryPage = ({ section = 'all' }) => {
     return label || null;
   };
 
+  const invHeading =
+    section === 'all'
+      ? 'จัดการสต็อก'
+      : ADMIN_SECTION_LABELS.inventory[section] || 'จัดการสต็อก';
+
   if (loadingPage) {
     return (
-      <div className="admin-dashboard" style={{ padding: 16 }}>
-        <h1>จัดการสต็อกแบบครบวงจร</h1>
-        <p>กำลังโหลดข้อมูล...</p>
-      </div>
+      <AdminPageShell
+        header={<AdminPageHeader title={invHeading} subtitle="กำลังโหลดข้อมูล..." />}
+      />
     );
   }
 
   return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <h1>จัดการสต็อกแบบครบวงจร</h1>
+    <AdminPageShell
+      header={<AdminPageHeader title={invHeading} subtitle="จัดการคลัง ปรับสต็อก ผู้จำหน่าย และใบสั่งซื้อ — ตรงกับเมนูด้านซ้าย" />}
+    >
       {(section === 'all' || section === 'overview') && (
       <div className="admin-stats" style={{ marginBottom: 16 }}>
         <div className="stat-card"><h3>{overview?.total_products || 0}</h3><p>จำนวนสินค้า</p></div>
@@ -530,7 +539,7 @@ const AdminInventoryPage = ({ section = 'all' }) => {
         </table>
       </div>
       )}
-    </div>
+    </AdminPageShell>
   );
 };
 

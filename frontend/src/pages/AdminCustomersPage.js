@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import config from '../config';
 import ApiPaginationBar from '../components/ApiPaginationBar';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { usePopup } from '../components/PopupProvider';
 import './AdminDashboard.css';
 
@@ -107,15 +109,9 @@ const AdminCustomersPage = () => {
   const rows = payload.results;
 
   return (
-    <div className="admin-dashboard" style={{ padding: 16 }}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: '0 0 6px 0', fontSize: '1.35rem' }}>ลูกค้า</h1>
-        <p style={{ margin: 0, color: '#666', fontSize: '0.92rem' }}>
-          รายชื่อลูกค้า จำนวนออเดอร์ และยอดซื้อสะสม
-        </p>
-      </div>
-
-      <div className="admin-content">
+    <AdminPageShell
+      header={<AdminPageHeader title="ลูกค้า" subtitle="รายชื่อลูกค้า จำนวนออเดอร์ และยอดซื้อสะสม" />}
+    >
         <form
           onSubmit={submitSearch}
           style={{ padding: '12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
@@ -278,8 +274,7 @@ const AdminCustomersPage = () => {
           onPageChange={setPage}
           className=""
         />
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

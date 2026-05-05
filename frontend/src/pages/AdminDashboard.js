@@ -3,7 +3,10 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import ApiPaginationBar from '../components/ApiPaginationBar';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
 import { resolveMediaUrl } from '../utils/media';
+import { adminDashboardTabTitle } from '../utils/adminNavTitles';
 import './AdminDashboard.css';
 
 const ADMIN_ORDERS_PAGE_SIZE = 15;
@@ -1569,9 +1572,10 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
     }
   };
 
+  const pageHeading = adminDashboardTabTitle(activeTab, forcedSubsection);
+
   return (
-    <div className="admin-dashboard">
-      <div className="admin-content">
+    <AdminPageShell header={pageHeading ? <AdminPageHeader title={pageHeading} /> : null}>
         {activeTab === 'orders' && (
           <div className="orders-table">
             {ordersCustomerIdFilter ? (
@@ -2693,8 +2697,7 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

@@ -3,6 +3,9 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import config from '../config';
 import { usePopup } from '../components/PopupProvider';
 import { AdminBackLink } from '../components/AdminBackButton';
+import AdminPageHeader from '../components/AdminPageHeader';
+import AdminPageShell from '../components/AdminPageShell';
+import { useAdminBreadcrumbTail } from '../context/AdminBreadcrumbContext';
 import { PLACEHOLDER_IMAGES, resolveMediaUrl } from '../utils/media';
 import './AdminDashboard.css';
 
@@ -45,6 +48,14 @@ const AdminProductFormPage = () => {
   const [form, setForm] = useState(getDefaultCreateForm);
 
   const pageTitle = useMemo(() => (isEditMode ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'), [isEditMode]);
+
+  const editProductBreadcrumbName = useMemo(() => {
+    if (!isEditMode) return null;
+    const n = (form.name || '').trim();
+    return n || null;
+  }, [isEditMode, form.name]);
+
+  useAdminBreadcrumbTail(editProductBreadcrumbName);
 
   useEffect(() => {
     const loadData = async () => {
@@ -217,12 +228,15 @@ const AdminProductFormPage = () => {
   }
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-content">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-          <AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />
-          <h2 style={{ margin: 0 }}>{pageTitle}</h2>
-        </div>
+    <AdminPageShell
+      header={(
+        <AdminPageHeader
+          title="สินค้า"
+          subtitle={pageTitle}
+          leading={<AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />}
+        />
+      )}
+    >
         <form className="product-form" onSubmit={handleSubmit}>
           {isEditMode && form.image && (
             <div style={{ marginBottom: '10px' }}>
@@ -329,8 +343,7 @@ const AdminProductFormPage = () => {
             <AdminBackLink to={productsListPath} ariaLabel="รายการสินค้า" />
           </div>
         </form>
-      </div>
-    </div>
+    </AdminPageShell>
   );
 };
 

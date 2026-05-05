@@ -1,7 +1,17 @@
 .admin-dashboard {
   max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* หน้าที่ยังไม่ใช้ AdminPageShell เท่านั้น — ส่วนใหญ่ใช้ shell (padding 0) */
+.admin-dashboard:not(.admin-page-shell) {
   padding: 20px;
+}
+
+.admin-page-shell.admin-dashboard {
+  padding: 0;
 }
 
 .admin-stats {
@@ -12,18 +22,24 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
   padding: 20px;
   border-radius: 8px;
   color: white;
 }
 
 .stat-card.pending {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
 }
 
 .stat-card.revenue {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #86efac 0%, #bbf7d0 100%);
+  color: #14532d;
+}
+
+.stat-card.revenue p {
+  opacity: 0.88;
+  color: #166534;
 }
 
 .stat-card h3 {
@@ -57,7 +73,7 @@
 }
 
 .admin-tabs button.active {
-  background: #667eea;
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
   color: white;
 }
 
@@ -176,7 +192,7 @@
 
 .btn-primary {
   padding: 10px 20px;
-  background: #667eea;
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -186,7 +202,7 @@
 }
 
 .btn-primary:hover {
-  background: #5568d3;
+  background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
 }
 
 .product-form {
@@ -362,8 +378,8 @@
 }
 
 .admin-trend-filter-btn {
-  border: 1px solid #d7deee;
-  background: #f7f9ff;
+  border: 1px solid rgba(21, 128, 61, 0.2);
+  background: #f0fdf4;
   color: #334155;
   border-radius: 999px;
   padding: 4px 10px;
@@ -373,8 +389,8 @@
 }
 
 .admin-trend-filter-btn.active {
-  background: #3b5bdb;
-  border-color: #3b5bdb;
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
+  border-color: #15803d;
   color: #fff;
 }
 
@@ -396,7 +412,7 @@
   max-width: 42px;
   height: 120px;
   border-radius: 10px;
-  background: #eef2ff;
+  background: #ecfdf5;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -404,7 +420,7 @@
 
 .admin-trend-bar {
   width: 100%;
-  background: linear-gradient(180deg, #5b7cfa 0%, #3b5bdb 100%);
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
   border-radius: 10px;
 }
 
