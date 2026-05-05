@@ -6,7 +6,7 @@
 
 .admin-page-header__top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -16,7 +16,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 4px;
 }
 
 .admin-page-header__main {

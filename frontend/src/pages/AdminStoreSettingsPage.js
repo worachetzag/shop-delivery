@@ -192,7 +192,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
             <form className="store-settings-form" onSubmit={submit}>
               {(section === 'all' || section === 'store') && (
                 <section className="store-settings-card">
-                  <h2 className="store-settings-card__title">1) ข้อมูลร้านและพิกัด</h2>
+                  <h2 className="store-settings-card__title">ข้อมูลร้านและพิกัด</h2>
                   <p className="store-settings-card__hint">
                     ชื่อ ที่อยู่ และเกณฑ์แจ้งเตือนสต็อกที่ลูกค้าเห็นในหน้าร้านและคำสั่งซื้อ พิกัดใช้คำนวณระยะทาง/ค่าส่งและแผนที่
                   </p>
@@ -282,7 +282,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
 
               {(section === 'all' || section === 'payment') && (
                 <section className="store-settings-card">
-                  <h2 className="store-settings-card__title">2) การชำระเงิน (PromptPay)</h2>
+                  <h2 className="store-settings-card__title">การชำระเงิน (PromptPay)</h2>
                   <p className="store-settings-card__hint">ใช้สร้าง QR รับเงินจากลูกค้า</p>
                   <div className="store-settings-field">
                     <label className="form-label" htmlFor="store-settings-promptpay">
@@ -303,7 +303,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
 
               {(section === 'all' || section === 'hours') && (
                 <section className="store-settings-card">
-                  <h2 className="store-settings-card__title">3) เวลาทำการ</h2>
+                  <h2 className="store-settings-card__title">เวลาทำการ</h2>
                   <p className="store-settings-card__hint">
                     กำหนดช่วงเวลาเปิดรับคำสั่งซื้อแยกตามประเภทบริการ
                   </p>
@@ -354,7 +354,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
 
               {(section === 'all' || section === 'delivery-fees') && (
                 <section className="store-settings-card">
-                  <h2 className="store-settings-card__title">4) ค่าส่งตามระยะทาง</h2>
+                  <h2 className="store-settings-card__title">ค่าส่งตามระยะทาง</h2>
                   <p className="store-settings-card__hint">
                     ตั้งเป็นหลายบรรทัดแบบ “ไม่เกิน X กม.” และแถวสุดท้ายเป็น “มากกว่า” (เว้นช่องระยะทางเป็นค่าว่าง)
                   </p>

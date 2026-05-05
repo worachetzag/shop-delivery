@@ -1574,8 +1574,35 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
   const pageHeading = adminDashboardTabTitle(activeTab, forcedSubsection);
 
+  const shellHeader = pageHeading ? (
+    <AdminPageHeader
+      title={pageHeading}
+      actions={
+        activeTab === 'drivers' ? (
+          <>
+            {canManageStaff && showStaffSection ? (
+              <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('staff')}>
+                + เพิ่มพนักงาน
+              </button>
+            ) : null}
+            {showDriverSection ? (
+              <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('driver')}>
+                + เพิ่มคนขับ
+              </button>
+            ) : null}
+            {personnelCreateMode ? (
+              <button type="button" className="btn-secondary" onClick={() => setPersonnelCreateMode(null)}>
+                ปิดฟอร์ม
+              </button>
+            ) : null}
+          </>
+        ) : null
+      }
+    />
+  ) : null;
+
   return (
-    <AdminPageShell header={pageHeading ? <AdminPageHeader title={pageHeading} /> : null}>
+    <AdminPageShell header={shellHeader}>
         {activeTab === 'orders' && (
           <div className="orders-table">
             {ordersCustomerIdFilter ? (
@@ -2385,24 +2412,6 @@ const AdminDashboard = ({ forcedTab = null, forcedSubsection = null }) => {
 
         {activeTab === 'drivers' && (
           <div className="drivers-section">
-            <div className="admin-toolbar-row admin-toolbar-row--actions-only">
-              {canManageStaff && showStaffSection && (
-                <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('staff')}>
-                  ➕ เพิ่มพนักงาน
-                </button>
-              )}
-              {showDriverSection && (
-              <button type="button" className="btn-primary" onClick={() => setPersonnelCreateMode('driver')}>
-                ➕ เพิ่มคนขับ
-              </button>
-              )}
-              {personnelCreateMode && (
-                <button type="button" className="btn-secondary" onClick={() => setPersonnelCreateMode(null)}>
-                  ปิดฟอร์ม
-                </button>
-              )}
-            </div>
-
             {showStaffSection && selfStaffProfile && !canManageStaff && !editingStaff && (
               <div className="personnel-card">
                 <h3>ข้อมูลบัญชีของฉัน</h3>
