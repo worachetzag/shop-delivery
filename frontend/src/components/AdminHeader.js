@@ -110,7 +110,7 @@ function AdminNavSections({
         </button>
         {openGroup === 'inventory' && (
           <div className="admin-nav-submenu">
-            <Link to="/admin/inventory/overview" className={navLinkClass(isActivePath('/admin/inventory/overview'))}>ภาพรวม</Link>
+            <Link to="/admin/inventory/overview" className={navLinkClass(isActivePath('/admin/inventory/overview'))}>ภาพรวมคลัง</Link>
             <Link to="/admin/inventory/adjustments" className={navLinkClass(isActivePath('/admin/inventory/adjustments'))}>ปรับสต็อก</Link>
             <Link to="/admin/inventory/suppliers" className={navLinkClass(isActivePath('/admin/inventory/suppliers'))}>ผู้จำหน่าย</Link>
             <Link to="/admin/inventory/purchase-orders" className={navLinkClass(isActivePath('/admin/inventory/purchase-orders'))}>ใบสั่งซื้อ (PO)</Link>

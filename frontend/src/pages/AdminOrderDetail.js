@@ -280,12 +280,7 @@ const AdminOrderDetail = () => {
   if (!order) {
     return (
       <AdminPageShell
-        header={(
-          <AdminPageHeader
-            title="คำสั่งซื้อ"
-            subtitle="ไม่พบคำสั่งซื้อ"
-          />
-        )}
+        header={<AdminPageHeader title="ไม่พบคำสั่งซื้อ" />}
       />
     );
   }
@@ -323,12 +318,11 @@ const AdminOrderDetail = () => {
 
   return (
     <AdminPageShell
-      header={(
-        <AdminPageHeader
-          title="คำสั่งซื้อ"
-          subtitle={`รายละเอียด ${order.order_number || `#${order.id}`}`}
-        />
-      )}
+        header={(
+          <AdminPageHeader
+            title={`คำสั่งซื้อ ${order.order_number || `#${order.id}`}`}
+          />
+        )}
     >
         <p>
           <strong>ลูกค้า:</strong>{' '}

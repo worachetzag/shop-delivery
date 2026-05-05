@@ -136,7 +136,7 @@ const AdminOverviewPage = () => {
 
   return (
     <AdminPageShell
-      header={<AdminPageHeader title="ภาพรวม" subtitle="ภาพรวมระบบและข้อมูลเชิงสรุป" />}
+      header={<AdminPageHeader title="ภาพรวม" />}
     >
       <div className="admin-stats" style={{ marginBottom: 16 }}>
         <div className="stat-card">
@@ -159,9 +159,6 @@ const AdminOverviewPage = () => {
 
       <div className="products-manage-table admin-overview-chart">
         <h3>กราฟภาพรวม</h3>
-        <p className="muted" style={{ marginTop: 0, marginBottom: 12 }}>
-          เปรียบเทียบปริมาณข้อมูลหลักแบบรวดเร็ว
-        </p>
         <div className="admin-mini-chart" role="img" aria-label="กราฟสรุปข้อมูลหน้าแอดมิน">
           {chartItems.map((item) => (
             <div className="admin-mini-chart-row" key={item.key}>
@@ -203,9 +200,6 @@ const AdminOverviewPage = () => {
             </button>
           </div>
         </div>
-        <p className="muted" style={{ marginTop: 0, marginBottom: 12 }}>
-          จำนวนคำสั่งซื้อรายวันย้อนหลัง {trendDays} วัน
-        </p>
         {trendLoading ? (
           <div className="empty-state">กำลังโหลดกราฟ...</div>
         ) : trendChartData.length === 0 ? (

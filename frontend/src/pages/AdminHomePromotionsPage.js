@@ -319,13 +319,9 @@ const AdminHomePromotionsPage = () => {
 
   return (
     <AdminPageShell
-      header={(
-        <AdminPageHeader
-          title="โปรหน้าแรก"
-          subtitle="อัปโหลดรูปแบนเนอร์ได้ — ลูกค้าคลิกที่รูปแล้วไปตามที่เลือกด้านล่าง (หมวดสินค้า / สินค้าแนะนำ / ลดราคา / หน้ารวมสินค้า / สินค้ารายการเดียว)"
-        />
-      )}
+      header={<AdminPageHeader title="โปรหน้าแรก" />}
     >
+        <div style={{ padding: '12px' }}>
         <div className="admin-toolbar-row">
           <input
             type="search"
@@ -379,7 +375,7 @@ const AdminHomePromotionsPage = () => {
         </div>
 
         <section className="store-settings-card" style={{ marginBottom: '1.25rem' }}>
-          <h2 className="store-settings-card__title">{editingId ? 'แก้ไขการ์ด' : 'เพิ่มการ์ดใหม่'}</h2>
+          <h3 className="store-settings-card__title">{editingId ? 'แก้ไขการ์ด' : 'เพิ่มการ์ดใหม่'}</h3>
           <form className="store-settings-form" onSubmit={handleSubmit}>
             <div className="store-settings-stack">
           <div className="store-settings-field">
@@ -615,6 +611,7 @@ const AdminHomePromotionsPage = () => {
             </table>
           </div>
         )}
+        </div>
     </AdminPageShell>
   );
 };

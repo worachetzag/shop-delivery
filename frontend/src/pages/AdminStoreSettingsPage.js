@@ -182,10 +182,7 @@ const AdminStoreSettingsPage = ({ section = 'all' }) => {
   return (
     <AdminPageShell
       header={(
-        <AdminPageHeader
-          title={heading}
-          subtitle="ข้อมูลร้าน พิกัด เวลาทำการ การชำระเงิน และค่าจัดส่ง — แก้ไขตามแท็บเมนูด้านซ้าย"
-        />
+        <AdminPageHeader title={heading} />
       )}
     >
         <div className="store-settings-page store-settings-page--embedded">

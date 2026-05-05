@@ -108,10 +108,7 @@ const AdminAuditLogPage = () => {
     <AdminPageShell
       narrow
       header={(
-        <AdminPageHeader
-          title="ประวัติพนักงาน"
-          subtitle="บันทึกล็อกอิน/ออกจากระบบแอดมิน การตั้งค่าร้าน (พิกัด เวลา ค่าส่ง) การเพิ่มหรือแก้ไขสินค้าและหมวดหมู่ แบนเนอร์/โปรหน้าแรก ผู้จำหน่ายและใบสั่งซื้อ ปรับสต็อกมือ การเปลี่ยนสถานะคำสั่งซื้อ การตรวจสลิป การมอบหมายคนขับ การเพิ่ม/แก้ไข/ลบบัญชีพนักงานและคนขับ — เห็นได้เฉพาะเจ้าของร้าน"
-        />
+        <AdminPageHeader title="ประวัติพนักงาน" />
       )}
     >
       <form className="admin-toolbar-row admin-audit-toolbar" onSubmit={submitSearch}>

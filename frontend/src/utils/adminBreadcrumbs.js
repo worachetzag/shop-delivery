@@ -107,7 +107,7 @@ export function buildAdminBreadcrumbs(pathname) {
   const invRoot = '/admin/inventory/overview';
 
   if (p === '/admin/inventory' || p === '/admin/inventory/overview') {
-    return [home, crumb('จัดการสต็อก', invRoot), crumb('ภาพรวม')];
+    return [home, crumb('จัดการสต็อก', invRoot), crumb('ภาพรวมคลัง')];
   }
 
   if (p === '/admin/inventory/adjustments') {

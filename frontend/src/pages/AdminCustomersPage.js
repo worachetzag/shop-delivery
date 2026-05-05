@@ -110,7 +110,7 @@ const AdminCustomersPage = () => {
 
   return (
     <AdminPageShell
-      header={<AdminPageHeader title="ลูกค้า" subtitle="รายชื่อลูกค้า จำนวนออเดอร์ และยอดซื้อสะสม" />}
+      header={<AdminPageHeader title="ลูกค้า" />}
     >
         <form
           onSubmit={submitSearch}

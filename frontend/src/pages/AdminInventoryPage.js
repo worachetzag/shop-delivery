@@ -278,14 +278,14 @@ const AdminInventoryPage = ({ section = 'all' }) => {
   if (loadingPage) {
     return (
       <AdminPageShell
-        header={<AdminPageHeader title={invHeading} subtitle="กำลังโหลดข้อมูล..." />}
+        header={<AdminPageHeader title={invHeading} />}
       />
     );
   }
 
   return (
     <AdminPageShell
-      header={<AdminPageHeader title={invHeading} subtitle="จัดการคลัง ปรับสต็อก ผู้จำหน่าย และใบสั่งซื้อ — ตรงกับเมนูด้านซ้าย" />}
+      header={<AdminPageHeader title={invHeading} />}
     >
       {(section === 'all' || section === 'overview') && (
       <div className="admin-stats" style={{ marginBottom: 16 }}>

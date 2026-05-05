@@ -4,7 +4,7 @@
 
 export const ADMIN_SECTION_LABELS = {
   inventory: {
-    overview: 'ภาพรวม',
+    overview: 'ภาพรวมคลัง',
     adjustments: 'ปรับสต็อก',
     suppliers: 'ผู้จำหน่าย',
     'purchase-orders': 'ใบสั่งซื้อ (PO)',

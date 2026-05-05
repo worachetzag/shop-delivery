@@ -1141,6 +1141,12 @@ def profile_view(request):
 
 def line_login_start(request):
     """Start LINE OAuth flow without allauth dependency."""
+    channel_id = (getattr(settings, 'LINE_LOGIN_CHANNEL_ID', None) or '').strip()
+    if not channel_id:
+        logger.error('LINE_LOGIN_CHANNEL_ID is empty — set LINE_LOGIN_CHANNEL_ID in environment')
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+        return HttpResponseRedirect(f"{frontend_url}/customer/login?error=line_missing_channel")
+
     state = secrets.token_urlsafe(24)
     request.session['line_oauth_state'] = state
     request.session['line_oauth_next'] = _sanitize_line_oauth_next(request.GET.get('next'))
@@ -1150,7 +1156,7 @@ def line_login_start(request):
 
     params = {
         'response_type': 'code',
-        'client_id': settings.LINE_LOGIN_CHANNEL_ID,
+        'client_id': channel_id,
         'redirect_uri': redirect_uri,
         'state': state,
         # Keep scope minimal for stable LIFF login flow.

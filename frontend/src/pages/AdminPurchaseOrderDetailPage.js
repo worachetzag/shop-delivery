@@ -79,31 +79,27 @@ const AdminPurchaseOrderDetailPage = () => {
   if (loading) {
     return (
       <AdminPageShell
-        header={<AdminPageHeader title="ใบสั่งซื้อ (PO)" subtitle="กำลังโหลดรายละเอียด..." />}
+        header={<AdminPageHeader title="ใบสั่งซื้อ (PO)" />}
       />
     );
   }
 
   if (!purchaseOrder) {
     return (
-      <AdminPageShell
-        header={(
-          <AdminPageHeader
-            title="ใบสั่งซื้อ (PO)"
-            subtitle="ไม่พบข้อมูลใบสั่งซื้อ"
-          />
-        )}
-      />
+      <AdminPageShell header={<AdminPageHeader title="ไม่พบใบสั่งซื้อ" />} />
     );
   }
 
   return (
     <AdminPageShell
-      header={(
-        <AdminPageHeader
-          title="ใบสั่งซื้อ (PO)"
-          subtitle={purchaseOrder.reference ? `เลขอ้างอิง ${purchaseOrder.reference}` : null}
-          actions={(
+        header={(
+          <AdminPageHeader
+            title={
+              purchaseOrder.reference
+                ? `ใบสั่งซื้อ ${purchaseOrder.reference}`
+                : 'ใบสั่งซื้อ (PO)'
+            }
+            actions={(
             <button type="button" className="btn btn-primary" onClick={receiveAll} disabled={receiving}>
               {receiving ? 'กำลังรับเข้า...' : 'รับเข้าคงค้างทั้งหมด'}
             </button>

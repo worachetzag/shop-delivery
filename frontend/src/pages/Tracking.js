@@ -283,12 +283,12 @@ const Tracking = () => {
     window.location.assign(`tel:${phone.replace(/\s/g, '')}`);
   };
 
-  const adminTrackingHeader = (
-    <AdminPageHeader
-      title="ติดตามการจัดส่ง"
-      subtitle={trackingInfo?.trackingNumber ? `เลขอ้างอิง ${trackingInfo.trackingNumber}` : undefined}
-    />
-  );
+  const adminTrackingTitle =
+    trackingInfo?.trackingNumber != null && String(trackingInfo.trackingNumber).trim()
+      ? `ติดตามการจัดส่ง · ${trackingInfo.trackingNumber}`
+      : 'ติดตามการจัดส่ง';
+
+  const adminTrackingHeader = <AdminPageHeader title={adminTrackingTitle} />;
 
   if (loading) {
     if (isAdminTracking) {

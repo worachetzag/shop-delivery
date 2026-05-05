@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LineLoginButton, { redirectToShopLineOAuth } from '../components/LineLoginButton';
+import { popupNotify } from '../components/PopupProvider';
 import config from '../config';
 import { sanitizeCustomerOAuthNext } from '../utils/customerDeepLink';
 import './Login.css';
@@ -28,6 +29,17 @@ const Login = () => {
     }
     return nextFromQuery;
   }, [location.state, nextFromQuery]);
+
+  useEffect(() => {
+    const err = new URLSearchParams(location.search).get('error');
+    if (err === 'line_missing_channel') {
+      popupNotify(
+        'ระบบยังไม่ได้ตั้ง LINE Login Channel ID — แจ้งผู้ดูแล (ค่าว่างใน env ทำให้ล็อกอินไม่ได้)',
+        { type: 'error', duration: 7000 },
+      );
+      navigate({ pathname: '/customer/login', search: '' }, { replace: true, state: location.state });
+    }
+  }, [location.search, location.state, navigate]);
 
   useEffect(() => {
     let cancelled = false;

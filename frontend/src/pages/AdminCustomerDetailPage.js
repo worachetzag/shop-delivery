@@ -111,19 +111,11 @@ const AdminCustomerDetailPage = () => {
   const stats = customer.stats || {};
   const line = customer.line_profile;
 
-  const subtitleParts = [
-    displayName,
-    `@${u.username || '—'}`,
-    customer.contact_email ? `อีเมลลูกค้า: ${customer.contact_email}` : null,
-    !customer.contact_email && u.email ? u.email : null,
-  ].filter(Boolean);
-
   return (
     <AdminPageShell
       header={(
         <AdminPageHeader
-          title="ลูกค้า"
-          subtitle={subtitleParts.join(' · ')}
+          title={displayName}
           actions={(
             <Link className="btn-primary" style={{ textDecoration: 'none' }} to={`/admin/orders?customer_id=${customer.id}`}>
               ดูออเดอร์ทั้งหมดของลูกค้านี้

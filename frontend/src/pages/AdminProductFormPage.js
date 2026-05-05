@@ -226,12 +226,7 @@ const AdminProductFormPage = () => {
   if (loading) {
     return (
       <AdminPageShell
-        header={(
-          <AdminPageHeader
-            title="สินค้า"
-            subtitle={pageTitle}
-          />
-        )}
+        header={<AdminPageHeader title={pageTitle} />}
       >
         <div className="loading">กำลังโหลดข้อมูลสินค้า...</div>
       </AdminPageShell>
@@ -240,12 +235,7 @@ const AdminProductFormPage = () => {
 
   return (
     <AdminPageShell
-      header={(
-        <AdminPageHeader
-          title="สินค้า"
-          subtitle={pageTitle}
-        />
-      )}
+      header={<AdminPageHeader title={pageTitle} />}
     >
         <section className="store-settings-card">
         <form className="product-form product-form--embedded" onSubmit={handleSubmit}>

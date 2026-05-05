@@ -312,9 +312,12 @@ CORS_PREFLIGHT_MAX_AGE = 86400
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', 'your-channel-access-token')
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', 'your-channel-secret')
 
-# LINE Login Channel (สำหรับ LIFF)
-LINE_LOGIN_CHANNEL_ID = os.getenv('LINE_LOGIN_CHANNEL_ID', '2008347227')
-LINE_LOGIN_CHANNEL_SECRET = os.getenv('LINE_LOGIN_CHANNEL_SECRET', '9b724c3d737e5c6661c4c9b9b8fc953c')
+# LINE Login Channel (สำหรับ LIFF / OAuth)
+# หมายเหตุ: os.getenv('KEY', default) คืนค่า '' ถ้ามี KEY= ว่างใน env — client_id ว่างแล้ว LINE ตอบ 400
+_LINE_LOGIN_ID = (os.getenv('LINE_LOGIN_CHANNEL_ID') or '').strip()
+_LINE_LOGIN_SECRET = (os.getenv('LINE_LOGIN_CHANNEL_SECRET') or '').strip()
+LINE_LOGIN_CHANNEL_ID = _LINE_LOGIN_ID or '2008347227'
+LINE_LOGIN_CHANNEL_SECRET = _LINE_LOGIN_SECRET or '9b724c3d737e5c6661c4c9b9b8fc953c'
 LINE_LIFF_ID = os.getenv('LINE_LIFF_ID', '2008347227-Bd7D38KD')
 # path หลัง LIFF ID สำหรับดีลิงก์แจ้งเตือนออเดอร์ — ต่อท้าย Endpoint URL ใน LINE Console
 # default: orders/<id> เมื่อ Endpoint ลงท้ายด้วย .../customer/ ได้ URL สุดท้าย .../customer/orders/<id>
